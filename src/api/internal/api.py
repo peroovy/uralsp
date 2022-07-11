@@ -1,0 +1,49 @@
+from typing import Callable, Type
+
+from django.http import HttpRequest, HttpResponse
+from ninja import NinjaAPI
+
+from api.internal.auth.api import register_auth_api
+from api.internal.exceptions import (
+    APIException,
+    BadRequestException,
+    ExpiredTokenException,
+    InvalidPayloadException,
+    NotFoundException,
+    NotFoundRefreshTokenException,
+    RevokedRefreshTokenException,
+    UnauthorizedException,
+    UnknownRefreshTokenException,
+)
+
+
+def get_api() -> NinjaAPI:
+    api = NinjaAPI()
+
+    subscribe_exception_handlers(api)
+
+    register_auth_api(api)
+
+    return api
+
+
+def subscribe_exception_handlers(api: NinjaAPI) -> None:
+    exceptions = [
+        UnauthorizedException,
+        NotFoundRefreshTokenException,
+        InvalidPayloadException,
+        ExpiredTokenException,
+        UnknownRefreshTokenException,
+        BadRequestException,
+        NotFoundException,
+        RevokedRefreshTokenException,
+    ]
+
+    for exception in exceptions:
+        api.add_exception_handler(exception, get_exception_handler(api, exception))
+
+
+def get_exception_handler(
+    api: NinjaAPI, exception: Type[APIException]
+) -> Callable[[HttpRequest, Exception], HttpResponse]:
+    return lambda request, exc: exception.get_response(request, exc, api)

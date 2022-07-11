@@ -10,13 +10,14 @@ class User(models.Model):
 
     name = models.CharField(max_length=127)
     surname = models.CharField(max_length=127)
-    patronymic = models.CharField(max_length=127)
+    patronymic = models.CharField(max_length=127, null=True)
     permission = models.IntegerField(choices=Permissions.choices, default=Permissions.DEFAULT)
     email = models.EmailField(unique=True, null=True)
-    phone = models.CharField(max_length=15, unique=True, null=True)
+    phone = models.CharField(max_length=15, null=True)
     region = models.CharField(max_length=255, null=True)
     school = models.CharField(max_length=255, null=True)
     school_class = models.CharField(max_length=15, null=True)
+    vkontakte_id = models.BigIntegerField(unique=True, null=True)
 
     class Meta:
         db_table = "users"

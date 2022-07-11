@@ -3,6 +3,7 @@ from .competition_field import CompetitionField
 from .default_value import DefaultValue
 from .field import Field
 from .participant import Participant
+from .refresh_token import RefreshToken
 from .request import Request
 from .request_value import RequestValue
 from .user import User
