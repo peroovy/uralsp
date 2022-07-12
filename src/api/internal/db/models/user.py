@@ -1,13 +1,14 @@
 from django.db import models
 
 
-class User(models.Model):
-    class Permissions(models.IntegerChoices):
-        DEFAULT = 0
-        TEACHER = 1
-        ADMIN = 2
-        SUPER_ADMIN = 3
+class Permissions(models.IntegerChoices):
+    DEFAULT = 0
+    TEACHER = 1
+    ADMIN = 2
+    SUPER_ADMIN = 3
 
+
+class User(models.Model):
     name = models.CharField(max_length=127)
     surname = models.CharField(max_length=127)
     patronymic = models.CharField(max_length=127, null=True)

@@ -1,10 +1,11 @@
-import httpx
 from django.conf import settings
 from django.http import HttpRequest
 from ninja import Body
 from ninja.responses import Response
+from vk import API
+from vk.exceptions import VkAPIError
 
-from api.internal.auth.domain.entities import SocialLoginIn, TokenDetailsOut
+from api.internal.auth.domain.entities import TokenDetailsOut, VKLoginIn
 from api.internal.auth.domain.services import AuthService, RegisterService
 from api.internal.auth.domain.services.auth import TokenTypes
 from api.internal.exceptions import (
@@ -19,52 +20,21 @@ from api.internal.exceptions import (
 
 
 class AuthHandlers:
-    VKONTAKTE_ACCESS_TOKEN_URL = "https://oauth.vk.com/access_token"
-    VKONTAKTE_USER_DETAILS_URL = "https://api.vk.com/method/users.get"
-
     def __init__(self, auth_service: AuthService, register_service: RegisterService):
         self._auth_service = auth_service
         self._register_service = register_service
 
-    def signin_vkontakte(self, request: HttpRequest, auth_params: SocialLoginIn = Body(...)) -> Response:
-        access_response = httpx.get(
-            url=self.VKONTAKTE_ACCESS_TOKEN_URL,
-            params={
-                "client_id": auth_params.client_id,
-                "client_secret": auth_params.client_secret,
-                "code": auth_params.code,
-            },
-        )
-        if access_response.is_error:
+    def signin_vkontakte(self, request: HttpRequest, params: VKLoginIn = Body(...)) -> Response:
+        try:
+            api = API(access_token=params.access_token, v=settings.VKONTAKTE_API_VERSION)
+            response = api.secure.checkToken(token=params.access_token, access_token=params.service_token)
+        except VkAPIError:
             raise UnauthorizedException()
 
-        details_response = httpx.get(
-            url=self.VKONTAKTE_USER_DETAILS_URL,
-            params={
-                "access_token": access_response.json()["access_token"],
-                "fields": "nickname,contacts",
-                "v": settings.VKONTAKTE_API_VERSION,
-            },
-        )
-
-        if details_response.is_error:
-            raise UnauthorizedException()
-
-        body = details_response.json()["response"][0]
-        vk_id, name, surname, patronymic, phone = (
-            body["id"],
-            body["first_name"],
-            body["last_name"],
-            body["nickname"],
-            body["mobile_phone"],
-        )
-
+        vk_id = response["user_id"]
         user = self._auth_service.get_user_by_vkontakte_id(vk_id)
         if not user:
-            if not (
-                user := self._register_service.try_register_from_vkontakte(vk_id, name, surname, patronymic, phone)
-            ):
-                raise ServerException()
+            user = self._register_service.register_from_vkontakte(vk_id, params.name, params.surname)
 
         details = self._auth_service.try_create_access_and_refresh_tokens(user)
         if not details:

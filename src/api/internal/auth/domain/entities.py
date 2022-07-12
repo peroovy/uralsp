@@ -1,10 +1,11 @@
 from ninja import Schema
 
 
-class SocialLoginIn(Schema):
-    client_id: int
-    client_secret: str
-    code: str
+class VKLoginIn(Schema):
+    access_token: str
+    service_token: str
+    name: str
+    surname: str
 
 
 class TokenDetailsOut(Schema):
