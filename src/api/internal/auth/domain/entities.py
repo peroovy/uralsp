@@ -3,9 +3,11 @@ from ninja import Schema
 
 class VKLoginIn(Schema):
     access_token: str
-    service_token: str
-    name: str
-    surname: str
+
+
+class GoogleLoginIn(Schema):
+    client_id: str
+    id_token: str
 
 
 class TokenDetailsOut(Schema):

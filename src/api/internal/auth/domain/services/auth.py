@@ -20,7 +20,7 @@ class TokenTypes(Enum):
 
 
 class TokenDetails:
-    def __init__(self, access: str, refresh: str, expires_in: float):
+    def __init__(self, access: str = None, refresh: str = None, expires_in: float = None):
         self.access = access
         self.refresh = refresh
         self.expires_in = expires_in
@@ -45,6 +45,9 @@ class AuthService:
     def get_user_by_vkontakte_id(self, vk_id: int) -> Optional[User]:
         return self._user_repo.get_user_by_vkontakte_id(vk_id)
 
+    def get_user_by_google_id(self, google_id: int) -> Optional[User]:
+        return self._user_repo.get_user_by_google_id(google_id)
+
     def try_create_access_and_refresh_tokens(self, user: User) -> Optional[TokenDetails]:
         access, expires_in = self.generate_token(user, TokenTypes.ACCESS)
         refresh = self.generate_token(user, TokenTypes.REFRESH)[0]
@@ -58,10 +61,10 @@ class AuthService:
         except IntegrityError:
             return None
 
-    def try_update_access_and_refresh_tokens(self, refresh: RefreshToken) -> Optional[Union[TokenDetails, bool]]:
+    def try_update_access_and_refresh_tokens(self, refresh: RefreshToken) -> Optional[TokenDetails]:
         if refresh.revoked:
             self._refresh_repo.revoke_all(refresh.user.id)
-            return False
+            return TokenDetails()
 
         return self.try_create_access_and_refresh_tokens(refresh.user)
 

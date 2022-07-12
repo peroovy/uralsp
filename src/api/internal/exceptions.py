@@ -48,9 +48,12 @@ class ServerException(APIException):
 
 
 class UnauthorizedException(APIException):
+    def __init__(self, message: str = "Unauthorized"):
+        self.message = message
+
     @classmethod
     def get_response(cls, request: HttpRequest, exc, api: NinjaAPI) -> HttpResponse:
-        return api.create_response(request, data={"error": "Unauthorized"}, status=401)
+        return api.create_response(request, data={"error": exc.message}, status=401)
 
 
 class NotFoundRefreshTokenException(UnprocessableEntityException):

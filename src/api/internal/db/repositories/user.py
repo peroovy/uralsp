@@ -21,6 +21,8 @@ class IUserRepository(ABC):
         school: str = None,
         school_class: str = None,
         vkontakte_id: int = None,
+        google_id: int = None,
+        telegram_id: int = None,
     ) -> User:
         ...
 
@@ -30,6 +32,10 @@ class IUserRepository(ABC):
 
     @abstractmethod
     def get_user_by_vkontakte_id(self, vk_id: int) -> Optional[User]:
+        ...
+
+    @abstractmethod
+    def get_user_by_google_id(self, google_id: int) -> Optional[User]:
         ...
 
 
@@ -46,6 +52,8 @@ class UserRepository(IUserRepository):
         school: str = None,
         school_class: str = None,
         vkontakte_id: int = None,
+        google_id: int = None,
+        telegram_id: int = None,
     ):
 
         if email is not None and "@" not in email:
@@ -61,6 +69,8 @@ class UserRepository(IUserRepository):
             school=school,
             school_class=school_class,
             vkontakte_id=vkontakte_id,
+            google_id=google_id,
+            telegram_id=telegram_id,
         )
 
     def get(self, user_id: int) -> Optional[User]:
@@ -68,3 +78,6 @@ class UserRepository(IUserRepository):
 
     def get_user_by_vkontakte_id(self, vk_id: int) -> Optional[User]:
         return User.objects.filter(vkontakte_id=vk_id).first()
+
+    def get_user_by_google_id(self, google_id: int) -> Optional[User]:
+        return User.objects.filter(google_id=google_id).first()

@@ -18,7 +18,9 @@ class User(models.Model):
     region = models.CharField(max_length=255, null=True)
     school = models.CharField(max_length=255, null=True)
     school_class = models.CharField(max_length=15, null=True)
-    vkontakte_id = models.BigIntegerField(unique=True, null=True)
+    vkontakte_id = models.CharField(max_length=255, unique=True, null=True)
+    google_id = models.CharField(max_length=255, unique=True, null=True)
+    telegram_id = models.CharField(max_length=255, unique=True, null=True)
 
     class Meta:
         db_table = "users"

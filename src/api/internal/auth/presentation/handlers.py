@@ -1,13 +1,18 @@
+from typing import Callable, Optional
+
 from django.conf import settings
 from django.http import HttpRequest
+from google.auth.transport import requests
+from google.oauth2 import id_token
 from ninja import Body
 from ninja.responses import Response
 from vk import API
 from vk.exceptions import VkAPIError
 
-from api.internal.auth.domain.entities import TokenDetailsOut, VKLoginIn
+from api.internal.auth.domain.entities import GoogleLoginIn, TokenDetailsOut, VKLoginIn
 from api.internal.auth.domain.services import AuthService, RegisterService
 from api.internal.auth.domain.services.auth import TokenTypes
+from api.internal.db.models import User
 from api.internal.exceptions import (
     ExpiredTokenException,
     InvalidPayloadException,
@@ -27,23 +32,54 @@ class AuthHandlers:
     def signin_vkontakte(self, request: HttpRequest, params: VKLoginIn = Body(...)) -> Response:
         try:
             api = API(access_token=params.access_token, v=settings.VKONTAKTE_API_VERSION)
-            response = api.secure.checkToken(token=params.access_token, access_token=params.service_token)
+            info = api.account.getProfileInfo(access_token=params.access_token)
         except VkAPIError:
             raise UnauthorizedException()
 
-        vk_id = response["user_id"]
-        user = self._auth_service.get_user_by_vkontakte_id(vk_id)
+        return self.signin(
+            social_id=info["id"],
+            name=info["first_name"],
+            surname=info["last_name"],
+            get_user_by_social_id=self._auth_service.get_user_by_vkontakte_id,
+            register=self._register_service.register_by_vkontakte_id,
+        )
+
+    def signin_google(self, request: HttpRequest, params: GoogleLoginIn = Body(...)) -> Response:
+        try:
+            info = id_token.verify_oauth2_token(params.id_token, requests.Request(), params.client_id)
+        except ValueError:
+            raise UnauthorizedException()
+
+        google_id, name, surname = info["sub"], info["given_name"], info["family_name"]
+
+        return self.signin(
+            social_id=google_id,
+            name=name,
+            surname=surname,
+            get_user_by_social_id=self._auth_service.get_user_by_google_id,
+            register=self._register_service.register_by_google_id,
+        )
+
+    def signin(
+        self,
+        social_id: int,
+        name: str,
+        surname: str,
+        get_user_by_social_id: Callable[[int], Optional[User]],
+        register: Callable[[str, str, int], User],
+    ) -> Response:
+        user = get_user_by_social_id(social_id)
         if not user:
-            user = self._register_service.register_from_vkontakte(vk_id, params.name, params.surname)
+            user = register(name, surname, social_id)
 
         details = self._auth_service.try_create_access_and_refresh_tokens(user)
         if not details:
             raise ServerException()
 
-        details_response = Response(data=TokenDetailsOut(access_token=details.access, expires_in=details.expires_in))
-        details_response.set_cookie(settings.REFRESH_TOKEN_COOKIE, details.refresh, httponly=True)
+        response = Response(data=TokenDetailsOut(access_token=details.access, expires_in=details.expires_in))
+        response.set_cookie(settings.REFRESH_TOKEN_COOKIE, details.refresh, httponly=True)
 
-        return details_response
+        return response
 
     def refresh(self, request: HttpRequest) -> Response:
         refresh_token: str = request.COOKIES.get(settings.REFRESH_TOKEN_COOKIE)
@@ -66,10 +102,10 @@ class AuthHandlers:
             raise UnknownRefreshTokenException()
 
         details = self._auth_service.try_update_access_and_refresh_tokens(token)
-        if details is None:
+        if not details:
             raise ServerException()
 
-        if details is False:
+        if not details.access:
             raise RevokedRefreshTokenException()
 
         response = Response(data=TokenDetailsOut(access_token=details.access, expires_in=details.expires_in))
