@@ -70,10 +70,10 @@ class AuthHandlers:
             or not self._auth_service.are_payload_keys_valid(payload)
             or not self._auth_service.is_token_type(payload, TokenTypes.REFRESH)
         ):
-            raise InvalidPayloadException()
+            raise InvalidPayloadException(TokenTypes.REFRESH)
 
         if self._auth_service.is_token_expired(payload):
-            raise ExpiredTokenException()
+            raise ExpiredTokenException(TokenTypes.REFRESH)
 
         token = self._auth_service.get_refresh_token_details(refresh_token)
         if not token:

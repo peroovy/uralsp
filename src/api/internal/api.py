@@ -40,10 +40,8 @@ def subscribe_exception_handlers(api: NinjaAPI) -> None:
     ]
 
     for exception in exceptions:
-        api.add_exception_handler(exception, get_exception_handler(api, exception))
+        api.add_exception_handler(exception, get_exception_handler(exception))
 
 
-def get_exception_handler(
-    api: NinjaAPI, exception: Type[APIException]
-) -> Callable[[HttpRequest, Exception], HttpResponse]:
-    return lambda request, exc: exception.get_response(request, exc, api)
+def get_exception_handler(exception: Type[APIException]) -> Callable[[HttpRequest, Exception], HttpResponse]:
+    return lambda request, exc: exception.get_response(exc)

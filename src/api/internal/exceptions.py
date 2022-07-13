@@ -1,13 +1,14 @@
 from abc import abstractmethod
 
-from django.http import HttpRequest, HttpResponse
-from ninja import NinjaAPI
+from ninja.responses import Response
+
+from api.internal.auth.domain.services.auth import TokenTypes
 
 
 class APIException(Exception):
     @classmethod
     @abstractmethod
-    def get_response(cls, request: HttpRequest, exc, api: NinjaAPI) -> HttpResponse:
+    def get_response(cls, exc) -> Response:
         pass
 
 
@@ -16,8 +17,8 @@ class BadRequestException(APIException):
         self.message = message
 
     @classmethod
-    def get_response(cls, request: HttpRequest, exc, api: NinjaAPI) -> HttpResponse:
-        return api.create_response(request, data={"error": exc.message}, status=400)
+    def get_response(cls, exc) -> Response:
+        return Response(data={"error": exc.message}, status=400)
 
 
 class NotFoundException(APIException):
@@ -25,8 +26,8 @@ class NotFoundException(APIException):
         self.what = what
 
     @classmethod
-    def get_response(cls, request: HttpRequest, exc, api: NinjaAPI) -> HttpResponse:
-        return api.create_response(request, data={"error": f"Not found: {exc.what}"}, status=404)
+    def get_response(cls, exc) -> Response:
+        return Response(data={"error": f"Not found: {exc.what}"}, status=404)
 
 
 class UnprocessableEntityException(APIException):
@@ -34,8 +35,8 @@ class UnprocessableEntityException(APIException):
         self.message = message
 
     @classmethod
-    def get_response(cls, request: HttpRequest, exc, api: NinjaAPI) -> HttpResponse:
-        return api.create_response(request, data={"error": exc.message}, status=422)
+    def get_response(cls, exc) -> Response:
+        return Response(data={"error": exc.message}, status=422)
 
 
 class ServerException(APIException):
@@ -43,8 +44,8 @@ class ServerException(APIException):
         self.message = message
 
     @classmethod
-    def get_response(cls, request: HttpRequest, exc, api: NinjaAPI) -> HttpResponse:
-        return api.create_response(request, data={"error": exc.message}, status=500)
+    def get_response(cls, exc) -> Response:
+        return Response(data={"error": exc.message}, status=500)
 
 
 class UnauthorizedException(APIException):
@@ -52,30 +53,30 @@ class UnauthorizedException(APIException):
         self.message = message
 
     @classmethod
-    def get_response(cls, request: HttpRequest, exc, api: NinjaAPI) -> HttpResponse:
-        return api.create_response(request, data={"error": exc.message}, status=401)
+    def get_response(cls, exc) -> Response:
+        return Response(data={"error": exc.message}, status=401)
 
 
 class NotFoundRefreshTokenException(UnprocessableEntityException):
     def __init__(self):
-        super().__init__("Refresh token was not found in cookies")
+        super().__init__(message="Refresh token was not found in cookies")
 
 
 class InvalidPayloadException(UnprocessableEntityException):
-    def __init__(self):
-        super().__init__("Access token's payload is invalid")
+    def __init__(self, token_type: TokenTypes):
+        super().__init__(message=f"Payload of {token_type.value} token is broken")
 
 
 class ExpiredTokenException(UnprocessableEntityException):
-    def __init__(self):
-        super().__init__("Token is expired")
+    def __init__(self, token_type: TokenTypes):
+        super().__init__(message=f"{token_type.value.title()} token is expired")
 
 
 class UnknownRefreshTokenException(NotFoundException):
     def __init__(self):
-        super().__init__("refresh token")
+        super().__init__(what="refresh token")
 
 
 class RevokedRefreshTokenException(UnprocessableEntityException):
     def __init__(self):
-        super().__init__("Refresh token was be revoked")
+        super().__init__(message="Refresh token was revoked")
