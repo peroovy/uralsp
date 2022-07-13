@@ -18,7 +18,7 @@ class JWTAuthentication(HttpBearer):
 
         if (
             payload
-            and self._service.is_payload_valid(payload)
+            and self._service.are_payload_keys_valid(payload)
             and self._service.is_token_type(payload, TokenTypes.ACCESS)
             and not self._service.is_token_expired(payload)
         ):

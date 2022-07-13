@@ -13,4 +13,4 @@ class GoogleLoginIn(Schema):
 class TokenDetailsOut(Schema):
     token_type: str = "bearer"
     access_token: str
-    expires_in: float
+    expires_in: int

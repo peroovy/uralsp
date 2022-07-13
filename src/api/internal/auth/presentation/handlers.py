@@ -1,5 +1,3 @@
-from typing import Callable, Optional
-
 from django.conf import settings
 from django.http import HttpRequest
 from google.auth.transport import requests
@@ -7,12 +5,12 @@ from google.oauth2 import id_token
 from ninja import Body
 from ninja.responses import Response
 from vk import API
-from vk.exceptions import VkAPIError
+from vk.exceptions import VkException
 
 from api.internal.auth.domain.entities import GoogleLoginIn, TokenDetailsOut, VKLoginIn
-from api.internal.auth.domain.services import AuthService, RegisterService
+from api.internal.auth.domain.services import AuthService
 from api.internal.auth.domain.services.auth import TokenTypes
-from api.internal.db.models import User
+from api.internal.db.repositories.social import BaseSocial, Google, Vkontakte
 from api.internal.exceptions import (
     ExpiredTokenException,
     InvalidPayloadException,
@@ -25,24 +23,19 @@ from api.internal.exceptions import (
 
 
 class AuthHandlers:
-    def __init__(self, auth_service: AuthService, register_service: RegisterService):
+    def __init__(self, auth_service: AuthService):
         self._auth_service = auth_service
-        self._register_service = register_service
 
     def signin_vkontakte(self, request: HttpRequest, params: VKLoginIn = Body(...)) -> Response:
         try:
             api = API(access_token=params.access_token, v=settings.VKONTAKTE_API_VERSION)
             info = api.account.getProfileInfo(access_token=params.access_token)
-        except VkAPIError:
+        except VkException:
             raise UnauthorizedException()
 
-        return self.signin(
-            social_id=info["id"],
-            name=info["first_name"],
-            surname=info["last_name"],
-            get_user_by_social_id=self._auth_service.get_user_by_vkontakte_id,
-            register=self._register_service.register_by_vkontakte_id,
-        )
+        name, surname, vk_id = info["first_name"], info["last_name"], info["id"]
+
+        return self.signin(Vkontakte(name, surname, vk_id))
 
     def signin_google(self, request: HttpRequest, params: GoogleLoginIn = Body(...)) -> Response:
         try:
@@ -52,25 +45,10 @@ class AuthHandlers:
 
         google_id, name, surname = info["sub"], info["given_name"], info["family_name"]
 
-        return self.signin(
-            social_id=google_id,
-            name=name,
-            surname=surname,
-            get_user_by_social_id=self._auth_service.get_user_by_google_id,
-            register=self._register_service.register_by_google_id,
-        )
+        return self.signin(Google(name, surname, google_id))
 
-    def signin(
-        self,
-        social_id: int,
-        name: str,
-        surname: str,
-        get_user_by_social_id: Callable[[int], Optional[User]],
-        register: Callable[[str, str, int], User],
-    ) -> Response:
-        user = get_user_by_social_id(social_id)
-        if not user:
-            user = register(name, surname, social_id)
+    def signin(self, social: BaseSocial) -> Response:
+        user = social.get_or_create()
 
         details = self._auth_service.try_create_access_and_refresh_tokens(user)
         if not details:
@@ -89,7 +67,7 @@ class AuthHandlers:
         payload = self._auth_service.try_get_payload(refresh_token)
         if (
             not payload
-            or not self._auth_service.is_payload_valid(payload)
+            or not self._auth_service.are_payload_keys_valid(payload)
             or not self._auth_service.is_token_type(payload, TokenTypes.REFRESH)
         ):
             raise InvalidPayloadException()

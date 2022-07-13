@@ -1,7 +1,7 @@
 from collections import Counter
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 
 from django.conf import settings
 from django.db import IntegrityError
@@ -42,12 +42,6 @@ class AuthService:
     def get_user(self, payload: dict) -> Optional[User]:
         return self._user_repo.get(payload[self.USER_ID])
 
-    def get_user_by_vkontakte_id(self, vk_id: int) -> Optional[User]:
-        return self._user_repo.get_user_by_vkontakte_id(vk_id)
-
-    def get_user_by_google_id(self, google_id: int) -> Optional[User]:
-        return self._user_repo.get_user_by_google_id(google_id)
-
     def try_create_access_and_refresh_tokens(self, user: User) -> Optional[TokenDetails]:
         access, expires_in = self.generate_token(user, TokenTypes.ACCESS)
         refresh = self.generate_token(user, TokenTypes.REFRESH)[0]
@@ -70,7 +64,7 @@ class AuthService:
 
     def generate_token(self, user: User, token_type: TokenTypes) -> Tuple[str, float]:
         ttl = settings.REFRESH_TOKEN_TTL if token_type == TokenTypes.REFRESH else settings.ACCESS_TOKEN_TTL
-        expires_in = (self._now() + ttl).timestamp()
+        expires_in = int((self._now() + ttl).timestamp())
 
         payload = {
             self.TOKEN_TYPE: token_type.value,
@@ -88,13 +82,13 @@ class AuthService:
             return None
 
     def is_token_type(self, payload: dict, token_type: TokenTypes) -> bool:
-        return payload.get(self.TOKEN_TYPE) == token_type.value
+        return payload[self.TOKEN_TYPE] == token_type.value
 
-    def is_payload_valid(self, payload: dict) -> bool:
+    def are_payload_keys_valid(self, payload: dict) -> bool:
         return Counter(payload.keys()) == Counter(self.PAYLOAD_FIELDS)
 
-    def is_token_expired(self, payload: dict):
-        return self._now().timestamp() >= payload[self.EXPIRES_IN]
+    def is_token_expired(self, payload: dict) -> bool:
+        return int(self._now().timestamp()) >= payload[self.EXPIRES_IN]
 
     def get_refresh_token_details(self, value: str) -> Optional[RefreshToken]:
         return self._refresh_repo.get(value)
