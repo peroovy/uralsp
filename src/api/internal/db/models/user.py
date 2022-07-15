@@ -15,6 +15,7 @@ class User(models.Model):
     permission = models.IntegerField(choices=Permissions.choices, default=Permissions.DEFAULT)
     email = models.EmailField(unique=True, null=True)
     phone = models.CharField(max_length=15, null=True)
+    city = models.CharField(max_length=255, null=True)
     region = models.CharField(max_length=255, null=True)
     school = models.CharField(max_length=255, null=True)
     school_class = models.CharField(max_length=15, null=True)
@@ -24,5 +25,3 @@ class User(models.Model):
 
     class Meta:
         db_table = "users"
-        verbose_name = "User"
-        verbose_name_plural = "Users"

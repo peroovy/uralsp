@@ -27,7 +27,7 @@ class NotFoundException(APIException):
 
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(data={"error": f"Not found: {exc.what}"}, status=404)
+        return Response(data={"error": f"Not found {exc.what}"}, status=404)
 
 
 class UnprocessableEntityException(APIException):
@@ -60,6 +60,12 @@ class UnauthorizedException(APIException):
 class NotFoundRefreshTokenException(UnprocessableEntityException):
     def __init__(self):
         super().__init__(message="Refresh token was not found in cookies")
+
+
+class ForbiddenException(APIException):
+    @classmethod
+    def get_response(cls, exc) -> Response:
+        return Response(data={"error": "Forbidden"}, status=403)
 
 
 class InvalidPayloadException(UnprocessableEntityException):

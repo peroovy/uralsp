@@ -8,13 +8,16 @@ from api.internal.exceptions import (
     APIException,
     BadRequestException,
     ExpiredTokenException,
+    ForbiddenException,
     InvalidPayloadException,
     NotFoundException,
     NotFoundRefreshTokenException,
     RevokedRefreshTokenException,
     UnauthorizedException,
     UnknownRefreshTokenException,
+    UnprocessableEntityException,
 )
+from api.internal.user.api import register_user_api
 
 
 def get_api() -> NinjaAPI:
@@ -23,6 +26,7 @@ def get_api() -> NinjaAPI:
     subscribe_exception_handlers(api)
 
     register_auth_api(api)
+    register_user_api(api)
 
     return api
 
@@ -31,12 +35,14 @@ def subscribe_exception_handlers(api: NinjaAPI) -> None:
     exceptions = [
         UnauthorizedException,
         NotFoundRefreshTokenException,
+        UnprocessableEntityException,
         InvalidPayloadException,
         ExpiredTokenException,
         UnknownRefreshTokenException,
         BadRequestException,
         NotFoundException,
         RevokedRefreshTokenException,
+        ForbiddenException,
     ]
 
     for exception in exceptions:

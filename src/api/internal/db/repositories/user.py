@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Iterable, Optional
 
 from phonenumbers import PhoneNumber, PhoneNumberFormat, format_number
 
@@ -28,6 +28,14 @@ class IUserRepository(ABC):
 
     @abstractmethod
     def get(self, user_id: int) -> Optional[User]:
+        ...
+
+    @abstractmethod
+    def get_count(self, ids: Iterable[int]) -> int:
+        ...
+
+    @abstractmethod
+    def update(self, user_id: int, **kwargs) -> None:
         ...
 
 
@@ -67,3 +75,9 @@ class UserRepository(IUserRepository):
 
     def get(self, user_id: int) -> Optional[User]:
         return User.objects.filter(id=user_id).first()
+
+    def get_count(self, ids: Iterable[int]) -> int:
+        return User.objects.filter(id__in=ids).count()
+
+    def update(self, user_id: int, **kwargs) -> None:
+        return User.objects.select_for_update().filter(id=user_id).update(**kwargs)

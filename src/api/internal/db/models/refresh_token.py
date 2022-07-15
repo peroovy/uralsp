@@ -9,5 +9,3 @@ class RefreshToken(models.Model):
 
     class Meta:
         db_table = "refresh_tokens"
-        verbose_name = "Refresh Token"
-        verbose_name_plural = "Refresh Tokens"

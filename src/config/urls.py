@@ -7,6 +7,6 @@ api = get_api()
 
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("api/", api.urls),
+    path("super/", admin.site.urls),
+    path("", api.urls),
 ]
