@@ -48,24 +48,7 @@ class UserHandlers:
 
         participants = self._request_service.get_participants(request)
 
-        participation_outs = []
-        for participation in participants:
-            field_values = [
-                FieldValueSchema(field_id=field_value.field_id, value=field_value.value)
-                for field_value in participation.form.all()
-            ]
-            participation_outs.append(ParticipationSchema(user_id=participation.user_id, form=field_values))
-
-        return RequestDetailsOut(
-            id=request.id,
-            owner=request.owner_id,
-            competition=request.competition_id,
-            team_name=request.team_name,
-            status=request.status,
-            description=request.description,
-            created_at=request.created_at,
-            participants=participation_outs,
-        )
+        return RequestDetailsOut.create(request, participants)
 
     def create_request(self, request: HttpRequest, data: RequestIn = Body(...)) -> RequestOut:
         is_competition_valid = self._request_service.validate_competition_for_registration(request.user, data)
