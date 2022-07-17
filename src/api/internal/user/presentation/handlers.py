@@ -1,6 +1,7 @@
 from typing import List
 
 from django.http import HttpRequest
+from django.utils.timezone import now
 from ninja import Body
 
 from api.internal.exceptions import NotFoundException, ServerException, UnprocessableEntityException
@@ -20,6 +21,7 @@ class UserHandlers:
     INVALID_COMPETITION_ERROR = "Invalid competition data"
     INVALID_TEAM_ERROR = "Invalid user ids"
     INVALID_ANY_FORMS_ERROR = "Invalid form details"
+    COMPETITION_ALREADY_STARTED_ERROR = "Competition already started"
 
     def __init__(self, user_service: UserService, request_service: RequestService):
         self._user_service = user_service
@@ -82,8 +84,12 @@ class UserHandlers:
         return SuccessResponse()
 
     def cancel_request(self, request: HttpRequest, request_id: int) -> SuccessResponse:
-        if not self._request_service.exists(request.user, request_id):
+        req = self._request_service.get_request(request.user, request_id)
+        if not req:
             raise NotFoundException("request")
+
+        if self._request_service.is_competition_started(req):
+            raise UnprocessableEntityException(self.COMPETITION_ALREADY_STARTED_ERROR)
 
         self._request_service.cancel(request_id)
 

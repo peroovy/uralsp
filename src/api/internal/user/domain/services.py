@@ -94,6 +94,9 @@ class RequestService:
 
         return True
 
+    def is_competition_started(self, request: Request) -> bool:
+        return now() >= request.competition.started_at
+
     @atomic
     def create(self, owner: User, data: RequestIn) -> Request:
         request = self._request_repo.create(owner.id, data.competition_id, data.team_name)

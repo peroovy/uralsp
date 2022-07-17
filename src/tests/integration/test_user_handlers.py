@@ -102,9 +102,7 @@ def test_getting_request(http_request: HttpRequest, competition: Competition) ->
 
 @pytest.mark.integration
 @pytest.mark.django_db
-def test_creating_request__competition_does_not_exist(
-    http_request: HttpRequest, competition: Competition
-) -> None:
+def test_creating_request__competition_does_not_exist(http_request: HttpRequest, competition: Competition) -> None:
     data = RequestIn(**{"competition_id": -1, "team_name": "Baby", "team": []})
 
     with pytest.raises(UnprocessableEntityException, match=handlers.INVALID_COMPETITION_ERROR):
@@ -135,9 +133,7 @@ def test_creating_request__competition_registration_is_expired(
 @pytest.mark.integration
 @pytest.mark.django_db
 @freezegun.freeze_time(now())
-def test_creating_request__invalid_amount_of_participants(
-    http_request: HttpRequest, competition: Competition
-) -> None:
+def test_creating_request__invalid_amount_of_participants(http_request: HttpRequest, competition: Competition) -> None:
     team = [
         {"user_id": 1, "form": []},
         {"user_id": 2, "form": []},
@@ -462,16 +458,15 @@ def test_updating_request__team_must_not_be_empty(
 
 @pytest.mark.integration
 @pytest.mark.django_db
-def test_updating_request__participants_ids_are_repeated(http_request: HttpRequest, competition: Competition, another: User) -> None:
+def test_updating_request__participants_ids_are_repeated(
+    http_request: HttpRequest, competition: Competition, another: User
+) -> None:
     request = Request.objects.create(owner=http_request.user, competition=competition)
     competition.end_at = now() + timedelta(days=10)
     competition.person_amount = 2
     competition.save(update_fields=["end_at", "person_amount"])
 
-    data = FormsIn(**{
-        "team_name": "Baby",
-        "team": [{"user_id": another.id, "form": []} for _ in range(2)]
-    })
+    data = FormsIn(**{"team_name": "Baby", "team": [{"user_id": another.id, "form": []} for _ in range(2)]})
 
     with pytest.raises(UnprocessableEntityException, match=handlers.INVALID_TEAM_ERROR):
         handlers.update_request(http_request, request.id, data)
@@ -485,10 +480,7 @@ def test_updating_request__unknown_participants(http_request: HttpRequest, compe
     competition.person_amount = 1
     competition.save(update_fields=["end_at", "person_amount"])
 
-    data = FormsIn(**{
-        "team_name": "Baby",
-        "team": [{"user_id": -1, "form": []}]
-    })
+    data = FormsIn(**{"team_name": "Baby", "team": [{"user_id": -1, "form": []}]})
 
     with pytest.raises(UnprocessableEntityException, match=handlers.INVALID_TEAM_ERROR):
         handlers.update_request(http_request, request.id, data)
@@ -560,23 +552,22 @@ def test_updating_request__form_has_not_required_fields(
 
 @pytest.mark.integration
 @pytest.mark.django_db(transaction=True)
-def test_updating_request__competition_form_is_empty(http_request: HttpRequest, competition: Competition, user_request: Request, user: User, another: User, text_field: Field) -> None:
+def test_updating_request__competition_form_is_empty(
+    http_request: HttpRequest,
+    competition: Competition,
+    user_request: Request,
+    user: User,
+    another: User,
+    text_field: Field,
+) -> None:
     user_request.participants.add(another)
 
-    data = FormsIn(**{
-        "team_name": "Another",
-        "team": [
-            {
-                "user_id": user.id,
-                "form": [
-                    {
-                        "field_id": text_field.id,
-                        "value": "123"
-                    }
-                ]
-            }
-        ]
-    })
+    data = FormsIn(
+        **{
+            "team_name": "Another",
+            "team": [{"user_id": user.id, "form": [{"field_id": text_field.id, "value": "123"}]}],
+        }
+    )
 
     response = handlers.update_request(http_request, user_request.id, data)
     user_request.refresh_from_db()
@@ -595,6 +586,20 @@ def test_updating_request__competition_form_is_empty(http_request: HttpRequest, 
 def test_canceling_request__not_found(http_request: HttpRequest) -> None:
     with pytest.raises(NotFoundException):
         handlers.cancel_request(http_request, -1)
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+@pytest.mark.parametrize("delta", BEFORE_NOW)
+@freezegun.freeze_time(now())
+def test_canceling_request__competition_already_started(
+    http_request: HttpRequest, user_request: Request, competition: Competition, delta: timedelta
+) -> None:
+    competition.started_at = now() - delta
+    competition.save(update_fields=["started_at"])
+
+    with pytest.raises(UnprocessableEntityException, match=handlers.COMPETITION_ALREADY_STARTED_ERROR):
+        handlers.cancel_request(http_request, user_request.id)
 
 
 @pytest.mark.integration

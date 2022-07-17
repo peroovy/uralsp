@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from api.internal.db.models import Competition, Field, User, Request
+from api.internal.db.models import Competition, Field, Request, User
 from api.internal.db.models.field import FieldTypes
 from api.internal.db.models.user import Permissions
 
