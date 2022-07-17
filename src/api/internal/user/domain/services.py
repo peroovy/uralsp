@@ -1,6 +1,6 @@
 from typing import Iterable, List, Optional
 
-from django.db import IntegrityError
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.transaction import atomic
 from django.utils.timezone import now
 
@@ -46,7 +46,7 @@ class RequestService:
     def exists(self, owner: User, request_id: int) -> bool:
         return self._request_repo.exists(owner.id, request_id)
 
-    def get_participants(self, request: Request) -> List[Participation]:
+    def get_participation(self, request: Request) -> List[Participation]:
         return list(self._participation_repo.get_all(request.id))
 
     def cancel(self, request_id: int) -> None:
@@ -79,44 +79,53 @@ class RequestService:
         if not fields:
             return True
 
+        if not data.team and any(field.is_required for field in fields):
+            return False
+
         for user in data.team:
             field_ids = [field.field_id for field in user.form]
             unique_ids = set(field_ids)
 
-            if len(field_ids) != len(unique_ids) or not all(
-                expected.id in unique_ids for expected in fields if expected.is_required
-            ):
+            if len(field_ids) != len(unique_ids):
+                return False
+
+            if not all(expected.id in unique_ids for expected in fields if expected.is_required):
                 return False
 
         return True
 
-    def try_create(self, owner: User, data: RequestIn) -> Optional[Request]:
-        try:
-            with atomic():
-                request = self._request_repo.create(owner.id, data.competition_id, data.team_name)
+    @atomic
+    def create(self, owner: User, data: RequestIn) -> Request:
+        request = self._request_repo.create(owner.id, data.competition_id, data.team_name)
+        self._create_participation_and_fill_form(request.id, data.competition_id, data.team)
 
-                self._create_participation_and_fill_form(request.id, data.team)
+        return request
 
-            return request
-        except IntegrityError:
-            return None
+    @atomic
+    def update(self, owner: User, request_id: int, data: RequestIn) -> None:
+        if not self._request_repo.exists(owner.id, request_id) or not self._competition_repo.exists(
+            data.competition_id
+        ):
+            raise ObjectDoesNotExist()
 
-    def try_update(self, request_id: int, data: RequestIn) -> bool:
-        try:
-            with atomic():
-                self._request_repo.update(request_id, data.team_name, status=RequestStatus.AWAITED, description=None)
-                self._participation_repo.delete_all(request_id)
+        self._request_repo.update(request_id, data.team_name, status=RequestStatus.AWAITED, description=None)
+        self._participation_repo.delete_all(request_id)
 
-                self._create_participation_and_fill_form(request_id, data.team)
+        self._create_participation_and_fill_form(request_id, data.competition_id, data.team)
 
-            return True
-        except IntegrityError:
-            return False
+    def _create_participation_and_fill_form(
+        self, request_id: int, competition_id: int, team: Iterable[ParticipationSchema]
+    ):
+        fields = self._competition_repo.get_fields(competition_id)
+        expected_ids = set(field.id for field in fields)
 
-    def _create_participation_and_fill_form(self, request_id: int, team: Iterable[ParticipationSchema]):
         for user in team:
             participation = self._participation_repo.create(request_id, user.user_id)
             self._form_value_repo.create(
                 participation.id,
-                (FieldValue(field_id=field.field_id, value=field.value) for field in user.form),
+                (
+                    FieldValue(field_id=field.field_id, value=field.value)
+                    for field in user.form
+                    if field.field_id in expected_ids
+                ),
             )

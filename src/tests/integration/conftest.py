@@ -5,13 +5,22 @@ from django.http import HttpRequest
 from google.oauth2 import id_token
 from vk import API
 
+from api.internal.db.models import User
+
 
 @pytest.fixture(scope="function")
-def http_request() -> HttpRequest:
+def empty_request() -> HttpRequest:
     request = Mock()
     request.COOKIES = {}
 
     return request
+
+
+@pytest.fixture(scope="function")
+def http_request(empty_request: HttpRequest, user: User) -> HttpRequest:
+    empty_request.user = user
+
+    return empty_request
 
 
 @pytest.fixture(scope="function")

@@ -14,15 +14,15 @@ from api.internal.db.repositories import refresh_repo, user_repo
 service = AuthService(user_repo, refresh_repo)
 
 
-@pytest.mark.django_db
 @pytest.mark.unit
+@pytest.mark.django_db
 def test_getting_user_from_payload(user: User) -> None:
     assert user == service.get_user({service.USER_ID: user.id})
     assert service.get_user({service.USER_ID: "-1"}) is None
 
 
-@pytest.mark.django_db
 @pytest.mark.unit
+@pytest.mark.django_db
 @freezegun.freeze_time(now())
 def test_creating_tokens(user: User, admin: User, super_admin: User) -> None:
     for account in [user, admin, super_admin]:
@@ -31,8 +31,8 @@ def test_creating_tokens(user: User, admin: User, super_admin: User) -> None:
         assert_jwt_token(token_details.refresh, account, TokenTypes.REFRESH)
 
 
-@pytest.mark.django_db
 @pytest.mark.unit
+@pytest.mark.django_db
 def test_updating_tokens__refresh_is_expired(user: User) -> None:
     RefreshToken.objects.bulk_create(RefreshToken(value=i, user=user, revoked=False) for i in range(3))
     refresh = RefreshToken.objects.create(value="123", user=user, revoked=True)
@@ -45,8 +45,8 @@ def test_updating_tokens__refresh_is_expired(user: User) -> None:
     assert not RefreshToken.objects.filter(user=user, revoked=False).exists()
 
 
-@pytest.mark.django_db
 @pytest.mark.unit
+@pytest.mark.django_db
 @freezegun.freeze_time(now())
 def test_updating_tokens(user: User) -> None:
     refresh = RefreshToken.objects.create(value="123", user=user, revoked=False)
@@ -59,8 +59,8 @@ def test_updating_tokens(user: User) -> None:
     assert_jwt_token(details.refresh, user, TokenTypes.REFRESH)
 
 
-@pytest.mark.django_db
 @pytest.mark.unit
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ["typeof", "ttl"],
     [
@@ -117,6 +117,7 @@ def test_checking_payload() -> None:
         assert service.are_payload_keys_valid(payload) is False
 
 
+@pytest.mark.unit
 @freezegun.freeze_time(service._now())
 @pytest.mark.parametrize(
     ["delta", "is_expired"],
@@ -138,8 +139,8 @@ def test_checking_token_expired(delta: timedelta, is_expired: bool) -> None:
     assert service.is_token_expired(payload) == is_expired
 
 
-@pytest.mark.django_db
 @pytest.mark.unit
+@pytest.mark.django_db
 def test_getting_refresh_details(user: User) -> None:
     token = RefreshToken.objects.create(value="123", user=user)
 

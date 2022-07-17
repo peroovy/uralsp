@@ -15,6 +15,10 @@ class ICompetitionRepository(ABC):
     def get_fields(self, competition_id: int) -> QuerySet[Field]:
         ...
 
+    @abstractmethod
+    def exists(self, competition_id: int) -> bool:
+        ...
+
 
 class CompetitionRepository(ICompetitionRepository):
     def get(self, competition_id: int) -> Optional[Competition]:
@@ -22,3 +26,6 @@ class CompetitionRepository(ICompetitionRepository):
 
     def get_fields(self, competition_id: int) -> QuerySet[Field]:
         return Competition.objects.prefetch_related("fields").get(id=competition_id).fields.all()
+
+    def exists(self, competition_id: int) -> bool:
+        return Competition.objects.filter(id=competition_id).exists()

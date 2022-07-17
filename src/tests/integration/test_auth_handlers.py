@@ -33,21 +33,21 @@ handlers = AuthHandlers(AuthService(user_repo, refresh_repo))
 
 
 @pytest.mark.integration
-def test_signin_vkontakte__getting_error(http_request: HttpRequest, vk_api: API) -> None:
+def test_signin_vkontakte__getting_error(empty_request: HttpRequest, vk_api: API) -> None:
     vk_api.account.getProfileInfo.side_effect = VkException()
 
     with pytest.raises(UnauthorizedException):
-        handlers.signin_vkontakte(http_request, VKLoginIn(access_token=""))
+        handlers.signin_vkontakte(empty_request, VKLoginIn(access_token=""))
 
 
 @pytest.mark.django_db
 @pytest.mark.integration
 @freezegun.freeze_time(now())
-def test_signin_vkontakte__social_id_exists(http_request: HttpRequest, user: User, vk_api: API) -> None:
+def test_signin_vkontakte__social_id_exists(empty_request: HttpRequest, user: User, vk_api: API) -> None:
     vk_data = {"id": user.vkontakte_id, "first_name": "111111", "last_name": "22222222"}
     vk_api.account.getProfileInfo.return_value = vk_data
 
-    response = handlers.signin_vkontakte(http_request, VKLoginIn(access_token=""))
+    response = handlers.signin_vkontakte(empty_request, VKLoginIn(access_token=""))
 
     assert_social__id_exists(response, user, vkontakte_id=vk_data["id"])
 
@@ -55,31 +55,31 @@ def test_signin_vkontakte__social_id_exists(http_request: HttpRequest, user: Use
 @pytest.mark.django_db
 @pytest.mark.integration
 @freezegun.freeze_time(now())
-def test_signin_vkontakte__social_id_not_exists(http_request: HttpRequest, user: User, vk_api: API) -> None:
+def test_signin_vkontakte__social_id_not_exists(empty_request: HttpRequest, user: User, vk_api: API) -> None:
     data = {"id": 9999999999999999999999999999999, "first_name": user.name, "last_name": user.surname}
     vk_api.account.getProfileInfo.return_value = data
 
-    response = handlers.signin_vkontakte(http_request, VKLoginIn(access_token=""))
+    response = handlers.signin_vkontakte(empty_request, VKLoginIn(access_token=""))
 
     assert_social__id_doesnt_exist(response, user, data["first_name"], data["last_name"], vkontakte_id=data["id"])
 
 
 @pytest.mark.integration
-def test_signin_google__getting_error(http_request: HttpRequest, google_api: id_token) -> None:
+def test_signin_google__getting_error(empty_request: HttpRequest, google_api: id_token) -> None:
     google_api.verify_oauth2_token.side_effect = ValueError()
 
     with pytest.raises(UnauthorizedException):
-        handlers.signin_google(http_request, GoogleLoginIn(client_id=0, id_token=""))
+        handlers.signin_google(empty_request, GoogleLoginIn(client_id=0, id_token=""))
 
 
 @pytest.mark.django_db
 @pytest.mark.integration
 @freezegun.freeze_time(now())
-def test_signin_google__social_id_exists(http_request: HttpRequest, user: User, google_api: id_token) -> None:
+def test_signin_google__social_id_exists(empty_request: HttpRequest, user: User, google_api: id_token) -> None:
     google_data = {"sub": user.google_id, "given_name": "111111", "family_name": "22222222"}
     google_api.verify_oauth2_token.return_value = google_data
 
-    response = handlers.signin_google(http_request, GoogleLoginIn(client_id=0, id_token=""))
+    response = handlers.signin_google(empty_request, GoogleLoginIn(client_id=0, id_token=""))
 
     assert_social__id_exists(response, user, google_id=google_data["sub"])
 
@@ -87,27 +87,27 @@ def test_signin_google__social_id_exists(http_request: HttpRequest, user: User, 
 @pytest.mark.django_db
 @pytest.mark.integration
 @freezegun.freeze_time(now())
-def test_signin_google__social_id_not_exists(http_request: HttpRequest, user: User, google_api: id_token) -> None:
+def test_signin_google__social_id_not_exists(empty_request: HttpRequest, user: User, google_api: id_token) -> None:
     data = {"sub": 9999999999999999999999999999999, "given_name": user.name, "family_name": user.surname}
     google_api.verify_oauth2_token.return_value = data
 
-    response = handlers.signin_google(http_request, GoogleLoginIn(client_id=0, id_token=""))
+    response = handlers.signin_google(empty_request, GoogleLoginIn(client_id=0, id_token=""))
 
     assert_social__id_doesnt_exist(response, user, data["given_name"], data["family_name"], google_id=data["sub"])
 
 
 @pytest.mark.integration
-def test_refreshing__token_was_not_set(http_request: HttpRequest) -> None:
+def test_refreshing__token_was_not_set(empty_request: HttpRequest) -> None:
     with pytest.raises(NotFoundRefreshTokenException):
-        http_request.COOKIES = {}
-        handlers.refresh(http_request)
+        empty_request.COOKIES = {}
+        handlers.refresh(empty_request)
 
-        http_request.COOKIES = {settings.REFRESH_TOKEN_COOKIE: ""}
-        handlers.refresh(http_request)
+        empty_request.COOKIES = {settings.REFRESH_TOKEN_COOKIE: ""}
+        handlers.refresh(empty_request)
 
 
 @pytest.mark.integration
-def test_refreshing__invalid_token(http_request: HttpRequest) -> None:
+def test_refreshing__invalid_token(empty_request: HttpRequest) -> None:
     token_with_wrong_secret_key = (
         r"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
         r".eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"
@@ -118,8 +118,8 @@ def test_refreshing__invalid_token(http_request: HttpRequest) -> None:
 
     for bad_token in ["-1", payload, signature, token_with_wrong_secret_key]:
         with pytest.raises(InvalidPayloadException):
-            http_request.COOKIES[settings.REFRESH_TOKEN_COOKIE] = bad_token
-            handlers.refresh(http_request)
+            empty_request.COOKIES[settings.REFRESH_TOKEN_COOKIE] = bad_token
+            handlers.refresh(empty_request)
 
 
 @pytest.mark.integration
@@ -140,17 +140,17 @@ def test_refreshing__invalid_token(http_request: HttpRequest) -> None:
         },
     ],
 )
-def test_refreshing__invalid_payload_keys(http_request: HttpRequest, payload: dict) -> None:
+def test_refreshing__invalid_payload_keys(empty_request: HttpRequest, payload: dict) -> None:
     with pytest.raises(InvalidPayloadException):
-        http_request.COOKIES[settings.REFRESH_TOKEN_COOKIE] = encode(
+        empty_request.COOKIES[settings.REFRESH_TOKEN_COOKIE] = encode(
             payload, settings.SECRET_KEY, AuthService.ALGORITHM
         )
-        handlers.refresh(http_request)
+        handlers.refresh(empty_request)
 
 
 @pytest.mark.integration
 @pytest.mark.parametrize("typeof", [-1, "-1", TokenTypes.ACCESS.value, None, [], {}])
-def test_refreshing__invalid_token_type(http_request: HttpRequest, typeof: Any) -> None:
+def test_refreshing__invalid_token_type(empty_request: HttpRequest, typeof: Any) -> None:
     payload = {
         AuthService.USER_ID: 0,
         AuthService.PERMISSION: 0,
@@ -159,10 +159,10 @@ def test_refreshing__invalid_token_type(http_request: HttpRequest, typeof: Any) 
     }
 
     with pytest.raises(InvalidPayloadException):
-        http_request.COOKIES[settings.REFRESH_TOKEN_COOKIE] = encode(
+        empty_request.COOKIES[settings.REFRESH_TOKEN_COOKIE] = encode(
             payload, settings.SECRET_KEY, AuthService.ALGORITHM
         )
-        handlers.refresh(http_request)
+        handlers.refresh(empty_request)
 
 
 @pytest.mark.integration
@@ -177,7 +177,7 @@ def test_refreshing__invalid_token_type(http_request: HttpRequest, typeof: Any) 
         -2 * settings.ACCESS_TOKEN_TTL,
     ],
 )
-def test_refreshing__token_is_expired(http_request: HttpRequest, delta: timedelta) -> None:
+def test_refreshing__token_is_expired(empty_request: HttpRequest, delta: timedelta) -> None:
     payload = {
         AuthService.USER_ID: 0,
         AuthService.PERMISSION: 0,
@@ -186,15 +186,15 @@ def test_refreshing__token_is_expired(http_request: HttpRequest, delta: timedelt
     }
 
     with pytest.raises(ExpiredTokenException):
-        http_request.COOKIES[settings.REFRESH_TOKEN_COOKIE] = encode(
+        empty_request.COOKIES[settings.REFRESH_TOKEN_COOKIE] = encode(
             payload, settings.SECRET_KEY, AuthService.ALGORITHM
         )
-        handlers.refresh(http_request)
+        handlers.refresh(empty_request)
 
 
 @pytest.mark.django_db
 @pytest.mark.integration
-def test_refreshing__unknown_token_value(http_request: HttpRequest) -> None:
+def test_refreshing__unknown_token_value(empty_request: HttpRequest) -> None:
     payload = {
         AuthService.USER_ID: 0,
         AuthService.PERMISSION: 0,
@@ -203,15 +203,15 @@ def test_refreshing__unknown_token_value(http_request: HttpRequest) -> None:
     }
 
     with pytest.raises(UnknownRefreshTokenException):
-        http_request.COOKIES[settings.REFRESH_TOKEN_COOKIE] = encode(
+        empty_request.COOKIES[settings.REFRESH_TOKEN_COOKIE] = encode(
             payload, settings.SECRET_KEY, AuthService.ALGORITHM
         )
-        handlers.refresh(http_request)
+        handlers.refresh(empty_request)
 
 
 @pytest.mark.django_db
 @pytest.mark.integration
-def test_refreshing__if_token_was_revoked(http_request: HttpRequest, user: User) -> None:
+def test_refreshing__if_token_was_revoked(empty_request: HttpRequest, user: User) -> None:
     payload = {
         AuthService.USER_ID: 0,
         AuthService.PERMISSION: 0,
@@ -223,17 +223,17 @@ def test_refreshing__if_token_was_revoked(http_request: HttpRequest, user: User)
     RefreshToken.objects.create(value=token, user=user, revoked=True)
     RefreshToken.objects.bulk_create(RefreshToken(value=i, user=user, revoked=False) for i in range(5))
 
-    http_request.COOKIES[settings.REFRESH_TOKEN_COOKIE] = token
+    empty_request.COOKIES[settings.REFRESH_TOKEN_COOKIE] = token
 
     with pytest.raises(RevokedRefreshTokenException):
-        handlers.refresh(http_request)
+        handlers.refresh(empty_request)
 
     assert not RefreshToken.objects.filter(user=user, revoked=False).exists()
 
 
 @pytest.mark.django_db
 @pytest.mark.integration
-def test_refreshing(http_request: HttpRequest, user: User) -> None:
+def test_refreshing(empty_request: HttpRequest, user: User) -> None:
     RefreshToken.objects.bulk_create(RefreshToken(value=i, user=user, revoked=False) for i in range(5))
 
     payload = {
@@ -244,10 +244,10 @@ def test_refreshing(http_request: HttpRequest, user: User) -> None:
     }
 
     token = encode(payload, settings.SECRET_KEY, AuthService.ALGORITHM)
-    http_request.COOKIES[settings.REFRESH_TOKEN_COOKIE] = token
+    empty_request.COOKIES[settings.REFRESH_TOKEN_COOKIE] = token
     RefreshToken.objects.create(user=user, value=token, revoked=False)
 
-    response = handlers.refresh(http_request)
+    response = handlers.refresh(empty_request)
 
     assert_tokens_response(response, user)
 

@@ -8,13 +8,10 @@ from api.internal.responses import SuccessResponse
 from api.internal.user.domain.entities import (
     DefaultProfileIn,
     DefaultProfileOut,
-    FieldValueSchema,
     FormsIn,
-    ParticipationSchema,
     RequestDetailsOut,
     RequestIn,
     RequestOut,
-    SwitchOut,
 )
 from api.internal.user.domain.services import RequestService, UserService
 
@@ -46,9 +43,9 @@ class UserHandlers:
         if not request:
             raise NotFoundException("request")
 
-        participants = self._request_service.get_participants(request)
+        participation = self._request_service.get_participation(request)
 
-        return RequestDetailsOut.create(request, participants)
+        return RequestDetailsOut.create(request, participation)
 
     def create_request(self, request: HttpRequest, data: RequestIn = Body(...)) -> RequestOut:
         is_competition_valid = self._request_service.validate_competition_for_registration(request.user, data)
@@ -61,9 +58,7 @@ class UserHandlers:
         if not self._request_service.validate_forms(data):
             raise UnprocessableEntityException(self.INVALID_ANY_FORMS_ERROR)
 
-        req = self._request_service.try_create(request.user, data)
-        if not req:
-            raise ServerException()
+        req = self._request_service.create(request.user, data)
 
         return RequestOut.from_orm(req)
 
@@ -82,9 +77,7 @@ class UserHandlers:
         if not self._request_service.validate_forms(request_in):
             raise UnprocessableEntityException(self.INVALID_ANY_FORMS_ERROR)
 
-        was_updated = self._request_service.try_update(request_id, request_in)
-        if not was_updated:
-            raise ServerException()
+        self._request_service.update(request.user, request_id, request_in)
 
         return SuccessResponse()
 

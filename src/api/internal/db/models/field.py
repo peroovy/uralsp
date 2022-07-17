@@ -1,7 +1,7 @@
 from django.db import models
 
 
-class FieldType(models.IntegerChoices):
+class FieldTypes(models.IntegerChoices):
     TEXT = 0
     LIST = 1
     CHECKBOX = 2
@@ -12,7 +12,7 @@ class FieldType(models.IntegerChoices):
 class Field(models.Model):
     id = models.CharField(max_length=127, primary_key=True)
     name = models.CharField(max_length=127)
-    type = models.IntegerField(choices=FieldType.choices)
+    type = models.IntegerField(choices=FieldTypes.choices)
     is_required = models.BooleanField(default=True)
     is_visible = models.BooleanField(default=True)
 

@@ -1,9 +1,10 @@
 from datetime import datetime
-from typing import List, Optional, Iterable
+from typing import Iterable, List, Optional
 
 from ninja import ModelSchema, Schema
+from pydantic import EmailStr, Field
 
-from api.internal.db.models import Request, User, Participation
+from api.internal.db.models import Participation, Request, User
 
 
 class DefaultProfileOut(ModelSchema):
@@ -13,9 +14,12 @@ class DefaultProfileOut(ModelSchema):
 
 
 class DefaultProfileIn(ModelSchema):
+    phone: str = Field(regex=r"^\+7[0-9]{10}")
+    email: str = EmailStr()
+
     class Config:
         model = User
-        model_exclude = ["vkontakte_id", "google_id", "telegram_id"]
+        model_exclude = ["id", "permission", "vkontakte_id", "google_id", "telegram_id"]
 
 
 class FieldValueSchema(Schema):
@@ -54,9 +58,9 @@ class RequestDetailsOut(Schema):
     participants: List[ParticipationSchema]
 
     @staticmethod
-    def create(request: Request, participants: Iterable[Participation]) -> "RequestDetailsOut":
+    def create(request: Request, participation: Iterable[Participation]) -> "RequestDetailsOut":
         participation_outs = []
-        for participation in participants:
+        for participation in participation:
             field_values = [
                 FieldValueSchema(field_id=field_value.field_id, value=field_value.value)
                 for field_value in participation.form.all()
