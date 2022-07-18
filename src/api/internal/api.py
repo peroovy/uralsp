@@ -20,8 +20,9 @@ from api.internal.exceptions import (
     UnknownRefreshTokenException,
     UnprocessableEntityException,
 )
+from api.internal.requests.api import register_requests_router
 from api.internal.responses import ErrorResponse
-from api.internal.user.api import register_user_api
+from api.internal.users.api import register_users_api
 
 
 def get_api() -> NinjaAPI:
@@ -30,7 +31,8 @@ def get_api() -> NinjaAPI:
     subscribe_exception_handlers(api)
 
     register_auth_api(api)
-    register_user_api(api)
+    register_users_api(api)
+    register_requests_router(api)
 
     return api
 

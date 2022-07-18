@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from typing import Optional
 
 from django.http import HttpRequest
@@ -38,9 +37,8 @@ class JWTAuthentication(HttpBearer):
 
         raise UnauthorizedException()
 
-    @abstractmethod
     def authorize(self, user: User) -> bool:
-        ...
+        return True
 
 
 class AllowDefaultUser(JWTAuthentication):

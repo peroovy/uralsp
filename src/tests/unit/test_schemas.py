@@ -3,7 +3,8 @@ from itertools import chain
 import pytest
 from pydantic import ValidationError
 
-from api.internal.user.domain.entities import DefaultProfileIn, RequestIn
+from api.internal.requests.domain.entities import RequestIn
+from api.internal.users.domain.entities import DefaultProfileIn
 
 WRONG_PHONE_NUMBERS = (
     *(f"+{start}8005553535" for start in chain(range(7), [9])),

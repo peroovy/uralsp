@@ -2,7 +2,6 @@ from datetime import timedelta
 
 import freezegun
 import pytest
-from django.forms import model_to_dict
 from django.http import HttpRequest
 from django.utils.timezone import now
 
@@ -10,67 +9,15 @@ from api.internal.db.models import Competition, Field, FormValue, Participation,
 from api.internal.db.models.request import RequestStatus
 from api.internal.db.repositories import competition_repo, form_value_repo, participation_repo, request_repo, user_repo
 from api.internal.exceptions import NotFoundException, UnprocessableEntityException
+from api.internal.requests.domain.entities import FormsIn, RequestDetailsOut, RequestIn, RequestOut
+from api.internal.requests.domain.services import RequestService
+from api.internal.requests.presentation.handlers import RequestHandlers
 from api.internal.responses import SuccessResponse
-from api.internal.user.domain.entities import DefaultProfileIn, FormsIn, RequestDetailsOut, RequestIn, RequestOut
-from api.internal.user.domain.services import RequestService, UserService
-from api.internal.user.presentation.handlers import UserHandlers
 from tests.conftest import BEFORE_NOW
 
-handlers = UserHandlers(
-    UserService(user_repo),
-    RequestService(request_repo, competition_repo, user_repo, participation_repo, form_value_repo),
+handlers = RequestHandlers(
+    RequestService(request_repo, competition_repo, user_repo, participation_repo, form_value_repo)
 )
-
-# TODO: module must be refactored
-
-
-@pytest.mark.integration
-@pytest.mark.django_db
-def test_getting_profile(http_request: HttpRequest) -> None:
-    user = http_request.user
-    data = handlers.get_profile(http_request)
-
-    assert data.dict() == model_to_dict(user)
-
-
-@pytest.mark.integration
-@pytest.mark.django_db
-def test_updating_profile(http_request: HttpRequest) -> None:
-    user = http_request.user
-
-    json_ = {
-        "name": "-1",
-        "surname": "-2",
-        "patronymic": "-3",
-        "email": "m@m",
-        "phone": "+78005553535",
-        "city": "-4",
-        "region": "-5",
-        "school": "-6",
-        "school_class": "-7",
-    }
-
-    data = DefaultProfileIn(**json_)
-
-    user_id, permission, vk_id, google_id, telegram_id = (
-        user.id,
-        user.permission,
-        user.vkontakte_id,
-        user.google_id,
-        user.telegram_id,
-    )
-
-    response = handlers.update_profile(http_request, data)
-    user.refresh_from_db()
-
-    expected = data.dict()
-    assert type(response) is SuccessResponse
-    assert expected == model_to_dict(user, fields=list(expected.keys()))
-    assert user.id == user_id
-    assert user.permission == permission
-    assert user.vkontakte_id == vk_id
-    assert user.google_id == google_id
-    assert user.telegram_id == telegram_id
 
 
 @pytest.mark.integration
@@ -604,8 +551,11 @@ def test_canceling_request__competition_already_started(
 
 @pytest.mark.integration
 @pytest.mark.django_db
+@freezegun.freeze_time(now())
 def test_canceling_request(http_request: HttpRequest, competition: Competition) -> None:
     request = Request.objects.create(owner=http_request.user, competition=competition, status=RequestStatus.AWAITED)
+    competition.started_at = now() + timedelta(days=10)
+    competition.save(update_fields=["started_at"])
 
     for status in RequestStatus:
         request.status = status

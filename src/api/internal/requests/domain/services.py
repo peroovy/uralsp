@@ -11,15 +11,7 @@ from api.internal.db.repositories.form_value import FieldValue, IFormValueReposi
 from api.internal.db.repositories.request import IRequestRepository
 from api.internal.db.repositories.team import IParticipationRepository
 from api.internal.db.repositories.user import IUserRepository
-from api.internal.user.domain.entities import DefaultProfileIn, FormsIn, ParticipationSchema, RequestIn
-
-
-class UserService:
-    def __init__(self, user_repo: IUserRepository):
-        self._user_repo = user_repo
-
-    def update_profile(self, user: User, data: DefaultProfileIn) -> None:
-        self._user_repo.update(user.id, **data.dict())
+from api.internal.requests.domain.entities import FormsIn, ParticipationSchema, RequestIn
 
 
 class RequestService:

@@ -2,24 +2,8 @@ from datetime import datetime
 from typing import Iterable, List, Optional
 
 from ninja import ModelSchema, Schema
-from pydantic import EmailStr, Field
 
-from api.internal.db.models import Participation, Request, User
-
-
-class DefaultProfileOut(ModelSchema):
-    class Config:
-        model = User
-        model_fields = "__all__"
-
-
-class DefaultProfileIn(ModelSchema):
-    phone: str = Field(regex=r"^\+7[0-9]{10}")
-    email: str = EmailStr()
-
-    class Config:
-        model = User
-        model_exclude = ["id", "permission", "vkontakte_id", "google_id", "telegram_id"]
+from api.internal.db.models import Participation, Request
 
 
 class FieldValueSchema(Schema):

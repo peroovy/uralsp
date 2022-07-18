@@ -10,8 +10,8 @@ from django.utils.timezone import now
 from api.internal.db.models import Competition, Field, FormValue, Participation, Request, User
 from api.internal.db.models.request import RequestStatus
 from api.internal.db.repositories import competition_repo, form_value_repo, participation_repo, request_repo, user_repo
-from api.internal.user.domain.entities import FieldValueSchema, FormsIn, ParticipationSchema, RequestIn
-from api.internal.user.domain.services import RequestService
+from api.internal.requests.domain.entities import FieldValueSchema, FormsIn, ParticipationSchema, RequestIn
+from api.internal.requests.domain.services import RequestService
 from tests.conftest import AFTER_NOW, BEFORE_NOW
 
 service = RequestService(request_repo, competition_repo, user_repo, participation_repo, form_value_repo)

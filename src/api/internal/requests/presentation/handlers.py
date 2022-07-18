@@ -1,39 +1,22 @@
 from typing import List
 
 from django.http import HttpRequest
-from django.utils.timezone import now
 from ninja import Body
 
-from api.internal.exceptions import NotFoundException, ServerException, UnprocessableEntityException
+from api.internal.exceptions import NotFoundException, UnprocessableEntityException
+from api.internal.requests.domain.entities import FormsIn, RequestDetailsOut, RequestIn, RequestOut
+from api.internal.requests.domain.services import RequestService
 from api.internal.responses import SuccessResponse
-from api.internal.user.domain.entities import (
-    DefaultProfileIn,
-    DefaultProfileOut,
-    FormsIn,
-    RequestDetailsOut,
-    RequestIn,
-    RequestOut,
-)
-from api.internal.user.domain.services import RequestService, UserService
 
 
-class UserHandlers:
+class RequestHandlers:
     INVALID_COMPETITION_ERROR = "Invalid competition data"
     INVALID_TEAM_ERROR = "Invalid user ids"
     INVALID_ANY_FORMS_ERROR = "Invalid form details"
     COMPETITION_ALREADY_STARTED_ERROR = "Competition already started"
 
-    def __init__(self, user_service: UserService, request_service: RequestService):
-        self._user_service = user_service
+    def __init__(self, request_service: RequestService):
         self._request_service = request_service
-
-    def get_profile(self, request: HttpRequest) -> DefaultProfileOut:
-        return DefaultProfileOut.from_orm(request.user)
-
-    def update_profile(self, request: HttpRequest, data: DefaultProfileIn = Body(...)) -> SuccessResponse:
-        self._user_service.update_profile(request.user, data)
-
-        return SuccessResponse()
 
     def get_requests(self, request: HttpRequest) -> List[RequestOut]:
         requests = self._request_service.get_requests(request.user)
