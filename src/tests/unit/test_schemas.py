@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from api.internal.requests.domain.entities import RequestIn
-from api.internal.users.domain.entities import DefaultProfileIn
+from api.internal.users.domain.entities import CurrentProfileIn
 
 WRONG_PHONE_NUMBERS = (
     *(f"+{start}8005553535" for start in chain(range(7), [9])),
@@ -25,7 +25,7 @@ WRONG_PHONE_NUMBERS = (
 @pytest.mark.parametrize("value", WRONG_PHONE_NUMBERS)
 def test_default_profile_in__invalid_phone(value: str) -> None:
     with pytest.raises(ValidationError):
-        DefaultProfileIn(
+        CurrentProfileIn(
             name="-1",
             surname="-2",
             patronymic="-3",

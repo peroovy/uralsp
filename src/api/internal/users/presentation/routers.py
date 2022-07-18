@@ -15,6 +15,22 @@ def get_users_router(users_handlers: UsersHandlers) -> Router:
         path="", methods=["GET"], view_func=users_handlers.get_users, response={200: List[ProfileOut]}
     )
 
+    router.add_api_operation(
+        path="/{int:user_id}",
+        methods=["GET"],
+        auth=[OnlyAdmin()],
+        view_func=users_handlers.get_user,
+        response={200: FullProfileOut, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
+    )
+
+    router.add_api_operation(
+        path="/{int:user_id}",
+        methods=["PUT"],
+        auth=[OnlyAdmin()],
+        view_func=users_handlers.update_user,
+        response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse, 422: ErrorResponse},
+    )
+
     router.add_api_operation(path="/xlsx", methods=["GET"], auth=[OnlyAdmin()], view_func=users_handlers.get_users_xlsx)
     router.add_api_operation(path="/csv", methods=["GET"], auth=[OnlyAdmin()], view_func=users_handlers.get_users_csv)
 

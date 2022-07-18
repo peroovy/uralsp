@@ -4,7 +4,7 @@ from django.http import HttpRequest
 
 from api.internal.db.repositories import user_repo
 from api.internal.responses import SuccessResponse
-from api.internal.users.domain.entities import DefaultProfileIn
+from api.internal.users.domain.entities import CurrentProfileIn
 from api.internal.users.domain.services import UserService
 from api.internal.users.presentation.handlers import CurrentUserHandlers
 
@@ -39,7 +39,7 @@ def test_updating_profile(http_request: HttpRequest) -> None:
         "school_class": "-7",
     }
 
-    data = DefaultProfileIn(**json_)
+    data = CurrentProfileIn(**json_)
 
     user_id, permission, vk_id, google_id, telegram_id = (
         user.id,

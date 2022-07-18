@@ -1,6 +1,6 @@
 import csv
 from io import BytesIO, StringIO
-from typing import BinaryIO, Generator, Iterable, List
+from typing import Iterable, List, Optional
 
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
@@ -8,7 +8,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 from api.internal.db.models import User
 from api.internal.db.models.user import Permissions
 from api.internal.db.repositories.user import IUserRepository
-from api.internal.users.domain.entities import DefaultProfileIn, Filters
+from api.internal.users.domain.entities import Filters, ProfileIn
 
 
 class UserService:
@@ -22,7 +22,10 @@ class UserService:
             )
         )
 
-    def update_profile(self, user: User, data: DefaultProfileIn) -> None:
+    def get_user(self, user_id: int) -> Optional[User]:
+        return self._user_repo.get(user_id)
+
+    def update_profile(self, user: User, data: ProfileIn) -> None:
         self._user_repo.update(user.id, **data.dict())
 
 

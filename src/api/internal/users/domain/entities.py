@@ -18,10 +18,16 @@ class FullProfileOut(ModelSchema):
         model_fields = "__all__"
 
 
-class DefaultProfileIn(ModelSchema):
+class ProfileIn(ModelSchema):
     phone: str = Field(regex=r"^\+7[0-9]{10}")
     email: str = EmailStr()
 
+    class Config:
+        model = User
+        model_exclude = ["id", "vkontakte_id", "google_id", "telegram_id"]
+
+
+class CurrentProfileIn(ProfileIn):
     class Config:
         model = User
         model_exclude = ["id", "permission", "vkontakte_id", "google_id", "telegram_id"]
