@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Iterable, Optional
 
+from django.db.models import Q, QuerySet, Value
+from django.db.models.functions import Concat
 from phonenumbers import PhoneNumber, PhoneNumberFormat, format_number
 
 from api.internal.db.models import User
@@ -28,6 +30,12 @@ class IUserRepository(ABC):
 
     @abstractmethod
     def get(self, user_id: int) -> Optional[User]:
+        ...
+
+    @abstractmethod
+    def get_all_without_super_admins(
+        self, permission: Optional[int], school: str, school_class: str, region: str, email: str, fcs: str
+    ) -> QuerySet[User]:
         ...
 
     @abstractmethod
@@ -75,6 +83,30 @@ class UserRepository(IUserRepository):
 
     def get(self, user_id: int) -> Optional[User]:
         return User.objects.filter(id=user_id).first()
+
+    def get_all_without_super_admins(
+        self, permission: Optional[int], school: str, school_class: str, region: str, email: str, fcs: str
+    ) -> QuerySet[User]:
+        attr = dict(
+            (key, value)
+            for key, value in [
+                ["school__istartswith", school],
+                ["school_class__istartswith", school_class],
+                ["region__istartswith", region],
+                ["email__startswith", email],
+                ["full_name__icontains", fcs.replace(" ", "")],
+            ]
+            if value
+        )
+
+        if permission is not None:
+            attr["permission"] = permission
+
+        return (
+            User.objects.annotate(full_name=Concat("surname", "name", "patronymic"))
+            .filter(**attr)
+            .filter(~Q(permission=Permissions.SUPER_ADMIN))
+        )
 
     def get_count(self, ids: Iterable[int]) -> int:
         return User.objects.filter(id__in=ids).count()

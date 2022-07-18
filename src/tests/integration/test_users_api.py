@@ -6,9 +6,9 @@ from api.internal.db.repositories import user_repo
 from api.internal.responses import SuccessResponse
 from api.internal.users.domain.entities import DefaultProfileIn
 from api.internal.users.domain.services import UserService
-from api.internal.users.presentation.handlers import UserHandlers
+from api.internal.users.presentation.handlers import CurrentUserHandlers
 
-handlers = UserHandlers(
+current_user_handlers = CurrentUserHandlers(
     UserService(user_repo),
 )
 
@@ -17,7 +17,7 @@ handlers = UserHandlers(
 @pytest.mark.django_db
 def test_getting_profile(http_request: HttpRequest) -> None:
     user = http_request.user
-    data = handlers.get_profile(http_request)
+    data = current_user_handlers.get_profile(http_request)
 
     assert data.dict() == model_to_dict(user)
 
@@ -49,7 +49,7 @@ def test_updating_profile(http_request: HttpRequest) -> None:
         user.telegram_id,
     )
 
-    response = handlers.update_profile(http_request, data)
+    response = current_user_handlers.update_profile(http_request, data)
     user.refresh_from_db()
 
     expected = data.dict()

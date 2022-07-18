@@ -44,3 +44,8 @@ class JWTAuthentication(HttpBearer):
 class AllowDefaultUser(JWTAuthentication):
     def authorize(self, user: User) -> bool:
         return user.permission == Permissions.DEFAULT
+
+
+class OnlyAdmin(JWTAuthentication):
+    def authorize(self, user: User) -> bool:
+        return user.permission == Permissions.ADMIN
