@@ -1,0 +1,17 @@
+// Colors
+$primary-color: #19334d;
+$secondary-color: #3490dc;
+
+// Fonts
+@font-face {
+    font-family: 'Black';
+    src: url("../lib/Assets/fonts/Raleway-Black.ttf") format('truetype');
+}
+@font-face {
+    font-family: 'Medium';
+    src: url("../lib/Assets/fonts/Raleway-Medium.ttf") format('truetype');
+}
+@font-face {
+    font-family: 'Light';
+    src: url("../lib/Assets/fonts/Raleway-Light.ttf") format('truetype');
+}
