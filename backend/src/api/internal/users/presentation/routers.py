@@ -2,7 +2,7 @@ from typing import List
 
 from ninja import Router
 
-from api.internal.middlewares import JWTAuthentication, OnlyAdmin
+from api.internal.middlewares import AnyUser, OnlyAdmin
 from api.internal.responses import ErrorResponse, SuccessResponse
 from api.internal.users.domain.entities import FullProfileOut, ProfileOut
 from api.internal.users.presentation.handlers import CurrentUserHandlers, UsersHandlers
@@ -38,12 +38,11 @@ def get_users_router(users_handlers: UsersHandlers) -> Router:
 
 
 def get_current_user_router(current_user_handlers: CurrentUserHandlers) -> Router:
-    router = Router(tags=["auth_user"])
+    router = Router(tags=["auth_user"], auth=[AnyUser()])
 
     router.add_api_operation(
         path="/profile",
         methods=["GET"],
-        auth=[JWTAuthentication()],
         view_func=current_user_handlers.get_profile,
         response={200: FullProfileOut, 401: ErrorResponse, 403: ErrorResponse},
     )
@@ -51,7 +50,6 @@ def get_current_user_router(current_user_handlers: CurrentUserHandlers) -> Route
     router.add_api_operation(
         path="/profile",
         methods=["PUT"],
-        auth=[JWTAuthentication()],
         view_func=current_user_handlers.update_profile,
         response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse},
     )
