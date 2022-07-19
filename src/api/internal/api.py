@@ -1,5 +1,6 @@
 from typing import Callable, Type
 
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import DatabaseError
 from django.http import HttpRequest, HttpResponse
@@ -20,7 +21,8 @@ from api.internal.exceptions import (
     UnknownRefreshTokenException,
     UnprocessableEntityException,
 )
-from api.internal.requests.api import register_requests_router
+from api.internal.fields.api import register_fields_api
+from api.internal.requests.api import register_requests_api
 from api.internal.responses import ErrorResponse
 from api.internal.users.api import register_users_api
 
@@ -32,7 +34,8 @@ def get_api() -> NinjaAPI:
 
     register_auth_api(api)
     register_users_api(api)
-    register_requests_router(api)
+    register_requests_api(api)
+    register_fields_api(api)
 
     return api
 
@@ -56,8 +59,9 @@ def subscribe_exception_handlers(api: NinjaAPI) -> None:
     for exception in outer_exceptions:
         api.add_exception_handler(exception, get_exception_handler(exception))
 
-    for exception in inner_exceptions:
-        api.add_exception_handler(exception, handle_500_error)
+    if not settings.DEBUG:
+        for exception in inner_exceptions:
+            api.add_exception_handler(exception, handle_500_error)
 
 
 def get_exception_handler(exception: Type[APIException]) -> Callable[[HttpRequest, Exception], HttpResponse]:
@@ -65,4 +69,4 @@ def get_exception_handler(exception: Type[APIException]) -> Callable[[HttpReques
 
 
 def handle_500_error(request: HttpRequest, exc) -> Response:
-    return Response(ErrorResponse(error="Server error").json())
+    return Response(ErrorResponse(error="Server error").dict(), status=500)

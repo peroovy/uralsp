@@ -49,3 +49,8 @@ class AllowDefaultUser(JWTAuthentication):
 class OnlyAdmin(JWTAuthentication):
     def authorize(self, user: User) -> bool:
         return user.permission == Permissions.ADMIN
+
+
+class OnlySuperAdmin(JWTAuthentication):
+    def authorize(self, user: User) -> bool:
+        return user.permission == Permissions.SUPER_ADMIN
