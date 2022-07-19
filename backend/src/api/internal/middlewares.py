@@ -39,7 +39,7 @@ class JWTAuthentication(HttpBearer):
         return True
 
 
-class AllowDefaultUser(JWTAuthentication):
+class OnlyDefaultUser(JWTAuthentication):
     def authorize(self, user: User) -> bool:
         return user.permission == Permissions.DEFAULT
 

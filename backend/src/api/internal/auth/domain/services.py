@@ -6,10 +6,15 @@ from django.conf import settings
 from django.db import IntegrityError
 from django.db.transaction import atomic
 from django.utils import timezone
+from google.auth.transport import requests
+from google.oauth2 import id_token as google_id_token
 from jwt import PyJWTError, decode, encode
+from vk import API
+from vk.exceptions import VkException
 
 from api.internal.db.models import RefreshToken, User
 from api.internal.db.repositories.refresh_token import IRefreshTokenRepository
+from api.internal.db.repositories.social import ISocialRepository
 from api.internal.db.repositories.user import IUserRepository
 
 
@@ -79,7 +84,7 @@ class AuthService:
         self._refresh_repo = refresh_repo
 
     def get_user(self, payload: Payload) -> Optional[User]:
-        return self._user_repo.get(payload._user_id)
+        return self._user_repo.get(payload.user_id)
 
     def try_create_access_and_refresh_tokens(self, user: User) -> Optional[TokenPairDetails]:
         access, expires_in = self.generate_token(user, TokenTypes.ACCESS)
@@ -116,10 +121,10 @@ class AuthService:
             return None
 
     def is_token_type(self, payload: Payload, token_type: TokenTypes) -> bool:
-        return payload._token_type == token_type.value
+        return payload.token_type == token_type.value
 
     def is_token_expired(self, payload: Payload) -> bool:
-        return int(self._now().timestamp()) >= payload._expires_in
+        return int(self._now().timestamp()) >= payload.expires_in
 
     def get_refresh_token_details(self, value: str) -> Optional[RefreshToken]:
         return self._refresh_repo.get(value)
@@ -131,3 +136,29 @@ class AuthService:
     @staticmethod
     def _from_timestamp(value: float) -> datetime:
         return datetime.fromtimestamp(value, tz=timezone.get_current_timezone())
+
+
+class SocialService:
+    def __init__(self, vkontakte_repo: ISocialRepository, google_repo: ISocialRepository):
+        self._vkontakte_repo = vkontakte_repo
+        self._google_repo = google_repo
+
+    def try_get_or_create_user_from_vkontakte(self, access_token: str) -> Optional[User]:
+        try:
+            api = API(access_token=access_token, v=settings.VKONTAKTE_API_VERSION)
+            info = api.account.getProfileInfo(access_token=access_token)
+
+            vk_id, name, surname = info["id"], info["first_name"], info["last_name"]
+
+            return self._vkontakte_repo.get_user(vk_id) or self._vkontakte_repo.create(vk_id, surname, name)
+        except VkException:
+            return None
+
+    def try_get_or_create_user_from_google(self, id_token: str, client_id: str) -> Optional[User]:
+        try:
+            info = google_id_token.verify_oauth2_token(id_token, requests.Request(), client_id)
+            google_id, name, surname = info["sub"], info["given_name"], info["family_name"]
+
+            return self._google_repo.get_user(google_id) or self._google_repo.create(google_id, surname, name)
+        except ValueError:
+            return None

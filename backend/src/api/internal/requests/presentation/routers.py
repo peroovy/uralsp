@@ -2,14 +2,14 @@ from typing import List
 
 from ninja import Router
 
-from api.internal.middlewares import AllowDefaultUser
+from api.internal.middlewares import OnlyDefaultUser
 from api.internal.requests.domain.entities import RequestDetailsOut, RequestOut
 from api.internal.requests.presentation.handlers import RequestHandlers
 from api.internal.responses import ErrorResponse, SuccessResponse
 
 
 def get_request_router(request_handlers: RequestHandlers) -> Router:
-    router = Router(tags=["requests"], auth=[AllowDefaultUser()])
+    router = Router(tags=["requests"], auth=[OnlyDefaultUser()])
 
     router.add_api_operation(
         path="",

@@ -4,12 +4,10 @@ from google.auth.transport import requests
 from google.oauth2 import id_token
 from ninja import Body
 from ninja.responses import Response
-from vk import API
-from vk.exceptions import VkException
 
 from api.internal.auth.domain.entities import GoogleLoginIn, TokenDetailsOut, VKLoginIn
-from api.internal.auth.domain.services import AuthService, TokenTypes
-from api.internal.db.repositories.social import BaseSocial, Google, Vkontakte
+from api.internal.auth.domain.services import AuthService, SocialService, TokenTypes
+from api.internal.db.models import User
 from api.internal.exceptions import (
     ExpiredTokenException,
     InvalidPayloadException,
@@ -22,33 +20,25 @@ from api.internal.exceptions import (
 
 
 class AuthHandlers:
-    def __init__(self, auth_service: AuthService):
+    def __init__(self, auth_service: AuthService, social_service: SocialService):
         self._auth_service = auth_service
+        self._social_service = social_service
 
     def signin_vkontakte(self, request: HttpRequest, params: VKLoginIn = Body(...)) -> Response:
-        try:
-            api = API(access_token=params.access_token, v=settings.VKONTAKTE_API_VERSION)
-            info = api.account.getProfileInfo(access_token=params.access_token)
-        except VkException:
+        user = self._social_service.try_get_or_create_user_from_vkontakte(params.access_token)
+        if not user:
             raise UnauthorizedException()
 
-        name, surname, vk_id = info["first_name"], info["last_name"], info["id"]
-
-        return self.signin(Vkontakte(name, surname, vk_id))
+        return self.signin(user)
 
     def signin_google(self, request: HttpRequest, params: GoogleLoginIn = Body(...)) -> Response:
-        try:
-            info = id_token.verify_oauth2_token(params.id_token, requests.Request(), params.client_id)
-        except ValueError:
+        user = self._social_service.try_get_or_create_user_from_google(params.id_token, params.client_id)
+        if not user:
             raise UnauthorizedException()
 
-        google_id, name, surname = info["sub"], info["given_name"], info["family_name"]
+        return self.signin(user)
 
-        return self.signin(Google(name, surname, google_id))
-
-    def signin(self, social: BaseSocial) -> Response:
-        user = social.get_or_create()
-
+    def signin(self, user: User) -> Response:
         details = self._auth_service.try_create_access_and_refresh_tokens(user)
         if not details:
             raise ServerException()

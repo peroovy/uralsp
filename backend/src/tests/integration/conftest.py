@@ -25,7 +25,7 @@ def http_request(empty_request: HttpRequest, user: User) -> HttpRequest:
 
 @pytest.fixture(scope="function")
 def vk_api() -> API:
-    patcher = patch("api.internal.auth.presentation.handlers.API")
+    patcher = patch("api.internal.auth.domain.services.API")
     API = patcher.start()
 
     api = Mock()
@@ -36,7 +36,7 @@ def vk_api() -> API:
 
 @pytest.fixture(scope="function")
 def google_api() -> id_token:
-    patcher = patch("api.internal.auth.presentation.handlers.id_token")
+    patcher = patch("api.internal.auth.domain.services.google_id_token")
     api = patcher.start()
 
     api.verify_oauth2_token = Mock()

@@ -15,10 +15,10 @@ from vk import API
 from vk.exceptions import VkException
 
 from api.internal.auth.domain.entities import GoogleLoginIn, VKLoginIn
-from api.internal.auth.domain.services import AuthService, Payload, TokenTypes
+from api.internal.auth.domain.services import AuthService, Payload, SocialService, TokenTypes
 from api.internal.auth.presentation.handlers import AuthHandlers
 from api.internal.db.models import RefreshToken, User
-from api.internal.db.repositories import refresh_repo, user_repo
+from api.internal.db.repositories import google_repo, refresh_repo, user_repo, vkontakte_repo
 from api.internal.exceptions import (
     ExpiredTokenException,
     InvalidPayloadException,
@@ -28,7 +28,7 @@ from api.internal.exceptions import (
     UnknownRefreshTokenException,
 )
 
-handlers = AuthHandlers(AuthService(user_repo, refresh_repo))
+handlers = AuthHandlers(AuthService(user_repo, refresh_repo), SocialService(vkontakte_repo, google_repo))
 
 
 @pytest.mark.integration
