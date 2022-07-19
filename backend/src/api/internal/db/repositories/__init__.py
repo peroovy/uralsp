@@ -29,4 +29,6 @@ __all__ = [
     "form_value_repo",
     "field_repo",
     "default_repo",
+    "vkontakte_repo",
+    "google_repo",
 ]
