@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from functools import reduce
 from typing import Optional
 
-from django.db.models import QuerySet, Q
+from django.db.models import Q, QuerySet
 
 from api.internal.db.models import Field
 from api.internal.db.models.field import FieldTypes

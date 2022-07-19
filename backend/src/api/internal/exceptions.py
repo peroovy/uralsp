@@ -2,7 +2,7 @@ from abc import abstractmethod
 
 from ninja.responses import Response
 
-from api.internal.auth.domain.services.auth import TokenTypes
+from api.internal.auth.domain.services import TokenTypes
 
 
 class APIException(Exception):

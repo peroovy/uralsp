@@ -8,8 +8,7 @@ from vk import API
 from vk.exceptions import VkException
 
 from api.internal.auth.domain.entities import GoogleLoginIn, TokenDetailsOut, VKLoginIn
-from api.internal.auth.domain.services import AuthService
-from api.internal.auth.domain.services.auth import TokenTypes
+from api.internal.auth.domain.services import AuthService, TokenTypes
 from api.internal.db.repositories.social import BaseSocial, Google, Vkontakte
 from api.internal.exceptions import (
     ExpiredTokenException,
@@ -65,11 +64,8 @@ class AuthHandlers:
             raise NotFoundRefreshTokenException()
 
         payload = self._auth_service.try_get_payload(refresh_token)
-        if (
-            not payload
-            or not self._auth_service.are_payload_keys_valid(payload)
-            or not self._auth_service.is_token_type(payload, TokenTypes.REFRESH)
-        ):
+
+        if not payload or not self._auth_service.is_token_type(payload, TokenTypes.REFRESH):
             raise InvalidPayloadException(TokenTypes.REFRESH)
 
         if self._auth_service.is_token_expired(payload):

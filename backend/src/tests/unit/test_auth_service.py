@@ -6,8 +6,7 @@ from django.conf import settings
 from django.utils.timezone import now
 from jwt import decode, encode
 
-from api.internal.auth.domain.services import AuthService
-from api.internal.auth.domain.services.auth import TokenTypes
+from api.internal.auth.domain.services import AuthService, Payload, TokenTypes
 from api.internal.db.models import RefreshToken, User
 from api.internal.db.repositories import refresh_repo, user_repo
 
@@ -17,8 +16,8 @@ service = AuthService(user_repo, refresh_repo)
 @pytest.mark.unit
 @pytest.mark.django_db
 def test_getting_user_from_payload(user: User) -> None:
-    assert user == service.get_user({service.USER_ID: user.id})
-    assert service.get_user({service.USER_ID: "-1"}) is None
+    assert user == service.get_user(Payload(user_id=user.id, token_type=None, expires_in=None, permission=None))
+    assert service.get_user(Payload(user_id=-1, token_type=None, expires_in=None, permission=None)) is None
 
 
 @pytest.mark.unit
@@ -73,7 +72,7 @@ def test_generating_token(user: User, typeof: TokenTypes, ttl: timedelta) -> Non
         token, expires_in = service.generate_token(user, typeof)
 
         payload = assert_jwt_token(token, user, typeof)
-        assert payload[service.EXPIRES_IN] == expires_in
+        assert payload.expires_in == expires_in
 
         frozen_datetime.tick(delta=ttl + timedelta(seconds=1))
         assert int(now().timestamp()) == expires_in + 1
@@ -95,26 +94,10 @@ def test_getting_payload__invalid_token() -> None:
 
 @pytest.mark.unit
 def test_checking_token_type_in_payload() -> None:
-    payload = {service.TOKEN_TYPE: TokenTypes.ACCESS.value}
+    payload = Payload(TokenTypes.ACCESS.value, None, None, None)
 
     assert service.is_token_type(payload, TokenTypes.ACCESS) is True
     assert service.is_token_type(payload, TokenTypes.REFRESH) is False
-
-
-@pytest.mark.unit
-def test_checking_payload() -> None:
-    payload = {
-        service.USER_ID: "id",
-        service.PERMISSION: "permission",
-        service.EXPIRES_IN: "expires_in",
-        service.TOKEN_TYPE: "type",
-    }
-
-    assert service.are_payload_keys_valid(payload) is True
-
-    for key in list(payload.keys()):
-        del payload[key]
-        assert service.are_payload_keys_valid(payload) is False
 
 
 @pytest.mark.unit
@@ -134,7 +117,9 @@ def test_checking_payload() -> None:
     ],
 )
 def test_checking_token_expired(delta: timedelta, is_expired: bool) -> None:
-    payload = {service.EXPIRES_IN: int((service._now() + delta).timestamp())}
+    payload = Payload(
+        expires_in=int((service._now() + delta).timestamp()), token_type=None, user_id=None, permission=None
+    )
 
     assert service.is_token_expired(payload) == is_expired
 
@@ -147,14 +132,13 @@ def test_getting_refresh_details(user: User) -> None:
     assert service.get_refresh_token_details(token.value) == token
 
 
-def assert_jwt_token(token: str, user: User, typeof: TokenTypes) -> dict:
-    payload = decode(token, settings.SECRET_KEY, service.ALGORITHM)
+def assert_jwt_token(token: str, user: User, typeof: TokenTypes) -> Payload:
+    payload = Payload.create(decode(token, settings.SECRET_KEY, service.ALGORITHM))
     ttl = settings.REFRESH_TOKEN_TTL if typeof == TokenTypes.REFRESH else settings.ACCESS_TOKEN_TTL
 
-    assert sorted(service.PAYLOAD_FIELDS) == sorted(payload.keys())
-    assert payload[service.USER_ID] == user.id
-    assert payload[service.PERMISSION] == user.permission
-    assert payload[service.TOKEN_TYPE] == typeof.value
-    assert payload[service.EXPIRES_IN] == int((now() + ttl).timestamp())
+    assert payload.user_id == user.id
+    assert payload.permission == user.permission
+    assert payload.token_type == typeof.value
+    assert payload.expires_in == int((now() + ttl).timestamp())
 
     return payload

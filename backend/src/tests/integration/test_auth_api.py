@@ -15,8 +15,7 @@ from vk import API
 from vk.exceptions import VkException
 
 from api.internal.auth.domain.entities import GoogleLoginIn, VKLoginIn
-from api.internal.auth.domain.services import AuthService
-from api.internal.auth.domain.services.auth import TokenTypes
+from api.internal.auth.domain.services import AuthService, Payload, TokenTypes
 from api.internal.auth.presentation.handlers import AuthHandlers
 from api.internal.db.models import RefreshToken, User
 from api.internal.db.repositories import refresh_repo, user_repo
@@ -123,39 +122,13 @@ def test_refreshing__invalid_token(empty_request: HttpRequest) -> None:
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize(
-    "payload",
-    [
-        {},
-        {"unknown_1": 0, "unknown_2": 0, "unknown_3": 0, "unknown_4": 0},
-        {AuthService.USER_ID: 0},
-        {AuthService.USER_ID: 0, AuthService.PERMISSION: 0},
-        {AuthService.USER_ID: 0, AuthService.PERMISSION: 0, AuthService.TOKEN_TYPE: TokenTypes.REFRESH.value},
-        {
-            AuthService.USER_ID: 0,
-            AuthService.PERMISSION: 0,
-            AuthService.TOKEN_TYPE: TokenTypes.REFRESH.value,
-            AuthService.EXPIRES_IN: 0,
-            "unknown_field": 0,
-        },
-    ],
-)
-def test_refreshing__invalid_payload_keys(empty_request: HttpRequest, payload: dict) -> None:
-    with pytest.raises(InvalidPayloadException):
-        empty_request.COOKIES[settings.REFRESH_TOKEN_COOKIE] = encode(
-            payload, settings.SECRET_KEY, AuthService.ALGORITHM
-        )
-        handlers.refresh(empty_request)
-
-
-@pytest.mark.integration
 @pytest.mark.parametrize("typeof", [-1, "-1", TokenTypes.ACCESS.value, None, [], {}])
 def test_refreshing__invalid_token_type(empty_request: HttpRequest, typeof: Any) -> None:
     payload = {
-        AuthService.USER_ID: 0,
-        AuthService.PERMISSION: 0,
-        AuthService.TOKEN_TYPE: typeof,
-        AuthService.EXPIRES_IN: 0,
+        Payload.USER_ID: 0,
+        Payload.PERMISSION: 0,
+        Payload.TOKEN_TYPE: typeof,
+        Payload.EXPIRES_IN: 0,
     }
 
     with pytest.raises(InvalidPayloadException):
@@ -179,10 +152,10 @@ def test_refreshing__invalid_token_type(empty_request: HttpRequest, typeof: Any)
 )
 def test_refreshing__token_is_expired(empty_request: HttpRequest, delta: timedelta) -> None:
     payload = {
-        AuthService.USER_ID: 0,
-        AuthService.PERMISSION: 0,
-        AuthService.TOKEN_TYPE: TokenTypes.REFRESH.value,
-        AuthService.EXPIRES_IN: int((now() + delta).timestamp()),
+        Payload.USER_ID: 0,
+        Payload.PERMISSION: 0,
+        Payload.TOKEN_TYPE: TokenTypes.REFRESH.value,
+        Payload.EXPIRES_IN: int((now() + delta).timestamp()),
     }
 
     with pytest.raises(ExpiredTokenException):
@@ -196,10 +169,10 @@ def test_refreshing__token_is_expired(empty_request: HttpRequest, delta: timedel
 @pytest.mark.integration
 def test_refreshing__unknown_token_value(empty_request: HttpRequest) -> None:
     payload = {
-        AuthService.USER_ID: 0,
-        AuthService.PERMISSION: 0,
-        AuthService.TOKEN_TYPE: TokenTypes.REFRESH.value,
-        AuthService.EXPIRES_IN: 2 * int(now().timestamp()),
+        Payload.USER_ID: 0,
+        Payload.PERMISSION: 0,
+        Payload.TOKEN_TYPE: TokenTypes.REFRESH.value,
+        Payload.EXPIRES_IN: 2 * int(now().timestamp()),
     }
 
     with pytest.raises(UnknownRefreshTokenException):
@@ -213,10 +186,10 @@ def test_refreshing__unknown_token_value(empty_request: HttpRequest) -> None:
 @pytest.mark.integration
 def test_refreshing__if_token_was_revoked(empty_request: HttpRequest, user: User) -> None:
     payload = {
-        AuthService.USER_ID: 0,
-        AuthService.PERMISSION: 0,
-        AuthService.TOKEN_TYPE: TokenTypes.REFRESH.value,
-        AuthService.EXPIRES_IN: 2 * int(now().timestamp()),
+        Payload.USER_ID: 0,
+        Payload.PERMISSION: 0,
+        Payload.TOKEN_TYPE: TokenTypes.REFRESH.value,
+        Payload.EXPIRES_IN: 2 * int(now().timestamp()),
     }
     token = encode(payload, settings.SECRET_KEY, AuthService.ALGORITHM)
 
@@ -237,10 +210,10 @@ def test_refreshing(empty_request: HttpRequest, user: User) -> None:
     RefreshToken.objects.bulk_create(RefreshToken(value=i, user=user, revoked=False) for i in range(5))
 
     payload = {
-        AuthService.USER_ID: 0,
-        AuthService.PERMISSION: 0,
-        AuthService.TOKEN_TYPE: TokenTypes.REFRESH.value,
-        AuthService.EXPIRES_IN: 2 * int(now().timestamp()),
+        Payload.USER_ID: 0,
+        Payload.PERMISSION: 0,
+        Payload.TOKEN_TYPE: TokenTypes.REFRESH.value,
+        Payload.EXPIRES_IN: 2 * int(now().timestamp()),
     }
 
     token = encode(payload, settings.SECRET_KEY, AuthService.ALGORITHM)

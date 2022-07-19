@@ -3,8 +3,7 @@ from typing import Optional
 from django.http import HttpRequest
 from ninja.security import HttpBearer
 
-from api.internal.auth.domain.services import AuthService
-from api.internal.auth.domain.services.auth import TokenTypes
+from api.internal.auth.domain.services import AuthService, TokenTypes
 from api.internal.db.models import User
 from api.internal.db.models.user import Permissions
 from api.internal.db.repositories import refresh_repo, user_repo
@@ -21,7 +20,6 @@ class JWTAuthentication(HttpBearer):
 
         if (
             payload
-            and self._service.are_payload_keys_valid(payload)
             and self._service.is_token_type(payload, TokenTypes.ACCESS)
             and not self._service.is_token_expired(payload)
         ):

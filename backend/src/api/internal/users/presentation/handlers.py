@@ -1,7 +1,6 @@
-from io import BytesIO
-from typing import List, Optional
+from typing import List
 
-from django.http import FileResponse, HttpRequest, HttpResponse, StreamingHttpResponse
+from django.http import FileResponse, HttpRequest, StreamingHttpResponse
 from django.utils.timezone import now
 from ninja import Body, Query
 from ninja.pagination import LimitOffsetPagination, paginate
