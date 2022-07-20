@@ -1,11 +1,13 @@
-from typing import List
+from typing import Callable, List, Optional
 
 from django.http import FileResponse, HttpRequest, StreamingHttpResponse
 from django.utils.timezone import now
 from ninja import Body, Query
 from ninja.pagination import LimitOffsetPagination, paginate
 
-from api.internal.db.models.user import Permissions
+from api.internal.auth.domain.entities import GoogleLoginIn, VKLoginIn
+from api.internal.auth.domain.services import SocialService
+from api.internal.db.models.user import Permissions, User
 from api.internal.exceptions import NotFoundException, UnprocessableEntityException
 from api.internal.responses import SuccessResponse
 from api.internal.users.domain.entities import CurrentProfileIn, Filters, FullProfileOut, ProfileIn, ProfileOut
@@ -56,13 +58,51 @@ class UsersHandlers:
 
 
 class CurrentUserHandlers:
-    def __init__(self, user_service: UserService):
+    MIN_SOCIAL_AMOUNT = 1
+
+    SOCIAL_LINKING_ERROR = "Failed to get user information"
+    MIN_AMOUNT_SOCIALS_ERROR = f"Min amount of socials is {MIN_SOCIAL_AMOUNT}"
+
+    def __init__(self, user_service: UserService, social_service: SocialService):
         self._user_service = user_service
+        self._social_service = social_service
 
     def get_profile(self, request: HttpRequest) -> FullProfileOut:
         return FullProfileOut.from_orm(request.user)
 
     def update_profile(self, request: HttpRequest, data: CurrentProfileIn = Body(...)) -> SuccessResponse:
         self._user_service.update_profile(request.user, data)
+
+        return SuccessResponse()
+
+    def link_vkontakte(self, request: HttpRequest, data: VKLoginIn) -> SuccessResponse:
+        vk_id = self._social_service.try_get_vkontakte_id(data.access_token)
+
+        return self._link_social(request, vk_id, self._user_service.update_vkontakte)
+
+    def link_google(self, request: HttpRequest, data: GoogleLoginIn) -> SuccessResponse:
+        google_id = self._social_service.try_get_google_id(data.id_token, data.client_id)
+
+        return self._link_social(request, google_id, self._user_service.update_google)
+
+    def unlink_vkontakte(self, request: HttpRequest) -> SuccessResponse:
+        return self._unlink_social(request, self._user_service.update_vkontakte)
+
+    def unlink_google(self, request: HttpRequest) -> SuccessResponse:
+        return self._unlink_social(request, self._user_service.update_google)
+
+    def _link_social(self, request: HttpRequest, social_id: Optional[int], update_social: Callable[[User, int], None]):
+        if not social_id:
+            raise UnprocessableEntityException(self.SOCIAL_LINKING_ERROR)
+
+        update_social(request.user, social_id)
+
+        return SuccessResponse()
+
+    def _unlink_social(self, request: HttpRequest, update_social: Callable[[User, None], None]) -> SuccessResponse:
+        if self._user_service.get_socials_amount(request.user) <= self.MIN_SOCIAL_AMOUNT:
+            raise UnprocessableEntityException(self.MIN_AMOUNT_SOCIALS_ERROR)
+
+        update_social(request.user, None)
 
         return SuccessResponse()

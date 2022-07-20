@@ -139,26 +139,58 @@ class AuthService:
 
 
 class SocialService:
+    VK_ID = "id"
+    VK_NAME = "first_name"
+    VK_SURNAME = "last_name"
+
+    GOOGLE_ID = "sub"
+    GOOGLE_NAME = "given_name"
+    GOOGLE_SURNAME = "family_name"
+
     def __init__(self, vkontakte_repo: ISocialRepository, google_repo: ISocialRepository):
         self._vkontakte_repo = vkontakte_repo
         self._google_repo = google_repo
 
     def try_get_or_create_user_from_vkontakte(self, access_token: str) -> Optional[User]:
+        if not (info := self._get_info_from_vkontakte(access_token)):
+            return None
+
+        vk_id, name, surname = info[self.VK_ID], info[self.VK_NAME], info[self.VK_SURNAME]
+
+        return self._vkontakte_repo.get_user(vk_id) or self._vkontakte_repo.create(vk_id, surname, name)
+
+    def try_get_vkontakte_id(self, access_token: str) -> Optional[int]:
+        if not (info := self._get_info_from_vkontakte(access_token)):
+            return None
+
+        return info[self.VK_ID]
+
+    def try_get_or_create_user_from_google(self, id_token: str, client_id: str) -> Optional[User]:
+        if not (info := self._get_info_from_google(id_token, client_id)):
+            return None
+
+        google_id, name, surname = info[self.GOOGLE_ID], info[self.GOOGLE_NAME], info[self.GOOGLE_SURNAME]
+
+        return self._google_repo.get_user(google_id) or self._google_repo.create(google_id, surname, name)
+
+    def try_get_google_id(self, id_token: str, client_id: str) -> Optional[int]:
+        if not (info := self._get_info_from_google(id_token, client_id)):
+            return None
+
+        return info[self.GOOGLE_ID]
+
+    @staticmethod
+    def _get_info_from_vkontakte(access_token: str) -> Optional[dict]:
         try:
             api = API(access_token=access_token, v=settings.VKONTAKTE_API_VERSION)
-            info = api.account.getProfileInfo(access_token=access_token)
 
-            vk_id, name, surname = info["id"], info["first_name"], info["last_name"]
-
-            return self._vkontakte_repo.get_user(vk_id) or self._vkontakte_repo.create(vk_id, surname, name)
+            return api.account.getProfileInfo(access_token=access_token)
         except VkException:
             return None
 
-    def try_get_or_create_user_from_google(self, id_token: str, client_id: str) -> Optional[User]:
+    @staticmethod
+    def _get_info_from_google(id_token: str, client_id: str) -> Optional[dict]:
         try:
-            info = google_id_token.verify_oauth2_token(id_token, requests.Request(), client_id)
-            google_id, name, surname = info["sub"], info["given_name"], info["family_name"]
-
-            return self._google_repo.get_user(google_id) or self._google_repo.create(google_id, surname, name)
+            return google_id_token.verify_oauth2_token(id_token, requests.Request(), client_id)
         except ValueError:
             return None

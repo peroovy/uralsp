@@ -28,6 +28,15 @@ class UserService:
     def update_profile(self, user: User, data: ProfileIn) -> None:
         self._user_repo.update(user.id, **data.dict())
 
+    def update_vkontakte(self, user: User, vk_id: Optional[int]) -> None:
+        self._user_repo.update(user.id, vkontakte_id=vk_id)
+
+    def update_google(self, user: User, vk_id: Optional[int]) -> None:
+        self._user_repo.update(user.id, google_id=vk_id)
+
+    def get_socials_amount(self, user: User) -> int:
+        return self._user_repo.get_socials_amount(user.id)
+
 
 class DocumentService:
     USER_HEADERS = (

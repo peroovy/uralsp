@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Iterable, Optional
 
-from django.db.models import Q, QuerySet, Value
+from django.db.models import Q, QuerySet, Sum
 from django.db.models.functions import Concat
 from phonenumbers import PhoneNumber, PhoneNumberFormat, format_number
 
@@ -44,6 +44,10 @@ class IUserRepository(ABC):
 
     @abstractmethod
     def update(self, user_id: int, **kwargs) -> None:
+        ...
+
+    @abstractmethod
+    def get_socials_amount(self, user_id: int) -> int:
         ...
 
 
@@ -112,4 +116,9 @@ class UserRepository(IUserRepository):
         return User.objects.filter(id__in=ids).count()
 
     def update(self, user_id: int, **kwargs) -> None:
-        return User.objects.select_for_update().filter(id=user_id).update(**kwargs)
+        User.objects.filter(id=user_id).select_for_update().update(**kwargs)
+
+    def get_socials_amount(self, user_id: int) -> int:
+        socials = User.objects.filter(id=user_id).values_list("vkontakte_id", "google_id", "telegram_id").first()
+
+        return sum(social is not None for social in socials)

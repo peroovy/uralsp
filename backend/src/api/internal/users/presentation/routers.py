@@ -54,4 +54,32 @@ def get_current_user_router(current_user_handlers: CurrentUserHandlers) -> Route
         response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse},
     )
 
+    router.add_api_operation(
+        path="/link-vkontakte",
+        methods=["PATCH"],
+        view_func=current_user_handlers.link_vkontakte,
+        response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse, 422: ErrorResponse},
+    )
+
+    router.add_api_operation(
+        path="/link-google",
+        methods=["PATCH"],
+        view_func=current_user_handlers.link_google,
+        response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse, 422: ErrorResponse},
+    )
+
+    router.add_api_operation(
+        path="/unlink-vkontakte",
+        methods=["PATCH"],
+        view_func=current_user_handlers.unlink_vkontakte,
+        response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse, 422: ErrorResponse},
+    )
+
+    router.add_api_operation(
+        path="/unlink-google",
+        methods=["PATCH"],
+        view_func=current_user_handlers.unlink_google,
+        response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse, 422: ErrorResponse},
+    )
+
     return router
