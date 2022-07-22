@@ -7,6 +7,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from api.internal.db.models import User
 from api.internal.db.models.user import Permissions
+from api.internal.db.repositories import user_repo
 from api.internal.db.repositories.user import IUserRepository
 from api.internal.users.domain.entities import Filters, ProfileIn
 
@@ -108,3 +109,7 @@ class DocumentService:
         for column, value in enumerate(values, 1):
             cell = worksheet.cell(row=row, column=column)
             cell.value = value
+
+
+user_service = UserService(user_repo)
+document_service = DocumentService()

@@ -8,6 +8,7 @@ from ninja import NinjaAPI
 from ninja.responses import Response
 
 from api.internal.auth.api import register_auth_api
+from api.internal.competitions.api import register_competitions_api
 from api.internal.exceptions import (
     APIException,
     BadRequestException,
@@ -36,6 +37,7 @@ def get_api() -> NinjaAPI:
     register_users_api(api)
     register_requests_api(api)
     register_fields_api(api)
+    register_competitions_api(api)
 
     return api
 

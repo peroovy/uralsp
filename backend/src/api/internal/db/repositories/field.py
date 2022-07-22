@@ -1,7 +1,7 @@
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import Optional
+from typing import Iterable, Optional
 
 from django.db.models import Q, QuerySet
 
@@ -32,7 +32,11 @@ class IFieldRepository(ABC):
 
     @abstractmethod
     def update(self, field_id: str, name: str, type: FieldTypes, is_required: bool, is_visible: bool) -> bool:
-        pass
+        ...
+
+    @abstractmethod
+    def exists_all(self, ids: Iterable[str]) -> bool:
+        ...
 
 
 class FieldRepository(IFieldRepository):
@@ -52,6 +56,11 @@ class FieldRepository(IFieldRepository):
 
     def exists(self, field_id: str) -> bool:
         return Field.objects.filter(id=field_id).exists()
+
+    def exists_all(self, ids: Iterable[str]) -> bool:
+        ids = set(ids)
+
+        return len(ids) == Field.objects.filter(id__in=ids).count()
 
     def delete(self, field_id: str) -> None:
         return Field.objects.filter(id=field_id).delete()

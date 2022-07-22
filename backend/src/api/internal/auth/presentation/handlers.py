@@ -1,12 +1,10 @@
 from django.conf import settings
 from django.http import HttpRequest
-from google.auth.transport import requests
-from google.oauth2 import id_token
 from ninja import Body
 from ninja.responses import Response
 
 from api.internal.auth.domain.entities import GoogleLoginIn, TokenDetailsOut, VKLoginIn
-from api.internal.auth.domain.services import AuthService, SocialService, TokenTypes
+from api.internal.auth.domain.services import AuthService, SocialService, TokenTypes, auth_service, social_service
 from api.internal.db.models import User
 from api.internal.exceptions import (
     ExpiredTokenException,
@@ -76,3 +74,6 @@ class AuthHandlers:
         response.set_cookie(settings.REFRESH_TOKEN_COOKIE, details.refresh, httponly=True)
 
         return response
+
+
+auth_handlers = AuthHandlers(auth_service, social_service)

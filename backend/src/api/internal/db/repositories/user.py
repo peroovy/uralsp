@@ -50,6 +50,10 @@ class IUserRepository(ABC):
     def get_socials_amount(self, user_id: int) -> int:
         ...
 
+    @abstractmethod
+    def exists_all_admins(self, ids: Iterable[int]) -> bool:
+        ...
+
 
 class UserRepository(IUserRepository):
     def create(
@@ -122,3 +126,8 @@ class UserRepository(IUserRepository):
         socials = User.objects.filter(id=user_id).values_list("vkontakte_id", "google_id", "telegram_id").first()
 
         return sum(social is not None for social in socials)
+
+    def exists_all_admins(self, ids: Iterable[int]) -> bool:
+        ids = set(ids)
+
+        return len(ids) == User.objects.filter(id__in=ids, permission=Permissions.ADMIN).count()

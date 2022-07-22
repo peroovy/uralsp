@@ -17,6 +17,9 @@ check_lint:
 	pipenv run flake8 --config setup.cfg & \
 	pipenv run black --check --config pyproject.toml .
 
+sql:
+	pipenv run python src/manage.py debugsqlshell
+
 test:
 	cd src && pipenv run pytest --disable-warnings
 

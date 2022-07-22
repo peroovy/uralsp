@@ -13,6 +13,7 @@ from vk import API
 from vk.exceptions import VkException
 
 from api.internal.db.models import RefreshToken, User
+from api.internal.db.repositories import google_repo, refresh_repo, user_repo, vkontakte_repo
 from api.internal.db.repositories.refresh_token import IRefreshTokenRepository
 from api.internal.db.repositories.social import ISocialRepository
 from api.internal.db.repositories.user import IUserRepository
@@ -194,3 +195,7 @@ class SocialService:
             return google_id_token.verify_oauth2_token(id_token, requests.Request(), client_id)
         except ValueError:
             return None
+
+
+auth_service = AuthService(user_repo, refresh_repo)
+social_service = SocialService(vkontakte_repo, google_repo)
