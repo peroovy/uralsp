@@ -15,7 +15,7 @@ from api.internal.users.domain.services import DocumentService, UserService
 
 
 class UsersHandlers:
-    INVALID_PERMISSION_ERROR = "Permission must be default or teacher"
+    PERMISSION_MUST_BE_DEFAULT_TYPE_ERROR = "Permission must be default or teacher"
 
     def __init__(self, user_service: UserService, document_service: DocumentService):
         self._user_service = user_service
@@ -37,8 +37,11 @@ class UsersHandlers:
         if not user:
             raise NotFoundException("user")
 
-        if data.permission not in [Permissions.DEFAULT, Permissions.TEACHER]:
-            raise UnprocessableEntityException(self.INVALID_PERMISSION_ERROR)
+        if (
+            data.permission in [Permissions.ADMIN, Permissions.SUPER_ADMIN]
+            and request.user.permission != Permissions.SUPER_ADMIN
+        ):
+            raise UnprocessableEntityException(self.PERMISSION_MUST_BE_DEFAULT_TYPE_ERROR)
 
         self._user_service.update_profile(user, data)
 

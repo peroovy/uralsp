@@ -33,7 +33,13 @@ class ICompetitionRepository(ABC):
 
     @abstractmethod
     def create(
-        self, name: str, started_at: datetime, registration_before: datetime, end_at: datetime, person_amount: int, request_template: Optional[str]
+        self,
+        name: str,
+        started_at: datetime,
+        registration_before: datetime,
+        end_at: datetime,
+        person_amount: int,
+        request_template: Optional[str],
     ) -> Competition:
         ...
 
@@ -81,7 +87,13 @@ class CompetitionRepository(ICompetitionRepository):
         return Competition.objects.filter(**attr)
 
     def create(
-        self, name: str, started_at: datetime, registration_before: datetime, end_at: datetime, persons_amount: int, request_template: Optional[str]
+        self,
+        name: str,
+        started_at: datetime,
+        registration_before: datetime,
+        end_at: datetime,
+        persons_amount: int,
+        request_template: Optional[str],
     ) -> Competition:
         return Competition.objects.create(
             name=name,
@@ -89,7 +101,7 @@ class CompetitionRepository(ICompetitionRepository):
             registration_before=registration_before,
             end_at=end_at,
             persons_amount=persons_amount,
-            request_template=request_template
+            request_template=request_template,
         )
 
     def delete(self, competition_id: int) -> None:

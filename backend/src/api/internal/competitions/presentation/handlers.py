@@ -12,7 +12,8 @@ from api.internal.competitions.domain.entities import (
     CompetitionIn,
     CompetitionOut,
     CompetitionRequestOut,
-    FormIn, RequestTemplateIn,
+    FormIn,
+    RequestTemplateIn,
 )
 from api.internal.competitions.domain.services import CompetitionService
 from api.internal.exceptions import NotFoundException, UnprocessableEntityException
@@ -107,7 +108,9 @@ class CompetitionHandlers:
 
         return SuccessResponse()
 
-    def update_request_template(self, request: HttpRequest, competition_id: int, data: RequestTemplateIn = Body(...)) -> SuccessResponse:
+    def update_request_template(
+        self, request: HttpRequest, competition_id: int, data: RequestTemplateIn = Body(...)
+    ) -> SuccessResponse:
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 

@@ -9,7 +9,7 @@ from api.internal.competitions.domain.entities import (
     CompetitionRequestOut,
 )
 from api.internal.competitions.presentation.handlers import CompetitionHandlers
-from api.internal.middlewares import OnlyAdminOrSuperAdmin, OnlySuperAdmin
+from api.internal.middlewares import AnyAdmin, OnlySuperAdmin
 from api.internal.responses import ErrorResponse, SuccessResponse
 
 
@@ -41,7 +41,7 @@ def get_competitions_router(competition_handlers: CompetitionHandlers) -> Router
     router.add_api_operation(
         path="/{int:competition_id}",
         methods=["PUT"],
-        auth=[OnlyAdminOrSuperAdmin()],
+        auth=[AnyAdmin()],
         view_func=competition_handlers.update_competition,
         response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
     )
@@ -49,7 +49,7 @@ def get_competitions_router(competition_handlers: CompetitionHandlers) -> Router
     router.add_api_operation(
         path="/{int:competition_id}",
         methods=["PATCH"],
-        auth=[OnlyAdminOrSuperAdmin()],
+        auth=[AnyAdmin()],
         view_func=competition_handlers.update_request_template,
         response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
     )
@@ -80,7 +80,7 @@ def get_competitions_router(competition_handlers: CompetitionHandlers) -> Router
     router.add_api_operation(
         path="/{int:competition_id}/form",
         methods=["PUT"],
-        auth=[OnlyAdminOrSuperAdmin()],
+        auth=[AnyAdmin()],
         view_func=competition_handlers.update_form,
         response={200: SuccessResponse, 404: ErrorResponse},
     )
@@ -88,7 +88,7 @@ def get_competitions_router(competition_handlers: CompetitionHandlers) -> Router
     router.add_api_operation(
         path="/{int:competition_id}/requests",
         methods=["GET"],
-        auth=[OnlyAdminOrSuperAdmin()],
+        auth=[AnyAdmin()],
         view_func=competition_handlers.get_requests_on_competition,
         response={200: List[CompetitionRequestOut], 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
     )
