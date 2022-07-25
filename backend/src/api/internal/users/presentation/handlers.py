@@ -10,7 +10,14 @@ from api.internal.auth.domain.services import SocialService
 from api.internal.db.models.user import Permissions, User
 from api.internal.exceptions import NotFoundException, UnprocessableEntityException
 from api.internal.responses import SuccessResponse
-from api.internal.users.domain.entities import CurrentProfileIn, Filters, FullProfileOut, ProfileIn, ProfileOut
+from api.internal.users.domain.entities import (
+    CurrentProfileIn,
+    Filters,
+    FormValueOut,
+    FullProfileOut,
+    ProfileIn,
+    ProfileOut,
+)
 from api.internal.users.domain.services import DocumentService, UserService
 
 
@@ -65,6 +72,7 @@ class CurrentUserHandlers:
 
     SOCIAL_LINKING_ERROR = "Failed to get user information"
     MIN_AMOUNT_SOCIALS_ERROR = f"Min amount of socials is {MIN_SOCIAL_AMOUNT}"
+    NOT_FOUND_ANY_FIELD_IDS_ERROR = "Any field ids were not found"
 
     def __init__(self, user_service: UserService, social_service: SocialService):
         self._user_service = user_service
@@ -77,6 +85,11 @@ class CurrentUserHandlers:
         self._user_service.update_profile(request.user, data)
 
         return SuccessResponse()
+
+    def get_form_values(self, request: HttpRequest, field_ids: List[str] = Query(...)) -> List[FormValueOut]:
+        values = self._user_service.get_last_form_values(request.user, set(field_ids))
+
+        return [FormValueOut(id=form_value.field_id, value=form_value.value) for form_value in values]
 
     def link_vkontakte(self, request: HttpRequest, data: VKLoginIn) -> SuccessResponse:
         vk_id = self._social_service.try_get_vkontakte_id(data.access_token)

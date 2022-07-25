@@ -1,20 +1,21 @@
 import csv
 from io import BytesIO, StringIO
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, Set
 
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from api.internal.db.models import User
+from api.internal.db.models import FormValue, User
 from api.internal.db.models.user import Permissions
-from api.internal.db.repositories import user_repo
+from api.internal.db.repositories.form_value import IFormValueRepository
 from api.internal.db.repositories.user import IUserRepository
 from api.internal.users.domain.entities import Filters, ProfileIn
 
 
 class UserService:
-    def __init__(self, user_repo: IUserRepository):
+    def __init__(self, user_repo: IUserRepository, form_value_repo: IFormValueRepository):
         self._user_repo = user_repo
+        self._form_value_repo = form_value_repo
 
     def get_users(self, filters: Filters) -> List[User]:
         return list(
@@ -37,6 +38,9 @@ class UserService:
 
     def get_socials_amount(self, user: User) -> int:
         return self._user_repo.get_socials_amount(user.id)
+
+    def get_last_form_values(self, user: User, field_ids: Set[str]) -> List[FormValue]:
+        return list(self._form_value_repo.get_lasts_for(user.id, field_ids))
 
 
 class DocumentService:
@@ -109,7 +113,3 @@ class DocumentService:
         for column, value in enumerate(values, 1):
             cell = worksheet.cell(row=row, column=column)
             cell.value = value
-
-
-user_service = UserService(user_repo)
-document_service = DocumentService()

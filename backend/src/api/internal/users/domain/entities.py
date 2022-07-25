@@ -46,3 +46,8 @@ class Filters(Schema):
     region: str = ""
     email: str = ""
     fcs: str = ""
+
+
+class FormValueOut(Schema):
+    id: str
+    value: str

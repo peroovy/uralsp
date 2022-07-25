@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterable
+from typing import Iterable, Set
 
 from django.db.models import QuerySet
 
@@ -17,6 +17,10 @@ class IFormValueRepository(ABC):
     def create(self, participation_id: int, form_values: Iterable[FieldValue]) -> QuerySet[FormValue]:
         ...
 
+    @abstractmethod
+    def get_lasts_for(self, user_id: int, field_ids: Set[str]) -> QuerySet[FormValue]:
+        ...
+
 
 class FormValueRepository(IFormValueRepository):
     def create(self, participation_id: int, form_values: Iterable[FieldValue]) -> QuerySet[FormValue]:
@@ -27,4 +31,11 @@ class FormValueRepository(IFormValueRepository):
                 value=form_value.value,
             )
             for form_value in form_values
+        )
+
+    def get_lasts_for(self, user_id: int, field_ids: Set[str]) -> QuerySet[FormValue]:
+        return (
+            FormValue.objects.filter(participation__user_id=user_id, field_id__in=field_ids)
+            .order_by("field", "-id")
+            .distinct("field")
         )
