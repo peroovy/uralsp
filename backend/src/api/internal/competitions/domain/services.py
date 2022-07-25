@@ -6,19 +6,26 @@ from django.utils.timezone import now
 
 from api.internal.competitions.domain import MIN_PERSONS_AMOUNT
 from api.internal.competitions.domain.entities import AdminsIn, CompetitionFilters, CompetitionIn, FormIn
-from api.internal.db.models import Competition
+from api.internal.db.models import Competition, Request, User
+from api.internal.db.models.user import Permissions
 from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.field import IFieldRepository
+from api.internal.db.repositories.request import IRequestRepository
 from api.internal.db.repositories.user import IUserRepository
 
 
 class CompetitionService:
     def __init__(
-        self, competition_repo: ICompetitionRepository, field_repo: IFieldRepository, user_repo: IUserRepository
+        self,
+        competition_repo: ICompetitionRepository,
+        field_repo: IFieldRepository,
+        user_repo: IUserRepository,
+        request_repo: IRequestRepository,
     ):
         self._competition_repo = competition_repo
         self._field_repo = field_repo
         self._user_repo = user_repo
+        self._request_repo = request_repo
 
     def get_filtered(self, filters: CompetitionFilters) -> List[Competition]:
         return list(self._competition_repo.get_filtered(filters.name, filters.admin, filters.opened, filters.started))
@@ -90,3 +97,9 @@ class CompetitionService:
 
     def update_request_template(self, competition_id: int, request_template: Optional[str]) -> None:
         self._competition_repo.update_request_template(competition_id, request_template)
+
+    def is_admin_on_competition(self, competition_id: int, user: User) -> bool:
+        return user.permission == Permissions.SUPER_ADMIN or self._competition_repo.is_admin(competition_id, user.id)
+
+    def get_requests_for(self, competition_id: int) -> List[Request]:
+        return list(self._request_repo.get_requests_on_competition(competition_id))

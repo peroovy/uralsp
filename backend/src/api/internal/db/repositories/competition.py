@@ -51,14 +51,14 @@ class ICompetitionRepository(ABC):
     def update_request_template(self, competition_id: int, request_template: Optional[str]) -> None:
         ...
 
+    @abstractmethod
+    def is_admin(self, competition_id: int, user_id: int) -> bool:
+        ...
+
 
 class CompetitionRepository(ICompetitionRepository):
     def get(self, competition_id: int) -> Optional[Competition]:
-        return (
-            Competition.objects.filter(id=competition_id)
-            .prefetch_related("fields", "fields__default_values", "requests")
-            .first()
-        )
+        return Competition.objects.filter(id=competition_id).first()
 
     def get_for_update(self, competition_id: int) -> Competition:
         return Competition.objects.select_for_update().get(id=competition_id)
@@ -109,3 +109,6 @@ class CompetitionRepository(ICompetitionRepository):
 
     def update_request_template(self, competition_id: int, request_template: Optional[str]) -> None:
         Competition.objects.filter(id=competition_id).select_for_update().update(request_template=request_template)
+
+    def is_admin(self, competition_id: int, user_id: int) -> bool:
+        return Competition.objects.filter(id=competition_id, admins__id=user_id).exists()

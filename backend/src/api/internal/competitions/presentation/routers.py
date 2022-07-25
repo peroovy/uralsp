@@ -47,7 +47,7 @@ def get_competitions_router(competition_handlers: CompetitionHandlers) -> Router
     )
 
     router.add_api_operation(
-        path="/{int:competition_id}",
+        path="/{int:competition_id}/request-template",
         methods=["PATCH"],
         auth=[AnyAdmin()],
         view_func=competition_handlers.update_request_template,

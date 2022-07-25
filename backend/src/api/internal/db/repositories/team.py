@@ -15,7 +15,7 @@ class IParticipationRepository(ABC):
         ...
 
     @abstractmethod
-    def get_all(self, request_id: int) -> QuerySet[Participation]:
+    def get_with_forms(self, request_id) -> QuerySet[Participation]:
         ...
 
 
@@ -26,5 +26,5 @@ class ParticipationRepository(IParticipationRepository):
     def delete_all(self, request_id: int) -> None:
         Participation.objects.filter(request_id=request_id).delete()
 
-    def get_all(self, request_id: int) -> QuerySet[Participation]:
+    def get_with_forms(self, request_id: int) -> QuerySet[Participation]:
         return Participation.objects.filter(request_id=request_id).prefetch_related("form")

@@ -16,7 +16,7 @@ from api.internal.competitions.domain.entities import (
     RequestTemplateIn,
 )
 from api.internal.competitions.domain.services import CompetitionService
-from api.internal.exceptions import NotFoundException, UnprocessableEntityException
+from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException
 from api.internal.responses import SuccessResponse
 
 
@@ -66,6 +66,9 @@ class CompetitionHandlers:
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
+        if not self._competition_service.is_admin_on_competition(competition_id, request.user):
+            raise ForbiddenException()
+
         self._validate_competition_in(data)
 
         self._competition_service.update(competition_id, data)
@@ -81,14 +84,23 @@ class CompetitionHandlers:
         return SuccessResponse()
 
     def get_requests_on_competition(self, request: HttpRequest, competition_id: int) -> List[CompetitionRequestOut]:
-        if not (competition := self._competition_service.get(competition_id)):
+        if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
-        return [CompetitionRequestOut.from_orm(req) for req in competition.requests.all()]
+        if not self._competition_service.is_admin_on_competition(competition_id, request.user):
+            raise ForbiddenException()
+
+        return [
+            CompetitionRequestOut.from_orm(user_request)
+            for user_request in self._competition_service.get_requests_for(competition_id)
+        ]
 
     def update_form(self, request: HttpRequest, competition_id: int, data: FormIn = Body(...)) -> SuccessResponse:
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
+
+        if not self._competition_service.is_admin_on_competition(competition_id, request.user):
+            raise ForbiddenException()
 
         if not self._competition_service.exists_all_fields(data.fields):
             raise UnprocessableEntityException(self.UNKNOWN_ANY_FIELDS_ERROR)
@@ -113,6 +125,9 @@ class CompetitionHandlers:
     ) -> SuccessResponse:
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
+
+        if not self._competition_service.is_admin_on_competition(competition_id, request.user):
+            raise ForbiddenException()
 
         self._competition_service.update_request_template(competition_id, data.request_template)
 
