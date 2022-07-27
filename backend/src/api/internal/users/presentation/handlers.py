@@ -32,6 +32,10 @@ class UsersHandlers:
 
     FILENAME = "{date}-users.{extension}"
     USER = "user"
+    PERMISSIONS = "permissions"
+    PERMISSION = "permission"
+    OWNER_REQUEST = "owner request"
+    PARTICIPATION = "participation"
 
     def __init__(self, user_service: UserService, document_service: DocumentService):
         self._user_service = user_service
@@ -42,22 +46,20 @@ class UsersHandlers:
         return [ProfileOut.from_orm(user) for user in self._user_service.get_users(filers)]
 
     def get_user(self, request: HttpRequest, user_id: int) -> FullProfileOut:
-        user = self._user_service.get_user(user_id)
-        if not user:
+        if not (user := self._user_service.get_user(user_id)):
             raise NotFoundException(self.USER)
 
         return FullProfileOut.from_orm(user)
 
     def update_user(self, request: HttpRequest, user_id: int, data: ProfileIn = Body(...)) -> SuccessResponse:
-        user = self._user_service.get_user(user_id)
-        if not user:
+        if not (user := self._user_service.get_user(user_id)):
             raise NotFoundException(self.USER)
 
         if (
             data.permission in [Permissions.ADMIN, Permissions.SUPER_ADMIN]
             and request.user.permission != Permissions.SUPER_ADMIN
         ):
-            raise UnprocessableEntityException(self.PERMISSION_MUST_BE_DEFAULT_TYPE_ERROR)
+            raise UnprocessableEntityException(self.PERMISSION_MUST_BE_DEFAULT_TYPE_ERROR, error=self.PERMISSION)
 
         self._user_service.update_profile(user, data)
 
@@ -88,13 +90,13 @@ class UsersHandlers:
             raise NotFoundException(self.NOT_FOUND_MERGING_IDS)
 
         if self._user_service.equal_permissions(users.from_id, users.to_id):
-            raise UnprocessableEntityException(self.NOT_EQUAL_PERMISSIONS_ERROR)
+            raise UnprocessableEntityException(self.NOT_EQUAL_PERMISSIONS_ERROR, error=self.PERMISSIONS)
 
         if self._user_service.intersect_request_owners(users.from_id, users.to_id):
-            raise UnprocessableEntityException(self.USERS_HAVE_COMMON_REQUEST_ERROR)
+            raise UnprocessableEntityException(self.USERS_HAVE_COMMON_REQUEST_ERROR, error=self.OWNER_REQUEST)
 
         if self._user_service.intersect_participation(users.from_id, users.to_id):
-            raise UnprocessableEntityException(self.USERS_HAVE_COMMON_PARTICIPATION_ERROR)
+            raise UnprocessableEntityException(self.USERS_HAVE_COMMON_PARTICIPATION_ERROR, error=self.PARTICIPATION)
 
         self._user_service.merge(users.from_id, users.to_id)
 
@@ -104,9 +106,12 @@ class UsersHandlers:
 class CurrentUserHandlers:
     MIN_SOCIAL_AMOUNT = 1
 
-    SOCIAL_LINKING_ERROR = "Failed to get user information"
+    SOCIAL_CONNECTING_ERROR = "Failed to get user information"
     MIN_AMOUNT_SOCIALS_ERROR = f"Min amount of socials is {MIN_SOCIAL_AMOUNT}"
     NOT_FOUND_ANY_FIELD_IDS_ERROR = "Any field ids were not found"
+
+    SOCIAL_CONNECTING = "social connecting"
+    SOCIALS_AMOUNT = "socials amount"
 
     def __init__(self, user_service: UserService, social_service: SocialService):
         self._user_service = user_service
@@ -143,7 +148,7 @@ class CurrentUserHandlers:
 
     def _link_social(self, request: HttpRequest, social_id: Optional[int], update_social: Callable[[User, int], None]):
         if not social_id:
-            raise UnprocessableEntityException(self.SOCIAL_LINKING_ERROR)
+            raise UnprocessableEntityException(self.SOCIAL_CONNECTING_ERROR, error=self.SOCIAL_CONNECTING)
 
         update_social(request.user, social_id)
 
@@ -151,7 +156,7 @@ class CurrentUserHandlers:
 
     def _unlink_social(self, request: HttpRequest, update_social: Callable[[User, None], None]) -> SuccessResponse:
         if self._user_service.get_socials_amount(request.user) <= self.MIN_SOCIAL_AMOUNT:
-            raise UnprocessableEntityException(self.MIN_AMOUNT_SOCIALS_ERROR)
+            raise UnprocessableEntityException(self.MIN_AMOUNT_SOCIALS_ERROR, error=self.SOCIALS_AMOUNT)
 
         update_social(request.user, None)
 

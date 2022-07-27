@@ -18,10 +18,6 @@ class ICompetitionRepository(ABC):
         ...
 
     @abstractmethod
-    def get_fields(self, competition_id: int) -> QuerySet[Field]:
-        ...
-
-    @abstractmethod
     def exists(self, competition_id: int) -> bool:
         ...
 
@@ -55,6 +51,10 @@ class ICompetitionRepository(ABC):
     def is_admin(self, competition_id: int, user_id: int) -> bool:
         ...
 
+    @abstractmethod
+    def get_form(self, competition_id: int) -> QuerySet[Field]:
+        ...
+
 
 class CompetitionRepository(ICompetitionRepository):
     def get(self, competition_id: int) -> Optional[Competition]:
@@ -62,9 +62,6 @@ class CompetitionRepository(ICompetitionRepository):
 
     def get_for_update(self, competition_id: int) -> Competition:
         return Competition.objects.select_for_update().get(id=competition_id)
-
-    def get_fields(self, competition_id: int) -> QuerySet[Field]:
-        return Competition.objects.prefetch_related("fields").get(id=competition_id).fields.all()
 
     def exists(self, competition_id: int) -> bool:
         return Competition.objects.filter(id=competition_id).exists()
@@ -112,3 +109,6 @@ class CompetitionRepository(ICompetitionRepository):
 
     def is_admin(self, competition_id: int, user_id: int) -> bool:
         return Competition.objects.filter(id=competition_id, admins__id=user_id).exists()
+
+    def get_form(self, competition_id: int) -> QuerySet[Field]:
+        return Competition.objects.prefetch_related("fields__default_values").get(id=competition_id).fields.all()

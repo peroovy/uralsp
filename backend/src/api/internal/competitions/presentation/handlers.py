@@ -1,6 +1,5 @@
 from typing import List
 
-from django.forms import model_to_dict
 from django.http import HttpRequest
 from ninja import Body, Query
 
@@ -27,6 +26,10 @@ class CompetitionHandlers:
     UNKNOWN_ANY_ADMINS_ERROR = "Unknown any admins"
 
     COMPETITION = "competition"
+    BAD_FIELDS = "bad fields"
+    BAD_ADMINS = "bad admins"
+    BAD_DATES = "bad dates"
+    BAD_PERSONS_AMOUNT = "bad persons amount"
 
     def __init__(self, competition_service: CompetitionService):
         self._competition_service = competition_service
@@ -43,18 +46,13 @@ class CompetitionHandlers:
         return CompetitionDetailsOut.from_orm(competition)
 
     def get_form(self, request: HttpRequest, competition_id: int) -> List[CompetitionFieldDetailsOut]:
-        if not (competition := self._competition_service.get(competition_id)):
+        if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
-        return [
-            CompetitionFieldDetailsOut(
-                **model_to_dict(field), default_values=list(field.default_values.values_list("value", flat=True))
-            )
-            for field in competition.fields.all()
-        ]
+        return self._competition_service.get_form_details(competition_id)
 
     def create_competition(self, request: HttpRequest, data: CompetitionIn = Body(...)) -> SuccessResponse:
-        self._validate_competition_in(data)
+        self._assert_competition_in(data)
 
         self._competition_service.create(data)
 
@@ -69,7 +67,7 @@ class CompetitionHandlers:
         if not self._competition_service.is_admin_on_competition(competition_id, request.user):
             raise ForbiddenException()
 
-        self._validate_competition_in(data)
+        self._assert_competition_in(data)
 
         self._competition_service.update(competition_id, data)
 
@@ -103,7 +101,7 @@ class CompetitionHandlers:
             raise ForbiddenException()
 
         if not self._competition_service.exists_all_fields(data.fields):
-            raise UnprocessableEntityException(self.UNKNOWN_ANY_FIELDS_ERROR)
+            raise UnprocessableEntityException(self.UNKNOWN_ANY_FIELDS_ERROR, error=self.BAD_FIELDS)
 
         self._competition_service.update_form(competition_id, data)
 
@@ -114,7 +112,7 @@ class CompetitionHandlers:
             raise NotFoundException(self.COMPETITION)
 
         if not self._competition_service.exists_all_admins(data.admins):
-            raise UnprocessableEntityException(self.UNKNOWN_ANY_ADMINS_ERROR)
+            raise UnprocessableEntityException(self.UNKNOWN_ANY_ADMINS_ERROR, error=self.BAD_ADMINS)
 
         self._competition_service.update_admins(competition_id, data)
 
@@ -133,15 +131,15 @@ class CompetitionHandlers:
 
         return SuccessResponse()
 
-    def _validate_competition_in(self, data: CompetitionIn) -> None:
-        if not self._competition_service.validate_person_amount(data.persons_amount):
-            raise UnprocessableEntityException(self.INVALID_PERSONS_AMOUNT_ERROR)
+    def _assert_competition_in(self, data: CompetitionIn) -> None:
+        if not self._competition_service.validate_person_amount(data):
+            raise UnprocessableEntityException(self.INVALID_PERSONS_AMOUNT_ERROR, error=self.BAD_PERSONS_AMOUNT)
 
-        if not self._competition_service.validate_dates(data.registration_before, data.started_at, data.end_at):
-            raise UnprocessableEntityException(self.INVALID_DATES_ERROR)
+        if not self._competition_service.validate_dates(data):
+            raise UnprocessableEntityException(self.INVALID_DATES_ERROR, error=self.BAD_DATES)
 
         if not self._competition_service.exists_all_fields(data.fields):
-            raise UnprocessableEntityException(self.UNKNOWN_ANY_FIELDS_ERROR)
+            raise UnprocessableEntityException(self.UNKNOWN_ANY_FIELDS_ERROR, error=self.BAD_FIELDS)
 
         if not self._competition_service.exists_all_admins(data.admins):
-            raise UnprocessableEntityException(self.UNKNOWN_ANY_ADMINS_ERROR)
+            raise UnprocessableEntityException(self.UNKNOWN_ANY_ADMINS_ERROR, error=self.BAD_ADMINS)

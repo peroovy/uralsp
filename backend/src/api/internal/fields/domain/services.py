@@ -1,13 +1,14 @@
-from typing import List, Optional
+from typing import List, Optional, Iterable
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import DatabaseError
 from django.db.transaction import atomic
+from django.forms import model_to_dict
 
 from api.internal.db.models import Field
 from api.internal.db.repositories.default import IDefaultRepository
 from api.internal.db.repositories.field import IFieldRepository
-from api.internal.fields.domain.entities import FieldFilters, FieldIn, FieldSchema
+from api.internal.fields.domain.entities import FieldFilters, FieldUpdatingIn, FieldSchema
 
 
 class FieldService:
@@ -38,9 +39,17 @@ class FieldService:
         self._default_repo.create(data.id, data.default_values)
 
     @atomic
-    def update(self, field_id: str, data: FieldIn) -> None:
+    def update(self, field_id: str, data: FieldUpdatingIn) -> None:
         if not self._field_repo.update(field_id, data.name, data.type, data.is_required, data.is_visible):
             raise ObjectDoesNotExist()
 
         self._default_repo.delete_all(field_id)
         self._default_repo.create(field_id, data.default_values)
+
+    def get_field_outs(self, fields: Iterable[Field]) -> List[FieldSchema]:
+        return [self.get_field_out(field) for field in fields]
+
+    def get_field_out(self, field: Field) -> FieldSchema:
+        return FieldSchema(
+                **model_to_dict(field), default_values=list(field.default_values.values_list("value", flat=True))
+            )

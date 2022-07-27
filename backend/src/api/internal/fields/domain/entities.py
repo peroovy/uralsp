@@ -13,7 +13,7 @@ class FieldSchema(ModelSchema):
         model_fields = "__all__"
 
 
-class FieldIn(ModelSchema):
+class FieldUpdatingIn(ModelSchema):
     default_values: List[str]
 
     class Config:

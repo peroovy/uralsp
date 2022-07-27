@@ -16,6 +16,9 @@ class RequestHandlers:
     COMPETITION_ALREADY_STARTED_ERROR = "Competition already started"
 
     REQUEST = "request"
+    COMPETITION = "competition"
+    USERS = "users"
+    FORMS = "forms"
 
     def __init__(self, request_service: RequestService):
         self._request_service = request_service
@@ -36,13 +39,13 @@ class RequestHandlers:
 
     def create_request(self, request: HttpRequest, data: RequestIn = Body(...)) -> RequestOut:
         if not self._request_service.validate_competition_for_registration(request.user, data):
-            raise UnprocessableEntityException(self.INVALID_COMPETITION_ERROR)
+            raise UnprocessableEntityException(self.INVALID_COMPETITION_ERROR, error=self.COMPETITION)
 
         if not self._request_service.validate_users(data):
-            raise UnprocessableEntityException(self.INVALID_TEAM_ERROR)
+            raise UnprocessableEntityException(self.INVALID_TEAM_ERROR, error=self.USERS)
 
         if not self._request_service.validate_forms(data):
-            raise UnprocessableEntityException(self.INVALID_ANY_FORMS_ERROR)
+            raise UnprocessableEntityException(self.INVALID_ANY_FORMS_ERROR, error=self.FORMS)
 
         return RequestOut.from_orm(self._request_service.create(request.user, data))
 
@@ -54,14 +57,14 @@ class RequestHandlers:
             raise ForbiddenException()
 
         if not self._request_service.validate_competition_for_updating(user_request, data):
-            raise UnprocessableEntityException(self.INVALID_COMPETITION_ERROR)
+            raise UnprocessableEntityException(self.INVALID_COMPETITION_ERROR, error=self.COMPETITION)
 
         if not self._request_service.validate_users(data):
-            raise UnprocessableEntityException(self.INVALID_TEAM_ERROR)
+            raise UnprocessableEntityException(self.INVALID_TEAM_ERROR, error=self.USERS)
 
         request_in = RequestIn(competition_id=user_request.competition.id, team_name=data.team_name, team=data.team)
         if not self._request_service.validate_forms(request_in):
-            raise UnprocessableEntityException(self.INVALID_ANY_FORMS_ERROR)
+            raise UnprocessableEntityException(self.INVALID_ANY_FORMS_ERROR, error=self.FORMS)
 
         self._request_service.update(request_id, request_in)
 
@@ -75,7 +78,7 @@ class RequestHandlers:
             raise ForbiddenException()
 
         if self._request_service.is_competition_started(user_request):
-            raise UnprocessableEntityException(self.COMPETITION_ALREADY_STARTED_ERROR)
+            raise UnprocessableEntityException(self.COMPETITION_ALREADY_STARTED_ERROR, error=self.COMPETITION)
 
         self._request_service.cancel(request_id)
 

@@ -1,11 +1,12 @@
-from datetime import datetime
 from typing import List, Optional
 
 from django.db.transaction import atomic
+from django.forms import model_to_dict
 from django.utils.timezone import now
 
 from api.internal.competitions.domain import MIN_PERSONS_AMOUNT
-from api.internal.competitions.domain.entities import AdminsIn, CompetitionFilters, CompetitionIn, FormIn
+from api.internal.competitions.domain.entities import AdminsIn, CompetitionFilters, CompetitionIn, FormIn, \
+    CompetitionFieldDetailsOut
 from api.internal.db.models import Competition, Request, User
 from api.internal.db.models.user import Permissions
 from api.internal.db.repositories.competition import ICompetitionRepository
@@ -45,11 +46,11 @@ class CompetitionService:
     def delete(self, competition_id: int) -> None:
         self._competition_repo.delete(competition_id)
 
-    def validate_person_amount(self, value: int):
-        return value >= MIN_PERSONS_AMOUNT
+    def validate_person_amount(self, data: CompetitionIn) -> bool:
+        return data.persons_amount >= MIN_PERSONS_AMOUNT
 
-    def validate_dates(self, registration_before: datetime, started_at: datetime, end_at: datetime) -> bool:
-        return now() < registration_before < started_at < end_at
+    def validate_dates(self, data: CompetitionIn) -> bool:
+        return now() < data.registration_before < data.started_at < data.end_at
 
     @atomic
     def create(self, data: CompetitionIn) -> Competition:
@@ -83,14 +84,14 @@ class CompetitionService:
 
     @atomic
     def update_form(self, competition_id: int, data: FormIn) -> None:
-        competition = self._competition_repo.get_for_update(competition_id)
+        competition = self._competition_repo.get(competition_id)
 
         competition.fields.clear()
         competition.fields.add(*data.fields)
 
     @atomic
     def update_admins(self, competition_id: int, data: AdminsIn) -> None:
-        competition = self._competition_repo.get_for_update(competition_id)
+        competition = self._competition_repo.get(competition_id)
 
         competition.admins.clear()
         competition.admins.add(*data.admins)
@@ -103,3 +104,13 @@ class CompetitionService:
 
     def get_requests_for(self, competition_id: int) -> List[Request]:
         return list(self._request_repo.get_requests_on_competition(competition_id))
+
+    def get_form_details(self, competition_id: int) -> List[CompetitionFieldDetailsOut]:
+        fields = self._competition_repo.get_form(competition_id)
+
+        return [
+            CompetitionFieldDetailsOut(
+                **model_to_dict(field), default_values=list(field.default_values.values_list("value", flat=True))
+            )
+            for field in fields
+        ]

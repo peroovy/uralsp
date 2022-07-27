@@ -1,11 +1,10 @@
-from datetime import datetime
 from enum import Enum
 from typing import Optional, Tuple
 
 from django.conf import settings
-from django.db import IntegrityError
+from django.db import DatabaseError
 from django.db.transaction import atomic
-from django.utils import timezone
+from django.utils.timezone import now
 from google.auth.transport import requests
 from google.oauth2 import id_token as google_id_token
 from jwt import PyJWTError, decode, encode
@@ -13,7 +12,6 @@ from vk import API
 from vk.exceptions import VkException
 
 from api.internal.db.models import RefreshToken, User
-from api.internal.db.repositories import google_repo, refresh_repo, user_repo, vkontakte_repo
 from api.internal.db.repositories.refresh_token import IRefreshTokenRepository
 from api.internal.db.repositories.social import ISocialRepository
 from api.internal.db.repositories.user import IUserRepository
@@ -97,7 +95,7 @@ class AuthService:
                 self._refresh_repo.create(user.id, refresh)
 
                 return TokenPairDetails(access, refresh, expires_in)
-        except IntegrityError:
+        except DatabaseError:
             return None
 
     def try_update_access_and_refresh_tokens(self, refresh: RefreshToken) -> Optional[TokenPairDetails]:
@@ -109,7 +107,7 @@ class AuthService:
 
     def generate_token(self, user: User, token_type: TokenTypes) -> Tuple[str, float]:
         ttl = settings.REFRESH_TOKEN_TTL if token_type == TokenTypes.REFRESH else settings.ACCESS_TOKEN_TTL
-        expires_in = int((self._now() + ttl).timestamp())
+        expires_in = int((now() + ttl).timestamp())
 
         payload = Payload(token_type.value, expires_in, user.id, user.permission)
 
@@ -125,18 +123,10 @@ class AuthService:
         return payload.token_type == token_type.value
 
     def is_token_expired(self, payload: Payload) -> bool:
-        return int(self._now().timestamp()) >= payload.expires_in
+        return int(now().timestamp()) >= payload.expires_in
 
     def get_refresh_token_details(self, value: str) -> Optional[RefreshToken]:
         return self._refresh_repo.get(value)
-
-    @staticmethod
-    def _now() -> datetime:
-        return timezone.now()
-
-    @staticmethod
-    def _from_timestamp(value: float) -> datetime:
-        return datetime.fromtimestamp(value, tz=timezone.get_current_timezone())
 
 
 class SocialService:
@@ -195,7 +185,3 @@ class SocialService:
             return google_id_token.verify_oauth2_token(id_token, requests.Request(), client_id)
         except ValueError:
             return None
-
-
-auth_service = AuthService(user_repo, refresh_repo)
-social_service = SocialService(vkontakte_repo, google_repo)

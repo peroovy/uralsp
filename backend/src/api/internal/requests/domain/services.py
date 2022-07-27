@@ -1,10 +1,9 @@
 from typing import Iterable, List, Optional
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.db.transaction import atomic
 from django.utils.timezone import now
 
-from api.internal.db.models import Participation, Request, User
+from api.internal.db.models import Request, User
 from api.internal.db.models.request import RequestStatus
 from api.internal.db.models.user import Permissions
 from api.internal.db.repositories.competition import ICompetitionRepository
@@ -68,7 +67,7 @@ class RequestService:
         return len(unique_ids) == self._user_repo.get_count(unique_ids)
 
     def validate_forms(self, data: RequestIn) -> bool:
-        fields = list(self._competition_repo.get_fields(data.competition_id))
+        fields = list(self._competition_repo.get_form(data.competition_id))
 
         if not fields:
             return True
@@ -146,7 +145,7 @@ class RequestService:
     def _create_participation_and_fill_form(
         self, request_id: int, competition_id: int, team: Iterable[ParticipationSchema]
     ):
-        fields = self._competition_repo.get_fields(competition_id)
+        fields = self._competition_repo.get_form(competition_id)
         expected_ids = set(field.id for field in fields)
 
         for user in team:
