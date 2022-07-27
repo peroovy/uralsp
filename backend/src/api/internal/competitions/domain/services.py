@@ -40,7 +40,7 @@ class CompetitionService:
         return self._field_repo.exists_all(ids)
 
     def exists_all_admins(self, ids: List[int]) -> bool:
-        return self._user_repo.exists_all_admins(ids)
+        return self._user_repo.exist_all_admins(ids)
 
     def delete(self, competition_id: int) -> None:
         self._competition_repo.delete(competition_id)
@@ -54,7 +54,7 @@ class CompetitionService:
     @atomic
     def create(self, data: CompetitionIn) -> Competition:
         competition = self._competition_repo.create(
-            data.name, data.started_at, data.registration_before, data.end_at, data.person_amount, data.request_template
+            data.name, data.started_at, data.registration_before, data.end_at, data.persons_amount, data.request_template
         )
 
         competition.fields.add(*data.fields)

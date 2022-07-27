@@ -51,3 +51,8 @@ class Filters(Schema):
 class FormValueOut(Schema):
     id: str
     value: str
+
+
+class MergingIn(Schema):
+    from_id: int
+    to_id: int

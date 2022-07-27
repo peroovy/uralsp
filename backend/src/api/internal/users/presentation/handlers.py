@@ -1,6 +1,6 @@
 from typing import Callable, List, Optional
 
-from django.http import FileResponse, HttpRequest, StreamingHttpResponse
+from django.http import FileResponse, HttpRequest
 from django.utils.timezone import now
 from ninja import Body, Query
 from ninja.pagination import LimitOffsetPagination, paginate
@@ -17,12 +17,21 @@ from api.internal.users.domain.entities import (
     FullProfileOut,
     ProfileIn,
     ProfileOut,
+    MergingIn,
 )
 from api.internal.users.domain.services import DocumentService, UserService
 
 
 class UsersHandlers:
     PERMISSION_MUST_BE_DEFAULT_TYPE_ERROR = "Permission must be default or teacher"
+    USERS_HAVE_COMMON_REQUEST_ERROR = "Users have common requests"
+    USERS_HAVE_COMMON_PARTICIPATION_ERROR = "Users have a common participation"
+    NOT_EQUAL_PERMISSIONS_ERROR = "Not equal permission"
+
+    NOT_FOUND_MERGING_IDS = "users ids"
+
+    FILENAME = "{date}-users.{extension}"
+    USER = "user"
 
     def __init__(self, user_service: UserService, document_service: DocumentService):
         self._user_service = user_service
@@ -35,14 +44,14 @@ class UsersHandlers:
     def get_user(self, request: HttpRequest, user_id: int) -> FullProfileOut:
         user = self._user_service.get_user(user_id)
         if not user:
-            raise NotFoundException("user")
+            raise NotFoundException(self.USER)
 
         return FullProfileOut.from_orm(user)
 
     def update_user(self, request: HttpRequest, user_id: int, data: ProfileIn = Body(...)) -> SuccessResponse:
         user = self._user_service.get_user(user_id)
         if not user:
-            raise NotFoundException("user")
+            raise NotFoundException(self.USER)
 
         if (
             data.permission in [Permissions.ADMIN, Permissions.SUPER_ADMIN]
@@ -54,17 +63,42 @@ class UsersHandlers:
 
         return SuccessResponse()
 
-    def get_users_xlsx(self, request: HttpRequest, filers: Filters = Query(...)) -> StreamingHttpResponse:
+    def get_users_xlsx(self, request: HttpRequest, filers: Filters = Query(...)) -> FileResponse:
         users = self._user_service.get_users(filers)
         buffer = self._document_service.serialize_users_to_xlsx(users)
 
-        return FileResponse(buffer, as_attachment=True, filename=f"{now().strftime('%Y-%m-%d %H-%M-%S')}-users.xlsx")
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=self.FILENAME.format(date=now().strftime("%Y-%m-%d %H-%M-%S"), extension="xlsx"),
+        )
 
-    def get_users_csv(self, request: HttpRequest, filters: Filters = Query(...)) -> StreamingHttpResponse:
+    def get_users_csv(self, request: HttpRequest, filters: Filters = Query(...)) -> FileResponse:
         users = self._user_service.get_users(filters)
         buffer = self._document_service.serialize_users_to_csv(users)
 
-        return FileResponse(buffer, as_attachment=True, filename=f"{now().strftime('%Y-%m-%d %H-%M-%S')}-users.csv")
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=self.FILENAME.format(date=now().strftime("%Y-%m-%d %H-%M-%S"), extension="csv"),
+        )
+
+    def merge_users(self, request: HttpRequest, users: MergingIn) -> SuccessResponse:
+        if not self._user_service.exist_all(users.from_id, users.to_id):
+            raise NotFoundException(self.NOT_FOUND_MERGING_IDS)
+
+        if self._user_service.equal_permissions(users.from_id, users.to_id):
+            raise UnprocessableEntityException(self.NOT_EQUAL_PERMISSIONS_ERROR)
+
+        if self._user_service.intersect_request_owners(users.from_id, users.to_id):
+            raise UnprocessableEntityException(self.USERS_HAVE_COMMON_REQUEST_ERROR)
+
+        if self._user_service.intersect_participation(users.from_id, users.to_id):
+            raise UnprocessableEntityException(self.USERS_HAVE_COMMON_PARTICIPATION_ERROR)
+
+        self._user_service.merge(users.from_id, users.to_id)
+
+        return SuccessResponse()
 
 
 class CurrentUserHandlers:

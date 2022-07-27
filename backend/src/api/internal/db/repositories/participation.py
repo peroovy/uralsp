@@ -18,6 +18,14 @@ class IParticipationRepository(ABC):
     def get_with_forms(self, request_id) -> QuerySet[Participation]:
         ...
 
+    @abstractmethod
+    def intersect(self, user_id_1: int, user_id_2: int) -> bool:
+        ...
+
+    @abstractmethod
+    def migrate(self, from_user_id: int, to_user_id: int) -> int:
+        ...
+
 
 class ParticipationRepository(IParticipationRepository):
     def create(self, request_id: int, user_id: int) -> Participation:
@@ -28,3 +36,14 @@ class ParticipationRepository(IParticipationRepository):
 
     def get_with_forms(self, request_id: int) -> QuerySet[Participation]:
         return Participation.objects.filter(request_id=request_id).prefetch_related("form")
+
+    def intersect(self, user_id_1: int, user_id_2: int) -> bool:
+        return (
+            Participation.objects.filter(user_id=user_id_1)
+            .values_list("request")
+            .intersection(Participation.objects.filter(user_id=user_id_2).values_list("request"))
+            .exists()
+        )
+
+    def migrate(self, from_user_id: int, to_user_id: int) -> int:
+        return Participation.objects.filter(user_id=from_user_id).select_for_update().update(user_id=to_user_id)

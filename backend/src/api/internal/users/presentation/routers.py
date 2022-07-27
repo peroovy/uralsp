@@ -34,6 +34,14 @@ def get_users_router(users_handlers: UsersHandlers) -> Router:
     router.add_api_operation(path="/xlsx", methods=["GET"], auth=[AnyAdmin()], view_func=users_handlers.get_users_xlsx)
     router.add_api_operation(path="/csv", methods=["GET"], auth=[AnyAdmin()], view_func=users_handlers.get_users_csv)
 
+    router.add_api_operation(
+        path="/merge",
+        methods=["POST"],
+        auth=[AnyAdmin()],
+        view_func=users_handlers.merge_users,
+        response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse, 422: ErrorResponse},
+    )
+
     return router
 
 

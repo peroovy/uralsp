@@ -51,7 +51,15 @@ class IUserRepository(ABC):
         ...
 
     @abstractmethod
-    def exists_all_admins(self, ids: Iterable[int]) -> bool:
+    def exist_all_admins(self, ids: Iterable[int]) -> bool:
+        ...
+
+    @abstractmethod
+    def exist_all(self, *ids: int) -> bool:
+        ...
+
+    @abstractmethod
+    def equal_permissions(self, user_id_1: int, user_id_2: int) -> bool:
         ...
 
 
@@ -127,7 +135,15 @@ class UserRepository(IUserRepository):
 
         return sum(social is not None for social in socials)
 
-    def exists_all_admins(self, ids: Iterable[int]) -> bool:
+    def exist_all_admins(self, ids: Iterable[int]) -> bool:
         ids = set(ids)
 
-        return len(ids) == User.objects.filter(id__in=ids, permission=Permissions.ADMIN).count()
+        return len(ids) > 0 and len(ids) == User.objects.filter(id__in=ids, permission=Permissions.ADMIN).count()
+
+    def exist_all(self, *ids: int) -> bool:
+        ids = set(ids)
+
+        return len(ids) > 0 and len(ids) == User.objects.filter(id__in=ids).count()
+
+    def equal_permissions(self, user_id_1: int, user_id_2: int) -> bool:
+        return User.objects.filter(id=user_id_1).values_list("permission") == User.objects.filter(id=user_id_2).values_list("permission")

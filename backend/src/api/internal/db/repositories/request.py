@@ -40,6 +40,14 @@ class IRequestRepository(ABC):
     def cancel(self, request_id: int) -> None:
         ...
 
+    @abstractmethod
+    def intersect_owners(self, owner_id_1: int, owner_id_2: int) -> bool:
+        ...
+
+    @abstractmethod
+    def migrate(self, from_owner_id: int, to_owner_id: int) -> int:
+        ...
+
 
 class RequestRepository(IRequestRepository):
     def get_requests(self, owner_id: int) -> QuerySet[Request]:
@@ -67,3 +75,14 @@ class RequestRepository(IRequestRepository):
 
     def cancel(self, request_id: int) -> None:
         Request.objects.filter(id=request_id).select_for_update().update(status=RequestStatus.CANCELED)
+
+    def intersect_owners(self, owner_id_1: int, owner_id_2: int) -> bool:
+        return (
+            Request.objects.filter(owner_id=1)
+            .values("competition")
+            .intersection(Request.objects.filter(owner_id=2).values("competition"))
+            .exists()
+        )
+
+    def migrate(self, from_owner_id: int, to_owner_id: int) -> int:
+        return Request.objects.filter(owner_id=from_owner_id).select_for_update().update(owner_id=to_owner_id)

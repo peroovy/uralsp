@@ -9,8 +9,8 @@ from api.internal.db.models.request import RequestStatus
 from api.internal.db.models.user import Permissions
 from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.form_value import FieldValue, IFormValueRepository
+from api.internal.db.repositories.participation import IParticipationRepository
 from api.internal.db.repositories.request import IRequestRepository
-from api.internal.db.repositories.team import IParticipationRepository
 from api.internal.db.repositories.user import IUserRepository
 from api.internal.requests.domain.entities import (
     FieldValueSchema,
@@ -51,10 +51,10 @@ class RequestService:
         if not competition or self._request_repo.exists_request_on_competition(owner.id, competition.id):
             return False
 
-        return now() < competition.registration_before and len(data.team) == competition.person_amount
+        return now() < competition.registration_before and len(data.team) == competition.persons_amount
 
     def validate_competition_for_updating(self, request: Request, data: FormsIn) -> bool:
-        return now() < request.competition.end_at and len(data.team) == request.competition.person_amount
+        return now() < request.competition.end_at and len(data.team) == request.competition.persons_amount
 
     def validate_users(self, data: FormsIn) -> bool:
         if not data.team:
