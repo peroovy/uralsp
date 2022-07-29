@@ -4,7 +4,7 @@ from django.http import HttpRequest
 from ninja import Query
 
 from api.internal.exceptions import NotFoundException, UnprocessableEntityException
-from api.internal.fields.domain.entities import FieldFilters, FieldUpdatingIn, FieldSchema
+from api.internal.fields.domain.entities import FieldFilters, FieldSchema, FieldUpdatingIn
 from api.internal.fields.domain.services import FieldService
 from api.internal.responses import SuccessResponse
 

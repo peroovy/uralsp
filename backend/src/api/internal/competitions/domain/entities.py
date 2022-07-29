@@ -35,7 +35,7 @@ class CompetitionFieldOut(ModelSchema):
         model_fields = "__all__"
 
 
-class CompetitionFieldDetailsOut(ModelSchema):
+class FieldDetailsOut(ModelSchema):
     default_values: List[str]
 
     class Config:
@@ -51,7 +51,7 @@ class CompetitionDetailsOut(ModelSchema):
         model_exclude = ["admins"]
 
 
-class CompetitionRequestOut(ModelSchema):
+class RequestOut(ModelSchema):
     class Config:
         model = Request
         model_fields = ["id", "owner", "status", "description", "created_at", "participants"]

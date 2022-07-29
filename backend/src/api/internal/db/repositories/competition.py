@@ -40,11 +40,11 @@ class ICompetitionRepository(ABC):
         ...
 
     @abstractmethod
-    def delete(self, competition_id: int) -> None:
+    def delete(self, competition_id: int) -> bool:
         ...
 
     @abstractmethod
-    def update_request_template(self, competition_id: int, request_template: Optional[str]) -> None:
+    def update(self, competition_id: int, **kwargs) -> bool:
         ...
 
     @abstractmethod
@@ -101,11 +101,11 @@ class CompetitionRepository(ICompetitionRepository):
             request_template=request_template,
         )
 
-    def delete(self, competition_id: int) -> None:
-        Competition.objects.filter(id=competition_id).delete()
+    def delete(self, competition_id: int) -> bool:
+        return Competition.objects.filter(id=competition_id).delete()[0] > 0
 
-    def update_request_template(self, competition_id: int, request_template: Optional[str]) -> None:
-        Competition.objects.filter(id=competition_id).select_for_update().update(request_template=request_template)
+    def update(self, competition_id: int, **kwargs) -> bool:
+        return Competition.objects.filter(id=competition_id).select_for_update().update(**kwargs) > 0
 
     def is_admin(self, competition_id: int, user_id: int) -> bool:
         return Competition.objects.filter(id=competition_id, admins__id=user_id).exists()

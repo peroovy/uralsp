@@ -112,6 +112,9 @@ class RequestService:
     def process(self, request: Request, data: ProcessIn) -> None:
         self._request_repo.update(request.id, request.team_name, data.status, data.description)
 
+    def get_requests_for(self, competition_id: int) -> List[Request]:
+        return list(self._request_repo.get_requests_on_competition(competition_id))
+
     def get_request_details(self, request: Request) -> RequestDetailsOut:
         team = self._participation_repo.get_with_forms(request.id)
 

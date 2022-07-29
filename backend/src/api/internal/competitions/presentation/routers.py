@@ -2,12 +2,7 @@ from typing import List
 
 from ninja import Router
 
-from api.internal.competitions.domain.entities import (
-    CompetitionDetailsOut,
-    CompetitionFieldDetailsOut,
-    CompetitionOut,
-    CompetitionRequestOut,
-)
+from api.internal.competitions.domain.entities import CompetitionDetailsOut, CompetitionOut, FieldDetailsOut, RequestOut
 from api.internal.competitions.presentation.handlers import CompetitionHandlers
 from api.internal.middlewares import AnyAdmin, OnlySuperAdmin
 from api.internal.responses import ErrorResponse, SuccessResponse
@@ -74,7 +69,7 @@ def get_competitions_router(competition_handlers: CompetitionHandlers) -> Router
         path="/{int:competition_id}/form",
         methods=["GET"],
         view_func=competition_handlers.get_form,
-        response={200: List[CompetitionFieldDetailsOut], 404: ErrorResponse},
+        response={200: List[FieldDetailsOut], 404: ErrorResponse},
     )
 
     router.add_api_operation(
@@ -90,7 +85,7 @@ def get_competitions_router(competition_handlers: CompetitionHandlers) -> Router
         methods=["GET"],
         auth=[AnyAdmin()],
         view_func=competition_handlers.get_requests_on_competition,
-        response={200: List[CompetitionRequestOut], 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
+        response={200: List[RequestOut], 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
     )
 
     return router

@@ -1,8 +1,14 @@
 from ninja import NinjaAPI
 
 from api.internal.auth.domain.services import SocialService
-from api.internal.db.repositories import form_value_repo, google_repo, user_repo, vkontakte_repo, request_repo, \
-    participation_repo
+from api.internal.db.repositories import (
+    form_value_repo,
+    google_repo,
+    participation_repo,
+    request_repo,
+    user_repo,
+    vkontakte_repo,
+)
 from api.internal.users.domain.services import DocumentService, UserService
 from api.internal.users.presentation.handlers import CurrentUserHandlers, UsersHandlers
 from api.internal.users.presentation.routers import get_current_user_router, get_users_router

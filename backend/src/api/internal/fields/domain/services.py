@@ -1,4 +1,4 @@
-from typing import List, Optional, Iterable
+from typing import Iterable, List, Optional
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import DatabaseError
@@ -8,7 +8,7 @@ from django.forms import model_to_dict
 from api.internal.db.models import Field
 from api.internal.db.repositories.default import IDefaultRepository
 from api.internal.db.repositories.field import IFieldRepository
-from api.internal.fields.domain.entities import FieldFilters, FieldUpdatingIn, FieldSchema
+from api.internal.fields.domain.entities import FieldFilters, FieldSchema, FieldUpdatingIn
 
 
 class FieldService:
@@ -24,6 +24,9 @@ class FieldService:
 
     def exists(self, field_id: str) -> bool:
         return self._field_repo.exists(field_id)
+
+    def exist_all(self, ids: List[str]) -> bool:
+        return self._field_repo.exist_all(ids)
 
     def try_delete(self, field_id: str) -> bool:
         try:
@@ -51,5 +54,5 @@ class FieldService:
 
     def get_field_out(self, field: Field) -> FieldSchema:
         return FieldSchema(
-                **model_to_dict(field), default_values=list(field.default_values.values_list("value", flat=True))
-            )
+            **model_to_dict(field), default_values=list(field.default_values.values_list("value", flat=True))
+        )

@@ -6,24 +6,27 @@ from ninja import Body, Query
 from api.internal.competitions.domain.entities import (
     AdminsIn,
     CompetitionDetailsOut,
-    CompetitionFieldDetailsOut,
     CompetitionFilters,
     CompetitionIn,
     CompetitionOut,
-    CompetitionRequestOut,
+    FieldDetailsOut,
     FormIn,
+    RequestOut,
     RequestTemplateIn,
 )
-from api.internal.competitions.domain.services import CompetitionService
+from api.internal.competitions.domain.services import CompetitionService, OperationStatus
 from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException
+from api.internal.fields.domain.services import FieldService
+from api.internal.requests.domain.services import RequestService
 from api.internal.responses import SuccessResponse
+from api.internal.users.domain.services import UserService
 
 
 class CompetitionHandlers:
     INVALID_DATES_ERROR = "Invalid dates"
     INVALID_PERSONS_AMOUNT_ERROR = "Invalid amount of persons"
-    UNKNOWN_ANY_FIELDS_ERROR = "Unknown any fields"
-    UNKNOWN_ANY_ADMINS_ERROR = "Unknown any admins"
+    INVALID_FIELDS_ERROR = "Invalid field ids"
+    INVALID_ADMINS_ERROR = "Invalid admin ids"
 
     COMPETITION = "competition"
     BAD_FIELDS = "bad fields"
@@ -31,8 +34,17 @@ class CompetitionHandlers:
     BAD_DATES = "bad dates"
     BAD_PERSONS_AMOUNT = "bad persons amount"
 
-    def __init__(self, competition_service: CompetitionService):
+    def __init__(
+        self,
+        competition_service: CompetitionService,
+        request_service: RequestService,
+        field_service: FieldService,
+        user_service: UserService,
+    ):
         self._competition_service = competition_service
+        self._request_service = request_service
+        self._field_service = field_service
+        self._user_service = user_service
 
     def get_competitions(self, request: HttpRequest, filters: CompetitionFilters = Query(...)) -> List[CompetitionOut]:
         competitions = self._competition_service.get_filtered(filters)
@@ -45,16 +57,15 @@ class CompetitionHandlers:
 
         return CompetitionDetailsOut.from_orm(competition)
 
-    def get_form(self, request: HttpRequest, competition_id: int) -> List[CompetitionFieldDetailsOut]:
+    def get_form(self, request: HttpRequest, competition_id: int) -> List[FieldDetailsOut]:
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
         return self._competition_service.get_form_details(competition_id)
 
     def create_competition(self, request: HttpRequest, data: CompetitionIn = Body(...)) -> SuccessResponse:
-        self._assert_competition_in(data)
-
-        self._competition_service.create(data)
+        status = self._competition_service.create(data)
+        self._handle_creating_or_updating_status(status)
 
         return SuccessResponse()
 
@@ -64,46 +75,42 @@ class CompetitionHandlers:
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
-        if not self._competition_service.is_admin_on_competition(competition_id, request.user):
+        if not self._competition_service.has_access(competition_id, request.user):
             raise ForbiddenException()
 
-        self._assert_competition_in(data)
-
-        self._competition_service.update(competition_id, data)
+        status = self._competition_service.update(competition_id, data)
+        self._handle_creating_or_updating_status(status)
 
         return SuccessResponse()
 
     def delete_competition(self, request: HttpRequest, competition_id: int) -> SuccessResponse:
-        if not self._competition_service.exists(competition_id):
+        if not self._competition_service.delete(competition_id):
             raise NotFoundException(self.COMPETITION)
-
-        self._competition_service.delete(competition_id)
 
         return SuccessResponse()
 
-    def get_requests_on_competition(self, request: HttpRequest, competition_id: int) -> List[CompetitionRequestOut]:
+    def get_requests_on_competition(self, request: HttpRequest, competition_id: int) -> List[RequestOut]:
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
-        if not self._competition_service.is_admin_on_competition(competition_id, request.user):
+        if not self._competition_service.has_access(competition_id, request.user):
             raise ForbiddenException()
 
         return [
-            CompetitionRequestOut.from_orm(user_request)
-            for user_request in self._competition_service.get_requests_for(competition_id)
+            RequestOut.from_orm(user_request) for user_request in self._request_service.get_requests_for(competition_id)
         ]
 
     def update_form(self, request: HttpRequest, competition_id: int, data: FormIn = Body(...)) -> SuccessResponse:
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
-        if not self._competition_service.is_admin_on_competition(competition_id, request.user):
+        if not self._competition_service.has_access(competition_id, request.user):
             raise ForbiddenException()
 
-        if not self._competition_service.exists_all_fields(data.fields):
-            raise UnprocessableEntityException(self.UNKNOWN_ANY_FIELDS_ERROR, error=self.BAD_FIELDS)
+        status = self._competition_service.update_form(competition_id, data)
 
-        self._competition_service.update_form(competition_id, data)
+        if status == OperationStatus.BAD_FIELDS:
+            raise UnprocessableEntityException(self.INVALID_FIELDS_ERROR, error=self.BAD_FIELDS)
 
         return SuccessResponse()
 
@@ -111,10 +118,10 @@ class CompetitionHandlers:
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
-        if not self._competition_service.exists_all_admins(data.admins):
-            raise UnprocessableEntityException(self.UNKNOWN_ANY_ADMINS_ERROR, error=self.BAD_ADMINS)
+        status = self._competition_service.update_admins(competition_id, data)
 
-        self._competition_service.update_admins(competition_id, data)
+        if status == OperationStatus.BAD_ADMINS:
+            raise UnprocessableEntityException(self.INVALID_ADMINS_ERROR, error=self.BAD_ADMINS)
 
         return SuccessResponse()
 
@@ -124,22 +131,23 @@ class CompetitionHandlers:
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
-        if not self._competition_service.is_admin_on_competition(competition_id, request.user):
+        if not self._competition_service.has_access(competition_id, request.user):
             raise ForbiddenException()
 
         self._competition_service.update_request_template(competition_id, data.request_template)
 
         return SuccessResponse()
 
-    def _assert_competition_in(self, data: CompetitionIn) -> None:
-        if not self._competition_service.validate_person_amount(data):
-            raise UnprocessableEntityException(self.INVALID_PERSONS_AMOUNT_ERROR, error=self.BAD_PERSONS_AMOUNT)
+    def _handle_creating_or_updating_status(self, status: OperationStatus) -> None:
+        match status:
+            case OperationStatus.BAD_PERSONS_AMOUNT:
+                raise UnprocessableEntityException(self.INVALID_PERSONS_AMOUNT_ERROR, error=self.BAD_PERSONS_AMOUNT)
 
-        if not self._competition_service.validate_dates(data):
-            raise UnprocessableEntityException(self.INVALID_DATES_ERROR, error=self.BAD_DATES)
+            case OperationStatus.BAD_DATES:
+                raise UnprocessableEntityException(self.INVALID_DATES_ERROR, error=self.BAD_DATES)
 
-        if not self._competition_service.exists_all_fields(data.fields):
-            raise UnprocessableEntityException(self.UNKNOWN_ANY_FIELDS_ERROR, error=self.BAD_FIELDS)
+            case OperationStatus.BAD_FIELDS:
+                raise UnprocessableEntityException(self.INVALID_FIELDS_ERROR, error=self.BAD_FIELDS)
 
-        if not self._competition_service.exists_all_admins(data.admins):
-            raise UnprocessableEntityException(self.UNKNOWN_ANY_ADMINS_ERROR, error=self.BAD_ADMINS)
+            case OperationStatus.BAD_ADMINS:
+                raise UnprocessableEntityException(self.INVALID_ADMINS_ERROR, error=self.BAD_ADMINS)

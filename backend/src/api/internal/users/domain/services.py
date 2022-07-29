@@ -10,8 +10,8 @@ from openpyxl.worksheet.worksheet import Worksheet
 from api.internal.db.models import FormValue, User
 from api.internal.db.models.user import Permissions
 from api.internal.db.repositories.form_value import IFormValueRepository
-from api.internal.db.repositories.request import IRequestRepository
 from api.internal.db.repositories.participation import IParticipationRepository
+from api.internal.db.repositories.request import IRequestRepository
 from api.internal.db.repositories.user import IUserRepository
 from api.internal.users.domain.entities import Filters, ProfileIn
 
@@ -56,6 +56,9 @@ class UserService:
 
     def exist_all(self, from_id: int, to_id: int) -> bool:
         return self._user_repo.exist_all(from_id, to_id)
+
+    def exist_all_admins(self, ids: List[int]) -> bool:
+        return self._user_repo.exist_all_admins(ids)
 
     def intersect_request_owners(self, from_id: int, to_id: int) -> bool:
         return self._request_repo.intersect_owners(from_id, to_id)

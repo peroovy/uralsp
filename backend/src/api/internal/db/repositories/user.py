@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Set
 
 from django.db.models import Q, QuerySet, Sum
 from django.db.models.functions import Concat
@@ -51,7 +51,7 @@ class IUserRepository(ABC):
         ...
 
     @abstractmethod
-    def exist_all_admins(self, ids: Iterable[int]) -> bool:
+    def exist_all_admins(self, ids: Set[int]) -> bool:
         ...
 
     @abstractmethod
@@ -135,10 +135,8 @@ class UserRepository(IUserRepository):
 
         return sum(social is not None for social in socials)
 
-    def exist_all_admins(self, ids: Iterable[int]) -> bool:
-        ids = set(ids)
-
-        return len(ids) > 0 and len(ids) == User.objects.filter(id__in=ids, permission=Permissions.ADMIN).count()
+    def exist_all_admins(self, ids: Set[int]) -> bool:
+        return len(ids) == User.objects.filter(id__in=ids, permission=Permissions.ADMIN).count()
 
     def exist_all(self, *ids: int) -> bool:
         ids = set(ids)
@@ -146,4 +144,6 @@ class UserRepository(IUserRepository):
         return len(ids) > 0 and len(ids) == User.objects.filter(id__in=ids).count()
 
     def equal_permissions(self, user_id_1: int, user_id_2: int) -> bool:
-        return User.objects.filter(id=user_id_1).values_list("permission") == User.objects.filter(id=user_id_2).values_list("permission")
+        return User.objects.filter(id=user_id_1).values_list("permission") == User.objects.filter(
+            id=user_id_2
+        ).values_list("permission")

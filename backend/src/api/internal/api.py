@@ -5,8 +5,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import DatabaseError
 from django.http import HttpRequest, HttpResponse
 from ninja import NinjaAPI
-from ninja.responses import Response
 from ninja.errors import AuthenticationError
+from ninja.responses import Response
 
 from api.internal.auth.api import register_auth_api
 from api.internal.competitions.api import register_competitions_api
@@ -61,7 +61,9 @@ def subscribe_exception_handlers(api: NinjaAPI) -> None:
     for exception in outer_exceptions:
         api.add_exception_handler(exception, get_exception_handler(exception))
 
-    api.add_exception_handler(AuthenticationError, lambda r, exc: UnauthorizedException.get_response(UnauthorizedException()))
+    api.add_exception_handler(
+        AuthenticationError, lambda r, exc: UnauthorizedException.get_response(UnauthorizedException())
+    )
 
     if not settings.DEBUG:
         for exception in inner_exceptions:

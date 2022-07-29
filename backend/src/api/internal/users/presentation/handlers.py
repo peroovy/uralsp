@@ -15,9 +15,9 @@ from api.internal.users.domain.entities import (
     Filters,
     FormValueOut,
     FullProfileOut,
+    MergingIn,
     ProfileIn,
     ProfileOut,
-    MergingIn,
 )
 from api.internal.users.domain.services import DocumentService, UserService
 
