@@ -1,17 +1,28 @@
 // Colors
 $primary-color: #19334d;
 $secondary-color: #3490dc;
+$bg-color: #f0f5fa;
 
-// Fonts
-@font-face {
-    font-family: 'Black';
-    src: url("../lib/Assets/fonts/Raleway-Black.ttf") format('truetype');
+@mixin bg {
+    .d1 {
+        width: clamp(400px, 50vw, 800px);
+        position: fixed;
+        top: 70px;
+        right: -100px;
+        z-index: 0;
+        opacity: 0.2;
+    }
+    .d2 {
+        width: 800px;
+        height: 800px;
+        background-color: $primary-color;
+        position: fixed;
+        bottom: -200px;
+        left: -200px;
+        z-index: 0;
+        border-radius: 50%;
+        transform: rotate(-45deg);
+        opacity: 0.1;
+    }
 }
-@font-face {
-    font-family: 'Medium';
-    src: url("../lib/Assets/fonts/Raleway-Medium.ttf") format('truetype');
-}
-@font-face {
-    font-family: 'Light';
-    src: url("../lib/Assets/fonts/Raleway-Light.ttf") format('truetype');
-}
+

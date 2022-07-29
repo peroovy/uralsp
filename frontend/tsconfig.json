@@ -10,5 +10,5 @@
 		"sourceMap": true,
 		"strict": true
 	},
-	"exclude": ["node_modules", "src/lib/Assets/lottie/*"],
+	"exclude": ["node_modules", "./src/lib/Assets/animations/*"],
 }

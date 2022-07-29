@@ -1,7 +1,8 @@
 <script lang="ts">
-    import Footer from "$lib/Footer/Footer.svelte";
     import logoSrc from "$lib/Assets/imgs/logo.png";   
     import dotsSrc from "$lib/Assets/imgs/dots.png";
+    import { goto } from '$app/navigation';
+    
 </script>
 
 <svelte:head>
@@ -14,13 +15,12 @@
 
 <section class="signup">
 	<img class="d1" src={dotsSrc} alt="">
-    <div class="d1"></div>
 	<div class="d2"></div>
     <div class="signup-form">
         <img src= {logoSrc} alt="logo" class="logo" />
         <p> Please sign up to continue </p>
         <div class="btn-group-vertical col-12">
-            <button class="btn btn-lg btn-block btn-outline">
+            <button class="btn btn-lg btn-block btn-outline" on:click={ () => goto('/participant')}>
                 <i class="fa fa-google"></i>
                 <span> Sign up with Google </span> 
                 <i class="fa fa-arrow-right"></i>
@@ -52,26 +52,8 @@
 		line-height: 40px;
 		font-size: 18px;
 		background-image: linear-gradient(to bottom right, $primary-color, $secondary-color);;
-        .d1 {
-			width: clamp(400px, 50vw, 800px);
-			position: fixed;
-			top: 50px;
-			right: -100px;
-			z-index: 0;
-            opacity: 0.2;
-        }
-		.d2 {
-			width: 800px;
-			height: 800px;
-			background-color: $primary-color;
-			position: fixed;
-			bottom: -200px;
-			left: -200px;
-			z-index: 0;
-			border-radius: 50%;
-			transform: rotate(-45deg);
-            opacity: 0.1;
-        }
+        
+        @include bg;
 
         .signup-form {
 			border: 1px solid rgba(0, 0, 0, 0.1);

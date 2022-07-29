@@ -1,6 +1,6 @@
 <script lang="ts">
     let date = new Date();
-    let year : string = date.getFullYear();
+    let year : number = date.getFullYear();
 </script>
 
 <footer>
