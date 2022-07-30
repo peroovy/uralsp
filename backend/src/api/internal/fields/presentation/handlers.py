@@ -1,7 +1,7 @@
 from typing import List
 
 from django.http import HttpRequest
-from ninja import Query
+from ninja import Body, Query
 
 from api.internal.exceptions import NotFoundException, UnprocessableEntityException
 from api.internal.fields.domain.entities import FieldFilters, FieldSchema, FieldUpdatingIn
@@ -30,7 +30,7 @@ class FieldHandlers:
 
         return self._field_service.get_field_out(field)
 
-    def create_field(self, request: HttpRequest, field: FieldSchema) -> SuccessResponse:
+    def create_field(self, request: HttpRequest, field: FieldSchema = Body(...)) -> SuccessResponse:
         if self._field_service.exists(field.id):
             raise UnprocessableEntityException(self.FIELD_ID_ALREADY_EXISTS_ERROR, error=self.BAD_FIELD_ID)
 
@@ -38,7 +38,7 @@ class FieldHandlers:
 
         return SuccessResponse()
 
-    def update_field(self, request: HttpRequest, field_id: str, field: FieldUpdatingIn) -> SuccessResponse:
+    def update_field(self, request: HttpRequest, field_id: str, field: FieldUpdatingIn = Body(...)) -> SuccessResponse:
         if not self._field_service.exists(field_id):
             raise NotFoundException(self.FIELD)
 

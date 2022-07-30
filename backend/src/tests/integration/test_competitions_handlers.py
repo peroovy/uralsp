@@ -204,6 +204,7 @@ def test_creating__invalid_persons_amount(http_request: HttpRequest, admin: User
 
     with pytest.raises(ValidationError):
         handlers.create_competition(http_request, CompetitionIn(**data))
+    assert Competition.objects.count() == 0
 
 
 @pytest.mark.integration
@@ -225,6 +226,7 @@ def test_creating__invalid_dates(
 
     with pytest.raises(UnprocessableEntityException, match=handlers.INVALID_DATES_ERROR):
         handlers.create_competition(http_request, CompetitionIn(**data))
+    assert Competition.objects.count() == 0
 
 
 @pytest.mark.integration
@@ -236,6 +238,7 @@ def test_creating__invalid_fields(http_request: HttpRequest, admin: User, field:
         data["fields"] = fields
         with pytest.raises(UnprocessableEntityException, match=handlers.INVALID_FIELDS_ERROR):
             handlers.create_competition(http_request, CompetitionIn(**data))
+        assert Competition.objects.count() == 0
 
 
 @pytest.mark.integration
@@ -249,6 +252,7 @@ def test_creating__invalid_admins(
         data["admins"] = admins
         with pytest.raises(UnprocessableEntityException, match=handlers.INVALID_ADMINS_ERROR):
             handlers.create_competition(http_request, CompetitionIn(**data))
+        assert Competition.objects.count() == 0
 
 
 @pytest.mark.integration
@@ -276,6 +280,7 @@ def test_updating__permission_denied(
 ) -> None:
     handler = lambda: handlers.update_competition(http_request, competition.id, None)
     assert_permission_denied(handler, http_request, competition, user, admin, another_admin)
+    assert Competition.objects.get(pk=competition.pk) == competition
 
 
 @pytest.mark.integration
@@ -289,6 +294,7 @@ def test_updating__invalid_persons_amount(
 
     with pytest.raises(ValidationError):
         handlers.update_competition(http_request, competition.id, CompetitionIn(**data))
+    assert Competition.objects.get(pk=competition.pk) == competition
 
 
 @pytest.mark.integration
@@ -313,24 +319,28 @@ def test_updating__invalid_dates(
 
     with pytest.raises(UnprocessableEntityException, match=handlers.INVALID_DATES_ERROR):
         handlers.update_competition(http_request, competition.id, CompetitionIn(**data))
+    assert Competition.objects.get(pk=competition.pk) == competition
 
 
 @pytest.mark.integration
 @pytest.mark.django_db(transaction=True)
-def test_updating__invalid_fields(http_request: HttpRequest, admin: User, super_admin: User, field: Field) -> None:
+def test_updating__invalid_fields(
+    http_request: HttpRequest, competition: Competition, admin: User, super_admin: User, field: Field
+) -> None:
     http_request.user = super_admin
     data = get_creating_data(admin, field)
 
     for fields in get_bad_field_ids(field):
         data["fields"] = fields
         with pytest.raises(UnprocessableEntityException, match=handlers.INVALID_FIELDS_ERROR):
-            handlers.create_competition(http_request, CompetitionIn(**data))
+            handlers.update_competition(http_request, competition.id, CompetitionIn(**data))
+        assert Competition.objects.get(pk=competition.pk) == competition
 
 
 @pytest.mark.integration
 @pytest.mark.django_db(transaction=True)
 def test_updating__invalid_admins(
-    http_request: HttpRequest, user: User, admin: User, super_admin: User, field: Field
+    http_request: HttpRequest, competition: Competition, user: User, admin: User, super_admin: User, field: Field
 ) -> None:
     http_request.user = super_admin
     data = get_creating_data(admin, field)
@@ -338,7 +348,8 @@ def test_updating__invalid_admins(
     for admins in get_bad_admin_ids(user, admin, super_admin):
         data["admins"] = admins
         with pytest.raises(UnprocessableEntityException, match=handlers.INVALID_ADMINS_ERROR):
-            handlers.create_competition(http_request, CompetitionIn(**data))
+            handlers.update_competition(http_request, competition.id, CompetitionIn(**data))
+        assert Competition.objects.get(pk=competition.pk) == competition
 
 
 @pytest.mark.integration
@@ -436,6 +447,7 @@ def test_updating_form__permission_denied(
 ) -> None:
     handler = lambda: handlers.update_form(http_request, competition.id, None)
     assert_permission_denied(handler, http_request, competition, user, admin, another_admin)
+    assert competition.fields.count() == 0
 
 
 @pytest.mark.integration
@@ -451,6 +463,7 @@ def test_updating_form__bad_fields(
         for fields in get_bad_field_ids(field):
             with pytest.raises(UnprocessableEntityException, match=handlers.INVALID_FIELDS_ERROR):
                 handlers.update_form(http_request, competition.id, FormIn(fields=fields))
+            assert competition.fields.count() == 0
 
 
 @pytest.mark.integration
@@ -494,6 +507,7 @@ def test_updating_admins__invalid_ids(
 
         with pytest.raises(UnprocessableEntityException, match=handlers.INVALID_ADMINS_ERROR):
             handlers.update_admins(http_request, competition.id, AdminsIn(**body))
+        assert competition.admins.count() == 0
 
 
 @pytest.mark.integration
@@ -522,6 +536,7 @@ def test_updating_template__permission_denied(
 ) -> None:
     handler = lambda: handlers.update_request_template(http_request, competition.id, None)
     assert_permission_denied(handler, http_request, competition, user, admin, another_admin)
+    assert Competition.objects.get(pk=competition.pk).request_template == competition.request_template
 
 
 @pytest.mark.integration

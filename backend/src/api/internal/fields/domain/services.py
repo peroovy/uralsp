@@ -20,7 +20,7 @@ class FieldService:
         return self._field_repo.get(field_id)
 
     def get_filtered(self, filters: FieldFilters) -> List[Field]:
-        return list(self._field_repo.get_filtered(filters.search))
+        return list(self._field_repo.get_filtered_by_id_and_name(filters.search))
 
     def exists(self, field_id: str) -> bool:
         return self._field_repo.exists(field_id)

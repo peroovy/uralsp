@@ -11,7 +11,7 @@ from api.internal.db.models.field import FieldTypes
 
 class IFieldRepository(ABC):
     @abstractmethod
-    def get_filtered(self, search: str) -> QuerySet[Field]:
+    def get_filtered_by_id_and_name(self, search: str) -> QuerySet[Field]:
         ...
 
     @abstractmethod
@@ -40,7 +40,7 @@ class IFieldRepository(ABC):
 
 
 class FieldRepository(IFieldRepository):
-    def get_filtered(self, search: str) -> QuerySet[Field]:
+    def get_filtered_by_id_and_name(self, search: str) -> QuerySet[Field]:
         attr = [
             Q(**{key: value}) for key, value in [["id__istartswith", search], ["name__istartswith", search]] if search
         ]
