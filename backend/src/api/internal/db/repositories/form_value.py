@@ -21,6 +21,10 @@ class IFormValueRepository(ABC):
     def get_lasts_for(self, user_id: int, field_ids: Set[str]) -> QuerySet[FormValue]:
         ...
 
+    @abstractmethod
+    def exists_field_value(self, field_id: str) -> bool:
+        ...
+
 
 class FormValueRepository(IFormValueRepository):
     def create(self, participation_id: int, form_values: Iterable[FieldValue]) -> QuerySet[FormValue]:
@@ -39,3 +43,6 @@ class FormValueRepository(IFormValueRepository):
             .order_by("field", "-id")
             .distinct("field")
         )
+
+    def exists_field_value(self, field_id: str) -> bool:
+        return FormValue.objects.filter(field_id=field_id).exists()

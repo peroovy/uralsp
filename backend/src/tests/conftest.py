@@ -7,7 +7,6 @@ from google.oauth2 import id_token
 from vk import API
 
 from api.internal.db.models import Competition, DefaultValue, Field, Request, User
-from api.internal.db.models.field import FieldTypes
 from api.internal.db.models.user import Permissions
 
 
@@ -212,9 +211,46 @@ def get_bad_field_ids(field: Field) -> list:
     return [[], ["unknown"], ["unknown", field.id], ["unknown", "unknwon"], [field.id, field.id]]
 
 
-def get_filters_by_name(competition: Competition) -> list:
-    return ["", competition.name[0], competition.name[:2], competition.name[:-1], competition.name, None]
+def get_competition_filters_by_name(competition: Competition) -> list:
+    return [
+        "",
+        competition.name[0],
+        competition.name[:2],
+        competition.name[:-1],
+        competition.name,
+        None,
+        competition.name.swapcase(),
+    ]
 
 
-def get_bad_filters_by_name(competition: Competition) -> list:
+def get_bad_competition_filters_by_name(competition: Competition) -> list:
     return [" ", "-1", competition.name + " ", competition.name + "a", " " + competition.name]
+
+
+def get_field_filters(field: Field) -> list:
+    return [
+        "",
+        field.id,
+        field.name,
+        field.id[0].upper(),
+        field.name[0].upper(),
+        field.id[:-1].swapcase(),
+        field.name[:-1].swapcase(),
+    ]
+
+
+def get_bad_field_filters(field: Field) -> list:
+    return [
+        " ",
+        field.type,
+        field.is_visible,
+        field.is_required,
+        field.id + " ",
+        field.name + " ",
+        " " + field.id,
+        " " + field.name,
+        field.id + "-1",
+        field.name + "-1",
+        "-1" + field.id,
+        "-1" + field.name,
+    ]

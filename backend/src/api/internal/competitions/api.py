@@ -18,7 +18,7 @@ from api.internal.users.domain.services import UserService
 
 
 def register_competitions_api(api: NinjaAPI) -> None:
-    competition_service = CompetitionService(competition_repo)
+    competition_service = CompetitionService(competition_repo, user_repo, field_repo)
     request_service = RequestService(request_repo, competition_repo, user_repo, participation_repo, form_value_repo)
     field_service = FieldService(field_repo, default_repo)
     user_service = UserService(user_repo, form_value_repo, request_repo, participation_repo)

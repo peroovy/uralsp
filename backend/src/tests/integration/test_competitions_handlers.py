@@ -37,14 +37,14 @@ from tests.conftest import (
     BAD_CREATING_DATE_DELTAS,
     BEFORE_NOW,
     get_bad_admin_ids,
+    get_bad_competition_filters_by_name,
     get_bad_field_ids,
-    get_bad_filters_by_name,
-    get_filters_by_name,
+    get_competition_filters_by_name,
 )
 
 competition_service = CompetitionService(competition_repo, user_repo, field_repo)
 request_service = RequestService(request_repo, competition_repo, user_repo, participation_repo, form_value_repo)
-field_service = FieldService(field_repo, default_repo)
+field_service = FieldService(field_repo, default_repo, form_value_repo)
 user_service = UserService(user_repo, form_value_repo, request_repo, participation_repo)
 
 handlers = CompetitionHandlers(competition_service, request_service, field_service, user_service)
@@ -55,11 +55,11 @@ handlers = CompetitionHandlers(competition_service, request_service, field_servi
 def test_getting_all__filtering_by_name(http_request: HttpRequest, competition: Competition) -> None:
     query = {"name": None}
 
-    for search in get_filters_by_name(competition):
+    for search in get_competition_filters_by_name(competition):
         query["name"] = search
         assert_getting_filtered(http_request, query, competition)
 
-    for search in get_bad_filters_by_name(competition):
+    for search in get_bad_competition_filters_by_name(competition):
         query["name"] = search
         assert_not_getting_filtered(http_request, query)
 

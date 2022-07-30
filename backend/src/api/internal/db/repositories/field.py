@@ -1,12 +1,11 @@
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import Iterable, Optional, Set
+from typing import Optional, Set
 
 from django.db.models import Q, QuerySet
 
 from api.internal.db.models import Field
-from api.internal.db.models.field import FieldTypes
 
 
 class IFieldRepository(ABC):
@@ -23,15 +22,15 @@ class IFieldRepository(ABC):
         ...
 
     @abstractmethod
-    def delete(self, field_id: str) -> None:
+    def delete(self, field_id: str) -> bool:
         ...
 
     @abstractmethod
-    def create(self, field_id: str, name: str, type: FieldTypes, is_required: bool, is_visible: bool) -> Field:
+    def create(self, field_id: str, name: str, type: int, is_required: bool, is_visible: bool) -> Field:
         ...
 
     @abstractmethod
-    def update(self, field_id: str, name: str, type: FieldTypes, is_required: bool, is_visible: bool) -> bool:
+    def update(self, field_id: str, name: str, type: int, is_required: bool, is_visible: bool) -> bool:
         ...
 
     @abstractmethod
@@ -58,15 +57,15 @@ class FieldRepository(IFieldRepository):
         return Field.objects.filter(id=field_id).exists()
 
     def exist_all(self, ids: Set[str]) -> bool:
-        return len(ids) == Field.objects.filter(id__in=ids).count()
+        return len(ids) > 0 and len(ids) == Field.objects.filter(id__in=ids).count()
 
-    def delete(self, field_id: str) -> None:
-        return Field.objects.filter(id=field_id).delete()
+    def delete(self, field_id: str) -> bool:
+        return Field.objects.filter(id=field_id).delete()[0] > 0
 
-    def create(self, field_id: str, name: str, type: FieldTypes, is_required: bool, is_visible: bool):
+    def create(self, field_id: str, name: str, type: int, is_required: bool, is_visible: bool):
         return Field.objects.create(id=field_id, name=name, type=type, is_required=is_required, is_visible=is_visible)
 
-    def update(self, field_id: str, name: str, type: FieldTypes, is_required: bool, is_visible: bool) -> bool:
+    def update(self, field_id: str, name: str, type: int, is_required: bool, is_visible: bool) -> bool:
         return (
             Field.objects.filter(id=field_id)
             .select_for_update()

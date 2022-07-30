@@ -5,16 +5,16 @@ from ninja import Body, Query
 
 from api.internal.exceptions import NotFoundException, UnprocessableEntityException
 from api.internal.fields.domain.entities import FieldFilters, FieldSchema, FieldUpdatingIn
-from api.internal.fields.domain.services import FieldService
+from api.internal.fields.domain.services import FieldService, OperationStatus
 from api.internal.responses import SuccessResponse
 
 
 class FieldHandlers:
     FIELD_ID_ALREADY_EXISTS_ERROR = "Field id already exists"
-    FIELD_IS_ATTACHED_WITH_ANY_FORMS_ERROR = "Field is attached to the form"
+    FORM_VALUE_EXISTS_ERROR = "Field value exists"
 
     FIELD = "field"
-    BAD_FIELD_ID = "bad field id"
+    FORM_VALUE = "form value"
 
     def __init__(self, field_service: FieldService):
         self._field_service = field_service
@@ -31,26 +31,29 @@ class FieldHandlers:
         return self._field_service.get_field_out(field)
 
     def create_field(self, request: HttpRequest, field: FieldSchema = Body(...)) -> SuccessResponse:
-        if self._field_service.exists(field.id):
-            raise UnprocessableEntityException(self.FIELD_ID_ALREADY_EXISTS_ERROR, error=self.BAD_FIELD_ID)
+        status = self._field_service.create(field)
 
-        self._field_service.create(field)
+        if status == OperationStatus.BAD_FIELD_ID:
+            raise UnprocessableEntityException(self.FIELD_ID_ALREADY_EXISTS_ERROR, error=self.FORM_VALUE)
 
         return SuccessResponse()
 
     def update_field(self, request: HttpRequest, field_id: str, field: FieldUpdatingIn = Body(...)) -> SuccessResponse:
-        if not self._field_service.exists(field_id):
-            raise NotFoundException(self.FIELD)
+        status = self._field_service.update(field_id, field)
 
-        self._field_service.update(field_id, field)
+        if status == OperationStatus.BAD_FIELD_ID:
+            raise NotFoundException(self.FIELD)
 
         return SuccessResponse()
 
     def delete_field(self, request: HttpRequest, field_id: str) -> SuccessResponse:
-        if not self._field_service.exists(field_id):
-            raise NotFoundException(self.FIELD)
+        status = self._field_service.delete(field_id)
 
-        if not self._field_service.try_delete(field_id):
-            raise UnprocessableEntityException(self.FIELD_IS_ATTACHED_WITH_ANY_FORMS_ERROR, error=self.BAD_FIELD_ID)
+        match status:
+            case OperationStatus.BAD_FIELD_ID:
+                raise NotFoundException(self.FIELD)
+
+            case OperationStatus.FORM_VALUE_EXISTS_ERROR:
+                raise UnprocessableEntityException(self.FORM_VALUE_EXISTS_ERROR, error=self.FORM_VALUE)
 
         return SuccessResponse()

@@ -15,9 +15,9 @@ from tests.conftest import (
     BAD_CREATING_DATE_DELTAS,
     BEFORE_NOW,
     get_bad_admin_ids,
+    get_bad_competition_filters_by_name,
     get_bad_field_ids,
-    get_bad_filters_by_name,
-    get_filters_by_name,
+    get_competition_filters_by_name,
 )
 
 service = CompetitionService(competition_repo, user_repo, field_repo)
@@ -26,11 +26,11 @@ service = CompetitionService(competition_repo, user_repo, field_repo)
 @pytest.mark.unit
 @pytest.mark.django_db
 def test_filtering_by_name(competition: Competition) -> None:
-    for search in get_filters_by_name(competition):
+    for search in get_competition_filters_by_name(competition):
         actual = service.get_filtered(CompetitionFilters(name=search))
         assert actual == [competition]
 
-    for search in get_bad_filters_by_name(competition):
+    for search in get_bad_competition_filters_by_name(competition):
         actual = service.get_filtered(CompetitionFilters(name=search))
         assert actual == []
 
