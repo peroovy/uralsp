@@ -8,7 +8,7 @@ from ninja.pagination import LimitOffsetPagination, paginate
 from api.internal.auth.domain.entities import GoogleLoginIn, VKLoginIn
 from api.internal.auth.domain.services import SocialService
 from api.internal.db.models.user import Permissions, User
-from api.internal.exceptions import NotFoundException, UnprocessableEntityException
+from api.internal.exceptions import NotFoundException, UnprocessableEntityException, ForbiddenException
 from api.internal.responses import SuccessResponse
 from api.internal.users.domain.entities import (
     CurrentProfileIn,
@@ -19,23 +19,22 @@ from api.internal.users.domain.entities import (
     ProfileIn,
     ProfileOut,
 )
-from api.internal.users.domain.services import DocumentService, UserService
+from api.internal.users.domain.services import DocumentService, UserService, OperationStatus
 
 
-class UsersHandlers:
-    PERMISSION_MUST_BE_DEFAULT_TYPE_ERROR = "Permission must be default or teacher"
-    USERS_HAVE_COMMON_REQUEST_ERROR = "Users have common requests"
-    USERS_HAVE_COMMON_PARTICIPATION_ERROR = "Users have a common participation"
-    NOT_EQUAL_PERMISSIONS_ERROR = "Not equal permission"
+class UserHandlers:
+    INTERSECTION_REQUESTS_ERROR = "Users have a intersected request"
+    INTERSECTION_PARTICIPATION_ERROR = "Users have a intersected participation"
+    NOT_EQUAL_PERMISSIONS_ERROR = "Not equal permissions"
 
-    NOT_FOUND_MERGING_IDS = "users ids"
+    USER_IDS = "user ids"
 
     FILENAME = "{date}-users.{extension}"
     USER = "user"
-    PERMISSIONS = "permissions"
+    BAD_PERMISSIONS = "bad permissions"
     PERMISSION = "permission"
-    OWNER_REQUEST = "owner request"
-    PARTICIPATION = "participation"
+    INTERSECTION_REQUESTS = "requests"
+    INTERSECTION_PARTICIPATION = "participation"
 
     def __init__(self, user_service: UserService, document_service: DocumentService):
         self._user_service = user_service
@@ -52,16 +51,14 @@ class UsersHandlers:
         return FullProfileOut.from_orm(user)
 
     def update_user(self, request: HttpRequest, user_id: int, data: ProfileIn = Body(...)) -> SuccessResponse:
-        if not (user := self._user_service.get_user(user_id)):
-            raise NotFoundException(self.USER)
-
         if (
             data.permission in [Permissions.ADMIN, Permissions.SUPER_ADMIN]
             and request.user.permission != Permissions.SUPER_ADMIN
         ):
-            raise UnprocessableEntityException(self.PERMISSION_MUST_BE_DEFAULT_TYPE_ERROR, error=self.PERMISSION)
+            raise ForbiddenException()
 
-        self._user_service.update_profile(user, data)
+        if not self._user_service.update(user_id, data):
+            raise NotFoundException(self.USER)
 
         return SuccessResponse()
 
@@ -85,20 +82,21 @@ class UsersHandlers:
             filename=self.FILENAME.format(date=now().strftime("%Y-%m-%d %H-%M-%S"), extension="csv"),
         )
 
-    def merge_users(self, request: HttpRequest, users: MergingIn) -> SuccessResponse:
-        if not self._user_service.exist_all(users.from_id, users.to_id):
-            raise NotFoundException(self.NOT_FOUND_MERGING_IDS)
+    def merge_users(self, request: HttpRequest, users: MergingIn = Body(...)) -> SuccessResponse:
+        status = self._user_service.merge(users.from_id, users.to_id)
 
-        if self._user_service.equal_permissions(users.from_id, users.to_id):
-            raise UnprocessableEntityException(self.NOT_EQUAL_PERMISSIONS_ERROR, error=self.PERMISSIONS)
+        match status:
+            case OperationStatus.BAD_USER_IDS:
+                raise NotFoundException(self.USER_IDS)
 
-        if self._user_service.intersect_request_owners(users.from_id, users.to_id):
-            raise UnprocessableEntityException(self.USERS_HAVE_COMMON_REQUEST_ERROR, error=self.OWNER_REQUEST)
+            case OperationStatus.NOT_EQUALS_PERMISSIONS:
+                raise UnprocessableEntityException(self.NOT_EQUAL_PERMISSIONS_ERROR, error=self.BAD_PERMISSIONS)
 
-        if self._user_service.intersect_participation(users.from_id, users.to_id):
-            raise UnprocessableEntityException(self.USERS_HAVE_COMMON_PARTICIPATION_ERROR, error=self.PARTICIPATION)
+            case OperationStatus.INTERSECTION_REQUESTS_ERROR:
+                raise UnprocessableEntityException(self.INTERSECTION_REQUESTS_ERROR, error=self.INTERSECTION_REQUESTS)
 
-        self._user_service.merge(users.from_id, users.to_id)
+            case OperationStatus.INTERSECTION_PARTICIPATION_ERROR:
+                raise UnprocessableEntityException(self.INTERSECTION_PARTICIPATION_ERROR, error=self.INTERSECTION_PARTICIPATION)
 
         return SuccessResponse()
 
@@ -121,7 +119,7 @@ class CurrentUserHandlers:
         return FullProfileOut.from_orm(request.user)
 
     def update_profile(self, request: HttpRequest, data: CurrentProfileIn = Body(...)) -> SuccessResponse:
-        self._user_service.update_profile(request.user, data)
+        self._user_service.update(request.user.id, data)
 
         return SuccessResponse()
 
@@ -130,12 +128,12 @@ class CurrentUserHandlers:
 
         return [FormValueOut(id=form_value.field_id, value=form_value.value) for form_value in values]
 
-    def link_vkontakte(self, request: HttpRequest, data: VKLoginIn) -> SuccessResponse:
+    def link_vkontakte(self, request: HttpRequest, data: VKLoginIn = Body(...)) -> SuccessResponse:
         vk_id = self._social_service.try_get_vkontakte_id(data.access_token)
 
         return self._link_social(request, vk_id, self._user_service.update_vkontakte)
 
-    def link_google(self, request: HttpRequest, data: GoogleLoginIn) -> SuccessResponse:
+    def link_google(self, request: HttpRequest, data: GoogleLoginIn = Body(...)) -> SuccessResponse:
         google_id = self._social_service.try_get_google_id(data.id_token, data.client_id)
 
         return self._link_social(request, google_id, self._user_service.update_google)

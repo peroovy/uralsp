@@ -41,7 +41,7 @@ class IRequestRepository(ABC):
         ...
 
     @abstractmethod
-    def intersect_owners(self, owner_id_1: int, owner_id_2: int) -> bool:
+    def exists_intersection(self, owner_id_1: int, owner_id_2: int) -> bool:
         ...
 
     @abstractmethod
@@ -76,7 +76,7 @@ class RequestRepository(IRequestRepository):
     def cancel(self, request_id: int) -> None:
         Request.objects.filter(id=request_id).select_for_update().update(status=RequestStatus.CANCELED)
 
-    def intersect_owners(self, owner_id_1: int, owner_id_2: int) -> bool:
+    def exists_intersection(self, owner_id_1: int, owner_id_2: int) -> bool:
         return (
             Request.objects.filter(owner_id=1)
             .values("competition")

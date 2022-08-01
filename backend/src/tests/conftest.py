@@ -51,7 +51,6 @@ def user() -> User:
     return User.objects.create(
         name="Pachka",
         surname="Pupkin",
-        patronymic="Pro",
         permission=Permissions.DEFAULT,
         email="123@123",
         phone="+78005553535",
@@ -218,13 +217,26 @@ def get_competition_filters_by_name(competition: Competition) -> list:
         competition.name[:2],
         competition.name[:-1],
         competition.name,
-        None,
         competition.name.swapcase(),
     ]
 
 
 def get_bad_competition_filters_by_name(competition: Competition) -> list:
     return [" ", "-1", competition.name + " ", competition.name + "a", " " + competition.name]
+
+
+def get_filters_by_string(value: str) -> list:
+    return [
+        value[0],
+        value[0].upper(),
+        value[:-1],
+        value,
+        value.swapcase(),
+    ]
+
+
+def get_bad_filters_by_string(value: str) -> list:
+    return [" ", "-1", value + " ", value + "a", " " + value, "a" + value, 2 * value]
 
 
 def get_field_filters(field: Field) -> list:

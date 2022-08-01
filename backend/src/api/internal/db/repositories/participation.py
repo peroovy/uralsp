@@ -19,7 +19,7 @@ class IParticipationRepository(ABC):
         ...
 
     @abstractmethod
-    def intersect(self, user_id_1: int, user_id_2: int) -> bool:
+    def exists_intersection(self, user_id_1: int, user_id_2: int) -> bool:
         ...
 
     @abstractmethod
@@ -37,7 +37,7 @@ class ParticipationRepository(IParticipationRepository):
     def get_with_forms(self, request_id: int) -> QuerySet[Participation]:
         return Participation.objects.filter(request_id=request_id).prefetch_related("form")
 
-    def intersect(self, user_id_1: int, user_id_2: int) -> bool:
+    def exists_intersection(self, user_id_1: int, user_id_2: int) -> bool:
         return (
             Participation.objects.filter(user_id=user_id_1)
             .values_list("request")

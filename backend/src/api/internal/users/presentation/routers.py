@@ -5,10 +5,10 @@ from ninja import Router
 from api.internal.middlewares import AnyAdmin, AnyUser
 from api.internal.responses import ErrorResponse, SuccessResponse
 from api.internal.users.domain.entities import FormValueOut, FullProfileOut, ProfileOut
-from api.internal.users.presentation.handlers import CurrentUserHandlers, UsersHandlers
+from api.internal.users.presentation.handlers import CurrentUserHandlers, UserHandlers
 
 
-def get_users_router(users_handlers: UsersHandlers) -> Router:
+def get_users_router(users_handlers: UserHandlers) -> Router:
     router = Router(tags=["users"])
 
     router.add_api_operation(

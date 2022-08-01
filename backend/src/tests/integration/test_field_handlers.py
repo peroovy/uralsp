@@ -16,8 +16,10 @@ handlers = FieldHandlers(service)
 
 @pytest.mark.integration
 @pytest.mark.django_db
-def test_getting_fields(http_request: HttpRequest, field: Field) -> None:
+def test_getting_fields(http_request: HttpRequest, field: Field, another_field: Field) -> None:
     query = {"search": None}
+
+    # TODO: without filter?
 
     for correct in get_field_filters(field):
         query["search"] = correct

@@ -1,4 +1,5 @@
 from enum import IntEnum
+from typing import Optional
 
 from ninja import ModelSchema, Schema
 from pydantic import EmailStr, Field
@@ -37,15 +38,16 @@ class PermissionsIn(IntEnum):
     DEFAULT = 0
     TEACHER = 1
     ADMIN = 2
+    SUPER_ADMIN = 3
 
 
 class Filters(Schema):
     permission: PermissionsIn = None
-    school: str = ""
-    school_class: str = ""
-    region: str = ""
-    email: str = ""
-    fcs: str = ""
+    school: Optional[str] = None
+    school_class: Optional[str] = None
+    region: Optional[str] = None
+    email: Optional[str] = None
+    fcs: Optional[str] = None
 
 
 class FormValueOut(Schema):
