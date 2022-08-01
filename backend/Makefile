@@ -1,6 +1,9 @@
 dev:
 	pipenv run python src/manage.py runserver
 
+run:
+	cd src && pipenv run gunicorn -c config/gunicorn.conf.py config.wsgi:application
+
 migration:
 	pipenv run python src/manage.py makemigrations -n ${n}
 
@@ -31,3 +34,9 @@ smoke:
 
 integration:
 	cd src && pipenv run pytest -m integration --disable-warnings
+
+up:
+	docker-compose up --build
+
+down:
+	docker-compose down
