@@ -1,9 +1,15 @@
 from datetime import datetime
+from enum import IntEnum
 from typing import Iterable, List, Optional
 
 from ninja import ModelSchema, Schema
 
 from api.internal.db.models import Participation, Request
+
+
+class Status(IntEnum):
+    ACCEPTED = 1
+    REJECTED = 2
 
 
 class FieldValueSchema(Schema):
@@ -41,27 +47,11 @@ class RequestDetailsOut(Schema):
     created_at: datetime
     participants: List[ParticipationSchema]
 
-    @staticmethod
-    def create(request: Request, participation: Iterable[Participation]) -> "RequestDetailsOut":
-        participation_outs = []
-        for participation in participation:
-            field_values = [
-                FieldValueSchema(field_id=field_value.field_id, value=field_value.value)
-                for field_value in participation.form.all()
-            ]
-            participation_outs.append(ParticipationSchema(user_id=participation.user_id, form=field_values))
-
-        return RequestDetailsOut(
-            id=request.id,
-            owner=request.owner_id,
-            competition=request.competition_id,
-            team_name=request.team_name,
-            status=request.status,
-            description=request.description,
-            created_at=request.created_at,
-            participants=participation_outs,
-        )
-
 
 class SwitchOut(Schema):
     is_canceled: bool
+
+
+class ProcessIn(Schema):
+    status: Status
+    description: Optional[str] = None

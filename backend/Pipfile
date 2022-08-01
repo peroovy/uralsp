@@ -16,9 +16,10 @@ pyjwt = "~=2.4.0"
 freezegun = "~=1.2.1"
 gunicorn = "~=20.1.0"
 phonenumbers = "~=8.12.51"
-vk = "*"
-google-auth = "*"
-openpyxl = "*"
+vk = "~=3.0"
+google-auth = "~=2.9.1"
+openpyxl = "~=3.0.10"
+django-debug-toolbar = "*"
 
 [dev-packages]
 

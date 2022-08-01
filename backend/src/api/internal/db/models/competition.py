@@ -7,8 +7,10 @@ class Competition(models.Model):
     started_at = models.DateTimeField()
     registration_before = models.DateTimeField()
     end_at = models.DateTimeField()
-    person_amount = models.IntegerField(validators=[MinValueValidator(1)])
+    persons_amount = models.IntegerField(validators=[MinValueValidator(1)])
+    request_template = models.TextField(null=True)
     fields = models.ManyToManyField("Field")
+    admins = models.ManyToManyField("User", related_name="administered_competitions")
 
     class Meta:
         db_table = "competitions"

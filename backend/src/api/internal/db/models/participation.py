@@ -7,3 +7,4 @@ class Participation(models.Model):
 
     class Meta:
         db_table = "participants"
+        unique_together = ["request", "user"]

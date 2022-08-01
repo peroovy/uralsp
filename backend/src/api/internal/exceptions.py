@@ -3,13 +3,14 @@ from abc import abstractmethod
 from ninja.responses import Response
 
 from api.internal.auth.domain.services import TokenTypes
+from api.internal.responses import ErrorResponse
 
 
 class APIException(Exception):
     @classmethod
     @abstractmethod
     def get_response(cls, exc) -> Response:
-        pass
+        ...
 
 
 class BadRequestException(APIException):
@@ -18,7 +19,7 @@ class BadRequestException(APIException):
 
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(data={"error": exc.message}, status=400)
+        return Response(ErrorResponse(details=exc.message), status=400)
 
 
 class NotFoundException(APIException):
@@ -27,16 +28,17 @@ class NotFoundException(APIException):
 
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(data={"error": f"Not found {exc.what}"}, status=404)
+        return Response(ErrorResponse(details=f"Not found {exc.what}"), status=404)
 
 
 class UnprocessableEntityException(APIException):
-    def __init__(self, message: str):
+    def __init__(self, message: str, error: str):
         self.message = message
+        self.error = error
 
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(data={"error": exc.message}, status=422)
+        return Response(ErrorResponse(details=exc.message, error=exc.error), status=422)
 
 
 class ServerException(APIException):
@@ -45,7 +47,7 @@ class ServerException(APIException):
 
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(data={"error": exc.message}, status=500)
+        return Response(ErrorResponse(details=exc.message), status=500)
 
 
 class UnauthorizedException(APIException):
@@ -54,28 +56,28 @@ class UnauthorizedException(APIException):
 
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(data={"error": exc.message}, status=401)
-
-
-class NotFoundRefreshTokenException(UnprocessableEntityException):
-    def __init__(self):
-        super().__init__(message="Refresh token was not found in cookies")
+        return Response(ErrorResponse(details=exc.message), status=401)
 
 
 class ForbiddenException(APIException):
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(data={"error": "Forbidden"}, status=403)
+        return Response(ErrorResponse(details="Forbidden"), status=403)
+
+
+class NotFoundRefreshTokenException(UnprocessableEntityException):
+    def __init__(self):
+        super().__init__(message="Refresh token was not found in cookies", error="bad cookies")
 
 
 class InvalidPayloadException(UnprocessableEntityException):
     def __init__(self, token_type: TokenTypes):
-        super().__init__(message=f"Payload of {token_type.value} token is broken")
+        super().__init__(message=f"Payload of {token_type.value} token is broken", error="bad payload")
 
 
 class ExpiredTokenException(UnprocessableEntityException):
     def __init__(self, token_type: TokenTypes):
-        super().__init__(message=f"{token_type.value.title()} token is expired")
+        super().__init__(message=f"{token_type.value.title()} token is expired", error="expired token")
 
 
 class UnknownRefreshTokenException(NotFoundException):
@@ -85,4 +87,4 @@ class UnknownRefreshTokenException(NotFoundException):
 
 class RevokedRefreshTokenException(UnprocessableEntityException):
     def __init__(self):
-        super().__init__(message="Refresh token was revoked")
+        super().__init__(message="Refresh token was revoked", error="revoked token")

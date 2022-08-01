@@ -2,7 +2,7 @@ from typing import List
 
 from ninja import Router
 
-from api.internal.middlewares import AnyUser
+from api.internal.middlewares import AnyAdmin, AnyUser
 from api.internal.requests.domain.entities import RequestDetailsOut, RequestOut
 from api.internal.requests.presentation.handlers import RequestHandlers
 from api.internal.responses import ErrorResponse, SuccessResponse
@@ -43,6 +43,14 @@ def get_request_router(request_handlers: RequestHandlers) -> Router:
         path="/{int:request_id}/cancel",
         methods=["PATCH"],
         view_func=request_handlers.cancel_request,
+        response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
+    )
+
+    router.add_api_operation(
+        path="/{int:request_id}/process",
+        methods=["PATCH"],
+        auth=[AnyAdmin()],
+        view_func=request_handlers.process_request,
         response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
     )
 

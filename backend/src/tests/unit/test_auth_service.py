@@ -16,8 +16,8 @@ service = AuthService(user_repo, refresh_repo)
 @pytest.mark.unit
 @pytest.mark.django_db
 def test_getting_user_from_payload(user: User) -> None:
-    assert user == service.get_user(Payload(user_id=user.id, token_type=None, expires_in=None, permission=None))
-    assert service.get_user(Payload(user_id=-1, token_type=None, expires_in=None, permission=None)) is None
+    assert user == service.get_user(Payload(user_id=user.id, token_type=None, expires_in=0, permission=None))
+    assert service.get_user(Payload(user_id=-1, token_type=None, expires_in=0, permission=None)) is None
 
 
 @pytest.mark.unit
@@ -85,23 +85,24 @@ def test_getting_payload__invalid_token() -> None:
         r".eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"
         r".SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
     )
-    token = encode({"payload": "normal"}, settings.SECRET_KEY)
-    payload, signature = token[1:], token[:-1]
+    token_with_correct_key = encode({"payload": "normal"}, settings.SECRET_KEY)
+    token_with_bad_key = encode({"payload": "normal"}, "Stupid")
+    payload, signature = token_with_correct_key[1:], token_with_correct_key[:-1]
 
-    for bad_token in ["", "-1", payload, signature, wrong_secret_token]:
+    for bad_token in ["", "-1", payload, signature, wrong_secret_token, token_with_correct_key, token_with_bad_key]:
         assert service.try_get_payload(bad_token) is None
 
 
 @pytest.mark.unit
 def test_checking_token_type_in_payload() -> None:
-    payload = Payload(TokenTypes.ACCESS.value, None, None, None)
+    payload = Payload(token_type=TokenTypes.ACCESS.value, expires_in=0, user_id=None, permission=None)
 
     assert service.is_token_type(payload, TokenTypes.ACCESS) is True
     assert service.is_token_type(payload, TokenTypes.REFRESH) is False
 
 
 @pytest.mark.unit
-@freezegun.freeze_time(service._now())
+@freezegun.freeze_time(now())
 @pytest.mark.parametrize(
     ["delta", "is_expired"],
     [
@@ -117,9 +118,7 @@ def test_checking_token_type_in_payload() -> None:
     ],
 )
 def test_checking_token_expired(delta: timedelta, is_expired: bool) -> None:
-    payload = Payload(
-        expires_in=int((service._now() + delta).timestamp()), token_type=None, user_id=None, permission=None
-    )
+    payload = Payload(expires_in=int((now() + delta).timestamp()), token_type=None, user_id=None, permission=None)
 
     assert service.is_token_expired(payload) == is_expired
 

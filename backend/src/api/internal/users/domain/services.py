@@ -1,23 +1,46 @@
 import csv
+from enum import IntEnum, auto
 from io import BytesIO, StringIO
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, Set
 
+from django.db.transaction import atomic
+from django.forms import model_to_dict
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from api.internal.db.models import User
+from api.internal.db.models import FormValue, User
 from api.internal.db.models.user import Permissions
+from api.internal.db.repositories.form_value import IFormValueRepository
+from api.internal.db.repositories.participation import IParticipationRepository
+from api.internal.db.repositories.request import IRequestRepository
 from api.internal.db.repositories.user import IUserRepository
 from api.internal.users.domain.entities import Filters, ProfileIn
 
 
+class OperationStatus(IntEnum):
+    INTERSECTION_PARTICIPATION_ERROR = auto()
+    INTERSECTION_REQUESTS_ERROR = auto()
+    NOT_EQUALS_PERMISSIONS = auto()
+    BAD_USER_IDS = auto()
+    OK = auto()
+
+
 class UserService:
-    def __init__(self, user_repo: IUserRepository):
+    def __init__(
+        self,
+        user_repo: IUserRepository,
+        form_value_repo: IFormValueRepository,
+        request_repo: IRequestRepository,
+        participation_repo: IParticipationRepository,
+    ):
         self._user_repo = user_repo
+        self._form_value_repo = form_value_repo
+        self._request_repo = request_repo
+        self._participation_repo = participation_repo
 
     def get_users(self, filters: Filters) -> List[User]:
         return list(
-            self._user_repo.get_all_without_super_admins(
+            self._user_repo.get_filtered(
                 filters.permission, filters.school, filters.school_class, filters.region, filters.email, filters.fcs
             )
         )
@@ -25,8 +48,46 @@ class UserService:
     def get_user(self, user_id: int) -> Optional[User]:
         return self._user_repo.get(user_id)
 
-    def update_profile(self, user: User, data: ProfileIn) -> None:
-        self._user_repo.update(user.id, **data.dict())
+    def update(self, user_id: int, data: ProfileIn) -> bool:
+        return self._user_repo.update(user_id, **data.dict())
+
+    def update_vkontakte(self, user: User, vk_id: Optional[int]) -> None:
+        self._user_repo.update(user.id, vkontakte_id=vk_id)
+
+    def update_google(self, user: User, vk_id: Optional[int]) -> None:
+        self._user_repo.update(user.id, google_id=vk_id)
+
+    def get_socials_amount(self, user: User) -> int:
+        return self._user_repo.get_socials_amount(user.id)
+
+    def get_last_form_values(self, user: User, field_ids: Set[str]) -> List[FormValue]:
+        return list(self._form_value_repo.get_lasts_for(user.id, field_ids))
+
+    @atomic
+    def merge(self, from_id: int, to_id: int) -> OperationStatus:
+        if not self._user_repo.exist_all(from_id, to_id):
+            return OperationStatus.BAD_USER_IDS
+
+        if not self._user_repo.equal_permissions(from_id, to_id):
+            return OperationStatus.NOT_EQUALS_PERMISSIONS
+
+        if self._request_repo.exists_intersection(from_id, to_id):
+            return OperationStatus.INTERSECTION_REQUESTS_ERROR
+
+        if self._participation_repo.exists_intersection(from_id, to_id):
+            return OperationStatus.INTERSECTION_PARTICIPATION_ERROR
+
+        self._participation_repo.migrate(from_id, to_id)
+        self._request_repo.migrate(from_id, to_id)
+
+        from_user = self._user_repo.get(from_id)
+        migrated_data = model_to_dict(from_user)
+        from_user.delete()
+
+        del migrated_data["id"]
+        self._user_repo.update(to_id, **migrated_data)
+
+        return OperationStatus.OK
 
 
 class DocumentService:

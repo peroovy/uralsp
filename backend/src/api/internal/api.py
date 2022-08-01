@@ -5,9 +5,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import DatabaseError
 from django.http import HttpRequest, HttpResponse
 from ninja import NinjaAPI
+from ninja.errors import AuthenticationError
 from ninja.responses import Response
 
 from api.internal.auth.api import register_auth_api
+from api.internal.competitions.api import register_competitions_api
 from api.internal.exceptions import (
     APIException,
     BadRequestException,
@@ -36,6 +38,7 @@ def get_api() -> NinjaAPI:
     register_users_api(api)
     register_requests_api(api)
     register_fields_api(api)
+    register_competitions_api(api)
 
     return api
 
@@ -53,11 +56,14 @@ def subscribe_exception_handlers(api: NinjaAPI) -> None:
         RevokedRefreshTokenException,
         ForbiddenException,
     ]
-
     inner_exceptions = [DatabaseError, ObjectDoesNotExist]
 
     for exception in outer_exceptions:
         api.add_exception_handler(exception, get_exception_handler(exception))
+
+    api.add_exception_handler(
+        AuthenticationError, lambda r, exc: UnauthorizedException.get_response(UnauthorizedException())
+    )
 
     if not settings.DEBUG:
         for exception in inner_exceptions:
@@ -69,4 +75,4 @@ def get_exception_handler(exception: Type[APIException]) -> Callable[[HttpReques
 
 
 def handle_500_error(request: HttpRequest, exc) -> Response:
-    return Response(ErrorResponse(error="Server error").dict(), status=500)
+    return Response(ErrorResponse(error="server", message="Server error"), status=500)
