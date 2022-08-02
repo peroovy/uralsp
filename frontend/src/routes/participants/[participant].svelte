@@ -2,7 +2,7 @@
 	import { base } from '$app/paths';
 	import { page } from '$app/stores';
 
-	import contest  from '$lib/stores';
+	import {contest}  from '$lib/stores';
 	import src from '$lib/Assets/imgs/logo.png';
 	import tempPhoto from '$lib/Assets/imgs/temp-photo.png';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
@@ -372,7 +372,7 @@
 </section>
 
 <style lang="scss">
-	@import '../lib/Assets/common.scss';
+	@import '../../lib/Assets/common.scss';
 	.participant-container {
 		width: 100vw;
 		min-height: 100vh;
@@ -381,50 +381,7 @@
 		@include bg;
 		position: relative;
 		z-index: 1;
-		nav {
-			z-index: 5;
-			position: sticky;
-			padding: 10px 20px;
-			font-family: 'Light';
-			font-size: 15px !important;
-			background-color: white;
-			.navbar-brand {
-				align-items: center !important;
-			}
-			.navbar-brand > img {
-				height: 20px;
-			}
-			.part-photo {
-				width: 30px;
-				height: 30px;
-				border-radius: 50%;
-				margin-right: 10px;
-			}
-			.nav-item {
-				cursor: pointer;
-			}
-			.dropdown-menu {
-				border: none;
-				position: absolute;
-				z-index: 9;
-				border-top: 3px solid $primary-color !important;
-				padding: 10px;
-				max-width: fit-content;
-				.dropdown-item {
-					cursor: pointer;
-					display: flex;
-					justify-content: left;
-					align-items: center;
-					&:hover {
-						background-color: transparent;
-						color: $primary-color;
-					}
-					.fa {
-						margin-right: 10px;
-					}
-				}
-			}
-		}
+		@include navbar;
 		.card-header {
 			z-index: 2;
 			.navbar-brand {
@@ -455,7 +412,9 @@
 		margin: 0px !important;
 		width: 100% !important;
 	}
-
+	nav{
+		position: sticky !important;
+	}
 	@media screen and (min-width: 1000px) {
 		.navbar-nav {
 			align-items: center !important;

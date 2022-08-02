@@ -20,8 +20,8 @@
         }
     },
     "onGoingContests":{
-        "ID1": {
-            "contestID": "ID1",
+        "ID3": {
+            "contestID": "ID3",
             "contestTitle": "First Contest Name",
             "description":
                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Cras fermentum odio eu feugiat pretium nibh ipsum consequat nisl. Etiam erat velit scelerisque in dictum non consectetur a. Rhoncus aenean vel elit scelerisque mauris. Rutrum quisque non tellus orci. Aliquam sem fringilla ut morbi tincidunt. Nullam ac tortor vitae purus faucibus ornare suspendisse sed nisi. Leo vel orci porta non. Eget dolor morbi non arcu risus quis varius quam quisque. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar sapien. Congue eu consequat ac felis donec. Sit amet massa vitae tortor condimentum lacinia quis. Consequat mauris nunc congue nisi vitae suscipit tellus. Montes nascetur ridiculus mus mauris vitae ultricies. Viverra ipsum nunc aliquet bibendum enim facilisis gravida neque convallis. Etiam tempor orci eu lobortis elementum nibh tellus molestie nunc. Maecenas accumsan lacus vel facilisis volutpat est. Gravida rutrum quisque non tellus orci. At imperdiet dui accumsan sit. Adipiscing elit duis tristique sollicitudin nibh sit amet. Tellus molestie nunc non blandit massa enim nec dui. Pellentesque dignissim enim sit amet venenatis urna. Et odio pellentesque diam volutpat. Habitasse platea dictumst vestibulum rhoncus est pellentesque elit. Tortor at auctor urna nunc. Pulvinar neque laoreet suspendisse interdum consectetur. Magna sit amet purus gravida quis blandit turpis cursus in. Velit scelerisque in dictum non consectetur a erat. At tempor commodo ullamcorper a lacus vestibulum. Massa ultricies mi quis hendrerit dolor. Vitae sapien pellentesque habitant morbi tristique senectus. Ut placerat orci nulla pellentesque dignissim. Nibh tellus molestie nunc non. In pellentesque massa placerat duis ultricies lacus sed turpis. Enim ut tellus elementum sagittis.",
@@ -54,11 +54,11 @@
         }
     },
     "pendingContests":{
-
+        
     },
-    "registered":{
-        "ID2": {
-            "contestID": "ID2",
+    "registeredContests":{
+        "ID5": {
+            "contestID": "ID5",
             "contestTitle": "Second Contest Name",
             "description":
                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Cras fermentum odio eu feugiat pretium nibh ipsum consequat nisl. Etiam erat velit scelerisque in dictum non consectetur a. Rhoncus aenean vel elit scelerisque mauris. Rutrum quisque non tellus orci. Aliquam sem fringilla ut morbi tincidunt. Nullam ac tortor vitae purus faucibus ornare suspendisse sed nisi. Leo vel orci porta non. Eget dolor morbi non arcu risus quis varius quam quisque. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar sapien. Congue eu consequat ac felis donec. Sit amet massa vitae tortor condimentum lacinia quis. Consequat mauris nunc congue nisi vitae suscipit tellus. Montes nascetur ridiculus mus mauris vitae ultricies. Viverra ipsum nunc aliquet bibendum enim facilisis gravida neque convallis. Etiam tempor orci eu lobortis elementum nibh tellus molestie nunc. Maecenas accumsan lacus vel facilisis volutpat est. Gravida rutrum quisque non tellus orci. At imperdiet dui accumsan sit. Adipiscing elit duis tristique sollicitudin nibh sit amet. Tellus molestie nunc non blandit massa enim nec dui. Pellentesque dignissim enim sit amet venenatis urna. Et odio pellentesque diam volutpat. Habitasse platea dictumst vestibulum rhoncus est pellentesque elit. Tortor at auctor urna nunc. Pulvinar neque laoreet suspendisse interdum consectetur. Magna sit amet purus gravida quis blandit turpis cursus in. Velit scelerisque in dictum non consectetur a erat. At tempor commodo ullamcorper a lacus vestibulum. Massa ultricies mi quis hendrerit dolor. Vitae sapien pellentesque habitant morbi tristique senectus. Ut placerat orci nulla pellentesque dignissim. Nibh tellus molestie nunc non. In pellentesque massa placerat duis ultricies lacus sed turpis. Enim ut tellus elementum sagittis.",

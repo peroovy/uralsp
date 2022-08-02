@@ -1,5 +1,5 @@
 <script lang="ts">
-	import contest  from '$lib/stores';
+	import { contest }  from '$lib/stores';
 	import { onMount } from 'svelte';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
 	import type {Draft, Mcq, Form, ContestType }  from '$lib/types'

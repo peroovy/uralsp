@@ -2,7 +2,7 @@
     import logoSrc from "$lib/Assets/imgs/logo.png";   
     import dotsSrc from "$lib/Assets/imgs/dots.png";
     import { goto } from '$app/navigation';
-    
+    import { base } from '$app/paths';
 </script>
 
 <svelte:head>
@@ -20,12 +20,12 @@
         <img src= {logoSrc} alt="logo" class="logo" />
         <p> Please sign up to continue </p>
         <div class="btn-group-vertical col-12">
-            <button class="btn btn-lg btn-block btn-outline" on:click={ () => goto('/participant')}>
+            <button class="btn btn-lg btn-block btn-outline" on:click={ () => goto(`${base}/participants/participantId`)}>
                 <i class="fa fa-google"></i>
                 <span> Sign up with Google </span> 
                 <i class="fa fa-arrow-right"></i>
             </button>
-            <button class="btn btn-lg btn-block btn-outline"> 
+            <button class="btn btn-lg btn-block btn-outline"  on:click={ () => goto(`${base}/admin/adminId`)}> 
                 <i class="fa fa-vk"></i>
                 <span> Sign up with VK </span> 
                 <i class="fa fa-arrow-right"></i>

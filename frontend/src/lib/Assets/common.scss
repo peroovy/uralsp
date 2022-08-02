@@ -21,8 +21,54 @@ $bg-color: #f0f5fa;
         left: -200px;
         z-index: 0;
         border-radius: 50%;
-        transform: rotate(-45deg);
         opacity: 0.1;
     }
 }
 
+@mixin navbar {
+    nav {
+		z-index: 5;
+		position: fixed;
+		top: 0px;
+		flex-shrink: 0;
+		padding: 10px 20px;
+		font-family: 'Light';
+		font-size: 15px !important;
+		.navbar-brand {
+			align-items: center !important;
+		}
+		.navbar-brand > img {
+			height: 20px;
+		}
+		.part-photo {
+			width: 30px;
+			height: 30px;
+			border-radius: 50%;
+			margin-right: 10px;
+		}
+		.nav-item {
+			cursor: pointer;
+		}
+		.dropdown-menu {
+			border: none;
+			position: absolute;
+			z-index: 9;
+			border-top: 3px solid $primary-color !important;
+			padding: 10px;
+			max-width: fit-content;
+			.dropdown-item {
+				cursor: pointer;
+				display: flex;
+				justify-content: left;
+				align-items: center;
+				&:hover {
+					background-color: transparent;
+					color: $primary-color;
+				}
+				.fa {
+					margin-right: 10px;
+				}
+			}
+		}
+	}
+}

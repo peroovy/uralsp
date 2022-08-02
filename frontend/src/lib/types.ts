@@ -39,4 +39,4 @@ export type ContestType = {
     start_time: string,
     end_time: string,
     form: Form,
-}
+} 
