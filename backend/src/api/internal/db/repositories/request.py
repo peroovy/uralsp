@@ -13,7 +13,11 @@ class IRequestRepository(ABC):
         ...
 
     @abstractmethod
-    def get_request(self, owner_id: int, request_id: int) -> Optional[Request]:
+    def get_request(self, request_id: int) -> Optional[Request]:
+        ...
+
+    @abstractmethod
+    def get_requests_on_competition(self, competition_id: int) -> QuerySet[Request]:
         ...
 
     @abstractmethod
@@ -36,13 +40,24 @@ class IRequestRepository(ABC):
     def cancel(self, request_id: int) -> None:
         ...
 
+    @abstractmethod
+    def exists_intersection(self, owner_id_1: int, owner_id_2: int) -> bool:
+        ...
+
+    @abstractmethod
+    def migrate(self, from_owner_id: int, to_owner_id: int) -> int:
+        ...
+
 
 class RequestRepository(IRequestRepository):
     def get_requests(self, owner_id: int) -> QuerySet[Request]:
         return Request.objects.filter(owner_id=owner_id)
 
-    def get_request(self, owner_id: int, request_id: int) -> Optional[Request]:
-        return Request.objects.filter(id=request_id, owner_id=owner_id).select_related("competition").first()
+    def get_request(self, request_id: int) -> Optional[Request]:
+        return Request.objects.filter(id=request_id).first()
+
+    def get_requests_on_competition(self, competition_id: int) -> QuerySet[Request]:
+        return Request.objects.filter(competition_id=competition_id)
 
     def create(self, owner_id: int, competition_id: int, team_name: str) -> Request:
         return Request.objects.create(owner_id=owner_id, competition_id=competition_id, team_name=team_name)
@@ -54,7 +69,20 @@ class RequestRepository(IRequestRepository):
         return Request.objects.filter(owner_id=owner_id, competition_id=competition_id).exists()
 
     def update(self, request_id: int, team_name: str, status: RequestStatus, description: Optional[str]) -> None:
-        Request.objects.filter(id=request_id).update(team_name=team_name, status=status, description=description)
+        Request.objects.filter(id=request_id).select_for_update().update(
+            team_name=team_name, status=status, description=description
+        )
 
     def cancel(self, request_id: int) -> None:
-        Request.objects.filter(id=request_id).update(status=RequestStatus.CANCELED)
+        Request.objects.filter(id=request_id).select_for_update().update(status=RequestStatus.CANCELED)
+
+    def exists_intersection(self, owner_id_1: int, owner_id_2: int) -> bool:
+        return (
+            Request.objects.filter(owner_id=1)
+            .values("competition")
+            .intersection(Request.objects.filter(owner_id=2).values("competition"))
+            .exists()
+        )
+
+    def migrate(self, from_owner_id: int, to_owner_id: int) -> int:
+        return Request.objects.filter(owner_id=from_owner_id).select_for_update().update(owner_id=to_owner_id)

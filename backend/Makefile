@@ -1,6 +1,9 @@
 dev:
 	pipenv run python src/manage.py runserver
 
+run:
+	cd src && pipenv run gunicorn -c config/gunicorn.conf.py config.wsgi:application
+
 migration:
 	pipenv run python src/manage.py makemigrations -n ${n}
 
@@ -17,6 +20,9 @@ check_lint:
 	pipenv run flake8 --config setup.cfg & \
 	pipenv run black --check --config pyproject.toml .
 
+sql:
+	pipenv run python src/manage.py debugsqlshell
+
 test:
 	cd src && pipenv run pytest --disable-warnings
 
@@ -28,3 +34,9 @@ smoke:
 
 integration:
 	cd src && pipenv run pytest -m integration --disable-warnings
+
+up:
+	docker-compose up --build
+
+down:
+	docker-compose down

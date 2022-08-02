@@ -2,8 +2,9 @@ from ninja import Schema
 
 
 class ErrorResponse(Schema):
-    error: str = "info"
+    error: str = "error"
+    details: str = "info"
 
 
 class SuccessResponse(Schema):
-    message: str = "Success"
+    details: str = "Success"

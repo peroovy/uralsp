@@ -1,7 +1,5 @@
 from django.conf import settings
 from django.http import HttpRequest
-from google.auth.transport import requests
-from google.oauth2 import id_token
 from ninja import Body
 from ninja.responses import Response
 
