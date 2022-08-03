@@ -30,7 +30,7 @@ class AuthHandlers:
         return self.signin(user)
 
     def signin_google(self, request: HttpRequest, params: GoogleLoginIn = Body(...)) -> Response:
-        user = self._social_service.try_get_or_create_user_from_google(params.id_token, params.client_id)
+        user = self._social_service.try_get_or_create_user_from_google(params.id_token)
         if not user:
             raise UnauthorizedException()
 
@@ -47,7 +47,7 @@ class AuthHandlers:
         return response
 
     def refresh(self, request: HttpRequest) -> Response:
-        refresh_token: str = request.COOKIES.get(settings.REFRESH_TOKEN_COOKIE)
+        refresh_token: str = request.COOKIES.try_get(settings.REFRESH_TOKEN_COOKIE)
         if not refresh_token:
             raise NotFoundRefreshTokenException()
 

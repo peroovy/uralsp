@@ -13,7 +13,7 @@ class IRequestRepository(ABC):
         ...
 
     @abstractmethod
-    def get_request(self, request_id: int) -> Optional[Request]:
+    def try_get_request(self, request_id: int) -> Optional[Request]:
         ...
 
     @abstractmethod
@@ -53,7 +53,7 @@ class RequestRepository(IRequestRepository):
     def get_requests(self, owner_id: int) -> QuerySet[Request]:
         return Request.objects.filter(owner_id=owner_id)
 
-    def get_request(self, request_id: int) -> Optional[Request]:
+    def try_get_request(self, request_id: int) -> Optional[Request]:
         return Request.objects.filter(id=request_id).first()
 
     def get_requests_on_competition(self, competition_id: int) -> QuerySet[Request]:
@@ -77,12 +77,9 @@ class RequestRepository(IRequestRepository):
         Request.objects.filter(id=request_id).select_for_update().update(status=RequestStatus.CANCELED)
 
     def exists_intersection(self, owner_id_1: int, owner_id_2: int) -> bool:
-        return (
-            Request.objects.filter(owner_id=1)
-            .values("competition")
-            .intersection(Request.objects.filter(owner_id=2).values("competition"))
-            .exists()
-        )
+        return Request.objects.filter(
+            owner_id=owner_id_1, competition=Request.objects.filter(owner_id=owner_id_2).values("competition")[:1]
+        ).exists()
 
     def migrate(self, from_owner_id: int, to_owner_id: int) -> int:
         return Request.objects.filter(owner_id=from_owner_id).select_for_update().update(owner_id=to_owner_id)

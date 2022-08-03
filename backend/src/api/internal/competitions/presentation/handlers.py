@@ -6,7 +6,7 @@ from ninja import Body, Query
 from api.internal.competitions.domain.entities import (
     AdminsIn,
     CompetitionDetailsOut,
-    CompetitionFilters,
+    Filters,
     CompetitionIn,
     CompetitionOut,
     FieldDetailsOut,
@@ -46,7 +46,7 @@ class CompetitionHandlers:
         self._field_service = field_service
         self._user_service = user_service
 
-    def get_competitions(self, request: HttpRequest, filters: CompetitionFilters = Query(...)) -> List[CompetitionOut]:
+    def get_competitions(self, request: HttpRequest, filters: Filters = Query(...)) -> List[CompetitionOut]:
         competitions = self._competition_service.get_filtered(filters)
 
         return [CompetitionOut.from_orm(competition) for competition in competitions]

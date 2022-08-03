@@ -8,7 +8,7 @@ from ninja.pagination import LimitOffsetPagination, paginate
 from api.internal.auth.domain.entities import GoogleLoginIn, VKLoginIn
 from api.internal.auth.domain.services import SocialService
 from api.internal.db.models.user import Permissions, User
-from api.internal.exceptions import NotFoundException, UnprocessableEntityException, ForbiddenException
+from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException
 from api.internal.responses import SuccessResponse
 from api.internal.users.domain.entities import (
     CurrentProfileIn,
@@ -19,7 +19,7 @@ from api.internal.users.domain.entities import (
     ProfileIn,
     ProfileOut,
 )
-from api.internal.users.domain.services import DocumentService, UserService, OperationStatus
+from api.internal.users.domain.services import DocumentService, OperationStatus, UserService
 
 
 class UserHandlers:
@@ -96,7 +96,9 @@ class UserHandlers:
                 raise UnprocessableEntityException(self.INTERSECTION_REQUESTS_ERROR, error=self.INTERSECTION_REQUESTS)
 
             case OperationStatus.INTERSECTION_PARTICIPATION_ERROR:
-                raise UnprocessableEntityException(self.INTERSECTION_PARTICIPATION_ERROR, error=self.INTERSECTION_PARTICIPATION)
+                raise UnprocessableEntityException(
+                    self.INTERSECTION_PARTICIPATION_ERROR, error=self.INTERSECTION_PARTICIPATION
+                )
 
         return SuccessResponse()
 
@@ -124,38 +126,38 @@ class CurrentUserHandlers:
         return SuccessResponse()
 
     def get_form_values(self, request: HttpRequest, field_ids: List[str] = Query(...)) -> List[FormValueOut]:
-        values = self._user_service.get_last_form_values(request.user, set(field_ids))
+        values = self._user_service.get_last_form_values(request.user.id, set(field_ids))
 
         return [FormValueOut(id=form_value.field_id, value=form_value.value) for form_value in values]
 
     def link_vkontakte(self, request: HttpRequest, data: VKLoginIn = Body(...)) -> SuccessResponse:
         vk_id = self._social_service.try_get_vkontakte_id(data.access_token)
 
-        return self._link_social(request, vk_id, self._user_service.update_vkontakte)
+        return self._link_social(request, vk_id, self._social_service.update_vkontakte)
 
     def link_google(self, request: HttpRequest, data: GoogleLoginIn = Body(...)) -> SuccessResponse:
         google_id = self._social_service.try_get_google_id(data.id_token, data.client_id)
 
-        return self._link_social(request, google_id, self._user_service.update_google)
+        return self._link_social(request, google_id, self._social_service.update_google)
 
     def unlink_vkontakte(self, request: HttpRequest) -> SuccessResponse:
-        return self._unlink_social(request, self._user_service.update_vkontakte)
+        return self._unlink_social(request, self._social_service.update_vkontakte)
 
     def unlink_google(self, request: HttpRequest) -> SuccessResponse:
-        return self._unlink_social(request, self._user_service.update_google)
+        return self._unlink_social(request, self._social_service.update_google)
 
-    def _link_social(self, request: HttpRequest, social_id: Optional[int], update_social: Callable[[User, int], None]):
+    def _link_social(self, request: HttpRequest, social_id: Optional[int], update_social: Callable[[int, int], int]):
         if not social_id:
             raise UnprocessableEntityException(self.SOCIAL_CONNECTING_ERROR, error=self.SOCIAL_CONNECTING)
 
-        update_social(request.user, social_id)
+        update_social(request.user.id, social_id)
 
         return SuccessResponse()
 
-    def _unlink_social(self, request: HttpRequest, update_social: Callable[[User, None], None]) -> SuccessResponse:
-        if self._user_service.get_socials_amount(request.user) <= self.MIN_SOCIAL_AMOUNT:
+    def _unlink_social(self, request: HttpRequest, update_social: Callable[[int, None], int]) -> SuccessResponse:
+        if self._social_service.get_socials_amount(request.user.id) <= self.MIN_SOCIAL_AMOUNT:
             raise UnprocessableEntityException(self.MIN_AMOUNT_SOCIALS_ERROR, error=self.SOCIALS_AMOUNT)
 
-        update_social(request.user, None)
+        update_social(request.user.id, None)
 
         return SuccessResponse()

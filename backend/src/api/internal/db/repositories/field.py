@@ -6,6 +6,7 @@ from typing import Optional, Set
 from django.db.models import Q, QuerySet
 
 from api.internal.db.models import Field
+from api.internal.utils import get_strip_filters
 
 
 class IFieldRepository(ABC):
@@ -14,7 +15,7 @@ class IFieldRepository(ABC):
         ...
 
     @abstractmethod
-    def get(self, field_id: str) -> Optional[Field]:
+    def try_get(self, field_id: str) -> Optional[Field]:
         ...
 
     @abstractmethod
@@ -40,17 +41,15 @@ class IFieldRepository(ABC):
 
 class FieldRepository(IFieldRepository):
     def get_filtered_by_id_and_name(self, search: str) -> QuerySet[Field]:
-        attr = [
-            Q(**{key: value}) for key, value in [["id__istartswith", search], ["name__istartswith", search]] if search
-        ]
+        filters = [Q(**{k: v}) for k, v in get_strip_filters(id__istartswith=search, name__istartswith=search).items()]
 
         queryset = Field.objects.prefetch_related("default_values")
-        if attr:
-            queryset = queryset.filter(reduce(operator.or_, attr))
+        if filters:
+            queryset = queryset.filter(reduce(operator.or_, filters))
 
         return queryset
 
-    def get(self, field_id: str) -> Optional[Field]:
+    def try_get(self, field_id: str) -> Optional[Field]:
         return Field.objects.filter(id=field_id).prefetch_related("default_values").first()
 
     def exists(self, field_id: str) -> bool:

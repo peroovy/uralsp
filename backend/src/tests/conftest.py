@@ -6,7 +6,7 @@ import pytest
 from google.oauth2 import id_token
 from vk import API
 
-from api.internal.db.models import Competition, DefaultValue, Field, Request, User
+from api.internal.db.models import Competition, DefaultValue, Field, Participation, Request, User
 from api.internal.db.models.user import Permissions
 
 
@@ -58,9 +58,9 @@ def user() -> User:
         region="Topchik reg",
         school="First",
         school_class="10 Z",
-        vkontakte_id="1337",
-        google_id="228",
-        telegram_id="1337228",
+        vkontakte_id="111111111111111111",
+        google_id="2222222222222222222",
+        telegram_id="333333333333333333",
     )
 
 
@@ -141,6 +141,24 @@ def super_admin() -> User:
 
 
 @pytest.fixture(scope="function")
+def another_super_admin() -> User:
+    return User.objects.create(
+        name="Qwertyasfasdfsa",
+        surname="Ytrewqzxvcxvz",
+        patronymic="Qawaasfqwerqe",
+        permission=Permissions.SUPER_ADMIN,
+        email="qwwertyasdfasdf@qwerty",
+        phone="+70707070999",
+        city="qqq",
+        region="Opaqqqq",
+        school="Unknownqqqqqqq",
+        school_class="10000 Zqqqqqq",
+        vkontakte_id="11111122222222222",
+        google_id="111222222222222222222",
+        telegram_id="111111111111112222222222222",
+    )
+
+@pytest.fixture(scope="function")
 def competition() -> Competition:
     return Competition.objects.create(
         name="babies",
@@ -165,6 +183,11 @@ def another_competition() -> Competition:
 @pytest.fixture(scope="function")
 def user_request(user: User, competition: Competition) -> Request:
     return Request.objects.create(owner=user, competition=competition)
+
+
+@pytest.fixture(scope="function")
+def participation(user: User, user_request: Request) -> Participation:
+    return Participation.objects.create(request=user_request, user=user)
 
 
 @pytest.fixture(scope="function")
@@ -211,58 +234,37 @@ def get_bad_field_ids(field: Field) -> list:
 
 
 def get_competition_filters_by_name(competition: Competition) -> list:
-    return [
-        "",
-        competition.name[0],
-        competition.name[:2],
-        competition.name[:-1],
-        competition.name,
-        competition.name.swapcase(),
-    ]
+    return get_filters_by_string(competition.name)
 
 
 def get_bad_competition_filters_by_name(competition: Competition) -> list:
-    return [" ", "-1", competition.name + " ", competition.name + "a", " " + competition.name]
+    return get_bad_filters_by_string(competition.name)
+
+
+def get_field_filters(field: Field) -> list:
+    return get_filters_by_string(field.id) + get_filters_by_string(field.name)
+
+
+def get_bad_field_filters(field: Field) -> list:
+    return get_bad_filters_by_string(field.id) + get_bad_filters_by_string(field.name)
 
 
 def get_filters_by_string(value: str) -> list:
     return [
+        "",
+        " ",
         value[0],
         value[0].upper(),
         value[:-1],
         value,
+        value.lower(),
+        value.upper(),
         value.swapcase(),
+        value + " " * 3,
+        " " * 3 + value,
+        " " * 3 + value + " " * 3,
     ]
 
 
 def get_bad_filters_by_string(value: str) -> list:
-    return [" ", "-1", value + " ", value + "a", " " + value, "a" + value, 2 * value]
-
-
-def get_field_filters(field: Field) -> list:
-    return [
-        "",
-        field.id,
-        field.name,
-        field.id[0].upper(),
-        field.name[0].upper(),
-        field.id[:-1].swapcase(),
-        field.name[:-1].swapcase(),
-    ]
-
-
-def get_bad_field_filters(field: Field) -> list:
-    return [
-        " ",
-        field.type,
-        field.is_visible,
-        field.is_required,
-        field.id + " ",
-        field.name + " ",
-        " " + field.id,
-        " " + field.name,
-        field.id + "-1",
-        field.name + "-1",
-        "-1" + field.id,
-        "-1" + field.name,
-    ]
+    return ["-1-1", value + "-1", "-1" + value, 2 * value, value[1:]]

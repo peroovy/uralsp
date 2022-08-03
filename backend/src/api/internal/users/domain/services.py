@@ -10,6 +10,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from api.internal.db.models import FormValue, User
 from api.internal.db.models.user import Permissions
+from api.internal.db.repositories import user_repo, form_value_repo, request_repo, participation_repo
 from api.internal.db.repositories.form_value import IFormValueRepository
 from api.internal.db.repositories.participation import IParticipationRepository
 from api.internal.db.repositories.request import IRequestRepository
@@ -46,22 +47,13 @@ class UserService:
         )
 
     def get_user(self, user_id: int) -> Optional[User]:
-        return self._user_repo.get(user_id)
+        return self._user_repo.try_get(user_id)
 
     def update(self, user_id: int, data: ProfileIn) -> bool:
         return self._user_repo.update(user_id, **data.dict())
 
-    def update_vkontakte(self, user: User, vk_id: Optional[int]) -> None:
-        self._user_repo.update(user.id, vkontakte_id=vk_id)
-
-    def update_google(self, user: User, vk_id: Optional[int]) -> None:
-        self._user_repo.update(user.id, google_id=vk_id)
-
-    def get_socials_amount(self, user: User) -> int:
-        return self._user_repo.get_socials_amount(user.id)
-
-    def get_last_form_values(self, user: User, field_ids: Set[str]) -> List[FormValue]:
-        return list(self._form_value_repo.get_lasts_for(user.id, field_ids))
+    def get_last_form_values(self, user_id: int, field_ids: Set[str]) -> List[FormValue]:
+        return list(self._form_value_repo.get_lasts_for(user_id, field_ids))
 
     @atomic
     def merge(self, from_id: int, to_id: int) -> OperationStatus:
@@ -80,11 +72,10 @@ class UserService:
         self._participation_repo.migrate(from_id, to_id)
         self._request_repo.migrate(from_id, to_id)
 
-        from_user = self._user_repo.get(from_id)
-        migrated_data = model_to_dict(from_user)
+        from_user = self._user_repo.try_get(from_id)
+        migrated_data = model_to_dict(from_user, exclude=["id"])
         from_user.delete()
 
-        del migrated_data["id"]
         self._user_repo.update(to_id, **migrated_data)
 
         return OperationStatus.OK
@@ -160,3 +151,7 @@ class DocumentService:
         for column, value in enumerate(values, 1):
             cell = worksheet.cell(row=row, column=column)
             cell.value = value
+
+
+user_service = UserService(user_repo, form_value_repo, request_repo, participation_repo)
+document_service = DocumentService()

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from ninja import ModelSchema, Schema
 
@@ -21,5 +21,5 @@ class FieldUpdatingIn(ModelSchema):
         model_exclude = ["id"]
 
 
-class FieldFilters(Schema):
-    search: str = ""
+class Filters(Schema):
+    search: Optional[str] = None

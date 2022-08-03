@@ -6,7 +6,7 @@ from api.internal.db.models import RefreshToken
 
 class IRefreshTokenRepository(ABC):
     @abstractmethod
-    def get(self, value: str) -> Optional[RefreshToken]:
+    def try_get(self, value: str) -> Optional[RefreshToken]:
         ...
 
     @abstractmethod
@@ -19,7 +19,7 @@ class IRefreshTokenRepository(ABC):
 
 
 class RefreshTokenRepository(IRefreshTokenRepository):
-    def get(self, value: str) -> Optional[RefreshToken]:
+    def try_get(self, value: str) -> Optional[RefreshToken]:
         return RefreshToken.objects.filter(value=value).first()
 
     def create(self, user_id: int, value: str) -> RefreshToken:

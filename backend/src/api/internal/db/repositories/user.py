@@ -7,6 +7,7 @@ from phonenumbers import PhoneNumber, PhoneNumberFormat, format_number
 
 from api.internal.db.models import User
 from api.internal.db.models.user import Permissions
+from api.internal.utils import get_strip_filters
 
 
 class IUserRepository(ABC):
@@ -29,7 +30,7 @@ class IUserRepository(ABC):
         ...
 
     @abstractmethod
-    def get(self, user_id: int) -> Optional[User]:
+    def try_get(self, user_id: int) -> Optional[User]:
         ...
 
     @abstractmethod
@@ -79,10 +80,6 @@ class UserRepository(IUserRepository):
         google_id: int = None,
         telegram_id: int = None,
     ):
-
-        if email is not None and "@" not in email:
-            raise ValueError("Wrong email")
-
         return User.objects.create(
             name=name,
             surname=surname,
@@ -97,26 +94,32 @@ class UserRepository(IUserRepository):
             telegram_id=telegram_id,
         )
 
-    def get(self, user_id: int) -> Optional[User]:
+    def try_get(self, user_id: int) -> Optional[User]:
         return User.objects.filter(id=user_id).first()
 
     def get_filtered(
-        self, permission: Optional[int], school: Optional[str], school_class: Optional[str], region: Optional[str], email: Optional[str], fcs: Optional[str]
+        self,
+        permission: Optional[int],
+        school: Optional[str],
+        school_class: Optional[str],
+        region: Optional[str],
+        email: Optional[str],
+        fcs: Optional[str],
     ) -> QuerySet[User]:
-        attr = dict(
-            (key, value)
-            for key, value in [
-                ["school__istartswith", school],
-                ["school_class__istartswith", school_class],
-                ["region__istartswith", region],
-                ["email__startswith", email],
-                ["full_name__istartswith", (fcs or "").replace(" ", "")],
-                ["permission", permission]
-            ]
-            if value is not None
+        filters = get_strip_filters(
+            school__istartswith=school,
+            school_class__istartswith=school_class,
+            region__istartswith=region,
+            email__startswith=email,
         )
 
-        return User.objects.annotate(full_name=Concat("surname", "name", "patronymic")).filter(**attr)
+        if fcs is not None:
+            filters["full_name__istartswith"] = fcs.replace(" ", "")
+
+        if permission is not None:
+            filters["permission"] = permission
+
+        return User.objects.annotate(full_name=Concat("surname", "name", "patronymic")).filter(**filters)
 
     def get_count(self, ids: Iterable[int]) -> int:
         return User.objects.filter(id__in=ids).count()
@@ -138,6 +141,6 @@ class UserRepository(IUserRepository):
         return len(ids) > 0 and len(ids) == User.objects.filter(id__in=ids).count()
 
     def equal_permissions(self, user_id_1: int, user_id_2: int) -> bool:
-        return User.objects.filter(id=user_id_1).values_list("permission") == User.objects.filter(
-            id=user_id_2
-        ).values_list("permission")
+        permissions = User.objects.filter(id__in=[user_id_1, user_id_2]).values_list("permission", flat=True)
+
+        return len(set(permissions)) == 1

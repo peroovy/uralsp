@@ -12,6 +12,7 @@ from vk import API
 from vk.exceptions import VkException
 
 from api.internal.db.models import RefreshToken, User
+from api.internal.db.repositories import user_repo, refresh_repo, vkontakte_repo, google_repo
 from api.internal.db.repositories.refresh_token import IRefreshTokenRepository
 from api.internal.db.repositories.social import ISocialRepository
 from api.internal.db.repositories.user import IUserRepository
@@ -83,7 +84,7 @@ class AuthService:
         self._refresh_repo = refresh_repo
 
     def get_user(self, payload: Payload) -> Optional[User]:
-        return self._user_repo.get(payload.user_id)
+        return self._user_repo.try_get(payload.user_id)
 
     def try_create_access_and_refresh_tokens(self, user: User) -> Optional[TokenPairDetails]:
         access, expires_in = self.generate_token(user, TokenTypes.ACCESS)
@@ -126,7 +127,7 @@ class AuthService:
         return int(now().timestamp()) >= payload.expires_in
 
     def get_refresh_token_details(self, value: str) -> Optional[RefreshToken]:
-        return self._refresh_repo.get(value)
+        return self._refresh_repo.try_get(value)
 
 
 class SocialService:
@@ -138,9 +139,19 @@ class SocialService:
     GOOGLE_NAME = "given_name"
     GOOGLE_SURNAME = "family_name"
 
-    def __init__(self, vkontakte_repo: ISocialRepository, google_repo: ISocialRepository):
+    def __init__(self, vkontakte_repo: ISocialRepository, google_repo: ISocialRepository, user_repo: IUserRepository):
         self._vkontakte_repo = vkontakte_repo
         self._google_repo = google_repo
+        self._user_repo = user_repo
+
+    def update_vkontakte(self, user_id: int, vk_id: Optional[int]) -> int:
+        return self._user_repo.update(user_id, vkontakte_id=vk_id)
+
+    def update_google(self, user_id: int, vk_id: Optional[int]) -> int:
+        return self._user_repo.update(user_id, google_id=vk_id)
+
+    def get_socials_amount(self, user_id: int) -> int:
+        return self._user_repo.get_socials_amount(user_id)
 
     def try_get_or_create_user_from_vkontakte(self, access_token: str) -> Optional[User]:
         if not (info := self._get_info_from_vkontakte(access_token)):
@@ -148,7 +159,7 @@ class SocialService:
 
         vk_id, name, surname = info[self.VK_ID], info[self.VK_NAME], info[self.VK_SURNAME]
 
-        return self._vkontakte_repo.get_user(vk_id) or self._vkontakte_repo.create(vk_id, surname, name)
+        return self._vkontakte_repo.try_get(vk_id) or self._vkontakte_repo.create(vk_id, surname, name)
 
     def try_get_vkontakte_id(self, access_token: str) -> Optional[int]:
         if not (info := self._get_info_from_vkontakte(access_token)):
@@ -156,16 +167,16 @@ class SocialService:
 
         return info[self.VK_ID]
 
-    def try_get_or_create_user_from_google(self, id_token: str, client_id: str) -> Optional[User]:
-        if not (info := self._get_info_from_google(id_token, client_id)):
+    def try_get_or_create_user_from_google(self, id_token: str) -> Optional[User]:
+        if not (info := self._get_info_from_google(id_token)):
             return None
 
         google_id, name, surname = info[self.GOOGLE_ID], info[self.GOOGLE_NAME], info[self.GOOGLE_SURNAME]
 
-        return self._google_repo.get_user(google_id) or self._google_repo.create(google_id, surname, name)
+        return self._google_repo.try_get(google_id) or self._google_repo.create(google_id, surname, name)
 
-    def try_get_google_id(self, id_token: str, client_id: str) -> Optional[int]:
-        if not (info := self._get_info_from_google(id_token, client_id)):
+    def try_get_google_id(self, id_token: str) -> Optional[int]:
+        if not (info := self._get_info_from_google(id_token)):
             return None
 
         return info[self.GOOGLE_ID]
@@ -180,8 +191,12 @@ class SocialService:
             return None
 
     @staticmethod
-    def _get_info_from_google(id_token: str, client_id: str) -> Optional[dict]:
+    def _get_info_from_google(id_token: str) -> Optional[dict]:
         try:
-            return google_id_token.verify_oauth2_token(id_token, requests.Request(), client_id)
+            return google_id_token.verify_oauth2_token(id_token, requests.Request())
         except ValueError:
             return None
+
+
+auth_service = AuthService(user_repo, refresh_repo)
+social_service = SocialService(vkontakte_repo, google_repo, user_repo)
