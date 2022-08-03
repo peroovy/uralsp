@@ -4,9 +4,13 @@ import { sveltekit } from '@sveltejs/kit/vite';
 const config = {
 	plugins: [sveltekit()],
 	server: { 
-		port: 80,
-		host: '127.0.0.1',
+		port: 4200,
+		host: 'localhost',
+		proxy: {
+			'/api/': 'http://localhost:8000/',
+		}
 	} 
+	
 };
 
 export default config;

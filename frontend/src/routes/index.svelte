@@ -25,7 +25,7 @@
             }
             
             let responsePayload;
-            function handleCredentialResponse(response: googleRespond) {
+            async function handleCredentialResponse(response: googleRespond) {
                 let credential = response.credential;
                 responsePayload = decodeJwtResponse(credential);
                 let id = responsePayload.sub;
@@ -37,8 +37,8 @@
                 let data = {
                     "client_id": id,
                     "id_token": credential
-                };
-                fetch('http://localhost:8000/auth/signin-google', {
+                }
+                await fetch('http://127.0.0.1:8000/api/auth/signin-google', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
