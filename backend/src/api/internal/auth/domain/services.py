@@ -167,16 +167,16 @@ class SocialService:
 
         return info[self.VK_ID]
 
-    def try_get_or_create_user_from_google(self, id_token: str, client_id: str) -> Optional[User]:
-        if not (info := self._get_info_from_google(id_token, client_id)):
+    def try_get_or_create_user_from_google(self, id_token: str) -> Optional[User]:
+        if not (info := self._get_info_from_google(id_token)):
             return None
 
         google_id, name, surname = info[self.GOOGLE_ID], info[self.GOOGLE_NAME], info[self.GOOGLE_SURNAME]
 
         return self._google_repo.try_get(google_id) or self._google_repo.create(google_id, surname, name)
 
-    def try_get_google_id(self, id_token: str, client_id: str) -> Optional[int]:
-        if not (info := self._get_info_from_google(id_token, client_id)):
+    def try_get_google_id(self, id_token: str) -> Optional[int]:
+        if not (info := self._get_info_from_google(id_token)):
             return None
 
         return info[self.GOOGLE_ID]
@@ -191,9 +191,9 @@ class SocialService:
             return None
 
     @staticmethod
-    def _get_info_from_google(id_token: str, client_id: str) -> Optional[dict]:
+    def _get_info_from_google(id_token: str) -> Optional[dict]:
         try:
-            return google_id_token.verify_oauth2_token(id_token, requests.Request(), client_id)
+            return google_id_token.verify_oauth2_token(id_token, requests.Request())
         except ValueError:
             return None
 

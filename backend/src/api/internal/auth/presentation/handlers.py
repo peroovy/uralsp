@@ -30,7 +30,7 @@ class AuthHandlers:
         return self.signin(user)
 
     def signin_google(self, request: HttpRequest, params: GoogleLoginIn = Body(...)) -> Response:
-        user = self._social_service.try_get_or_create_user_from_google(params.id_token, params.client_id)
+        user = self._social_service.try_get_or_create_user_from_google(params.id_token)
         if not user:
             raise UnauthorizedException()
 

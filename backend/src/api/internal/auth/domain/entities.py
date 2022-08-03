@@ -6,7 +6,6 @@ class VKLoginIn(Schema):
 
 
 class GoogleLoginIn(Schema):
-    client_id: str
     id_token: str
 
 
