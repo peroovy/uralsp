@@ -10,7 +10,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from api.internal.db.models import FormValue, User
 from api.internal.db.models.user import Permissions
-from api.internal.db.repositories import user_repo, form_value_repo, request_repo, participation_repo
+from api.internal.db.repositories import form_value_repo, participation_repo, request_repo, user_repo
 from api.internal.db.repositories.form_value import IFormValueRepository
 from api.internal.db.repositories.participation import IParticipationRepository
 from api.internal.db.repositories.request import IRequestRepository

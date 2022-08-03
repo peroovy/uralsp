@@ -6,10 +6,10 @@ from ninja import Body, Query
 from api.internal.competitions.domain.entities import (
     AdminsIn,
     CompetitionDetailsOut,
-    Filters,
     CompetitionIn,
     CompetitionOut,
     FieldDetailsOut,
+    Filters,
     FormIn,
     RequestOut,
     RequestTemplateIn,

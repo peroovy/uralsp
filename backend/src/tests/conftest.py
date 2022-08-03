@@ -14,7 +14,7 @@ def pytest_configure(config):
     logging.disable()
 
 
-AFTER_NOW = (
+AFTER_NOW = [
     timedelta(microseconds=1),
     timedelta(milliseconds=1),
     timedelta(seconds=1),
@@ -23,9 +23,9 @@ AFTER_NOW = (
     timedelta(days=1),
     timedelta(days=32),
     timedelta(days=365),
-)
+]
 
-BEFORE_NOW = tuple(-delta for delta in AFTER_NOW)
+BEFORE_NOW = [-delta for delta in AFTER_NOW]
 
 BAD_CREATING_DATE_DELTAS = [
     [timedelta(microseconds=2), timedelta(microseconds=2), timedelta(microseconds=3)],
@@ -157,6 +157,7 @@ def another_super_admin() -> User:
         google_id="111222222222222222222",
         telegram_id="111111111111112222222222222",
     )
+
 
 @pytest.fixture(scope="function")
 def competition() -> Competition:

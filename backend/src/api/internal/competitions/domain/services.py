@@ -6,16 +6,10 @@ from django.forms import model_to_dict
 from django.utils.timezone import now
 
 from api.internal.competitions.domain import MIN_PERSONS_AMOUNT
-from api.internal.competitions.domain.entities import (
-    AdminsIn,
-    Filters,
-    CompetitionIn,
-    FieldDetailsOut,
-    FormIn,
-)
+from api.internal.competitions.domain.entities import AdminsIn, CompetitionIn, FieldDetailsOut, Filters, FormIn
 from api.internal.db.models import Competition, User
 from api.internal.db.models.user import Permissions
-from api.internal.db.repositories import competition_repo, user_repo, field_repo
+from api.internal.db.repositories import competition_repo, field_repo, user_repo
 from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.field import IFieldRepository
 from api.internal.db.repositories.user import IUserRepository

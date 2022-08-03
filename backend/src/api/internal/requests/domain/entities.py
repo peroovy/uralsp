@@ -28,7 +28,7 @@ class FormsIn(Schema):
 
 
 class RequestIn(FormsIn):
-    competition_id: int
+    competition: int
 
 
 class RequestOut(ModelSchema):

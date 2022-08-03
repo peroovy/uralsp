@@ -12,7 +12,7 @@ from vk import API
 from vk.exceptions import VkException
 
 from api.internal.db.models import RefreshToken, User
-from api.internal.db.repositories import user_repo, refresh_repo, vkontakte_repo, google_repo
+from api.internal.db.repositories import google_repo, refresh_repo, user_repo, vkontakte_repo
 from api.internal.db.repositories.refresh_token import IRefreshTokenRepository
 from api.internal.db.repositories.social import ISocialRepository
 from api.internal.db.repositories.user import IUserRepository

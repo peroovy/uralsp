@@ -5,11 +5,11 @@ from django.db.transaction import atomic
 from django.forms import model_to_dict
 
 from api.internal.db.models import Field
-from api.internal.db.repositories import field_repo, default_repo, form_value_repo
+from api.internal.db.repositories import default_repo, field_repo, form_value_repo
 from api.internal.db.repositories.default import IDefaultRepository
 from api.internal.db.repositories.field import IFieldRepository
 from api.internal.db.repositories.form_value import IFormValueRepository
-from api.internal.fields.domain.entities import Filters, FieldSchema, FieldUpdatingIn
+from api.internal.fields.domain.entities import FieldSchema, FieldUpdatingIn, Filters
 
 
 class OperationStatus(IntEnum):

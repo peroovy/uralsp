@@ -9,7 +9,6 @@ from api.internal.auth.domain.services import SocialService, social_service
 from api.internal.db.models import User
 from api.internal.db.repositories import google_repo, user_repo, vkontakte_repo
 
-
 # VKONTAKTE
 
 

@@ -1,7 +1,7 @@
 from ninja import NinjaAPI
 
 from api.internal.auth.domain.services import social_service
-from api.internal.users.domain.services import user_service, document_service
+from api.internal.users.domain.services import document_service, user_service
 from api.internal.users.presentation.handlers import CurrentUserHandlers, UserHandlers
 from api.internal.users.presentation.routers import get_current_user_router, get_users_router
 

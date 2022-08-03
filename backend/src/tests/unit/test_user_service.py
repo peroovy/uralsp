@@ -111,7 +111,9 @@ def test_getting_users__filtering_by_email(user: User, search: str, is_found: bo
 @pytest.mark.django_db
 @pytest.mark.parametrize("permission", Permissions)
 def test_getting_users__filtering_by_permission(user: User, permission: Permissions) -> None:
-    assert user_service.get_users(Filters(permission=permission.value)) == ([user] if user.permission == permission else [])
+    assert user_service.get_users(Filters(permission=permission.value)) == (
+        [user] if user.permission == permission else []
+    )
 
 
 SURNAME, NAME, PATRONYMIC = "Petrov", "Petr", "Petrovich"
@@ -294,7 +296,9 @@ def test_merging_super_admins(
     participation.user = super_admin
     participation.save(update_fields=["user"])
 
-    assert_merging_default_users(super_admin, user_request, participation, another_super_admin, competition, another_competition, field)
+    assert_merging_default_users(
+        super_admin, user_request, participation, another_super_admin, competition, another_competition, field
+    )
 
 
 def assert_merging_default_users(
