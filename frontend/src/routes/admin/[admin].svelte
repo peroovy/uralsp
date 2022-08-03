@@ -300,11 +300,6 @@
 				}
 			}
 		}
-		.lottie-animations{
-			background-color: rgb(240, 240, 240);
-			position: relative;
-			z-index: 2;
-		}
 		input, select{
 			border-radius: 0;
 			border: 0px;
@@ -318,6 +313,11 @@
 				outline: none;
 				box-shadow: none;
 			}
+		}
+		.lottie-animations{
+			background-color: rgb(240, 240, 240);
+			position: relative;
+			z-index: 2;
 		}
 		.sliderCont{
 			width: 200vw;

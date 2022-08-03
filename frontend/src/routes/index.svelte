@@ -3,6 +3,89 @@
     import dotsSrc from "$lib/Assets/imgs/dots.png";
     import { goto } from '$app/navigation';
     import { base } from '$app/paths';
+    import { browser } from '$app/env';
+    import { onMount } from "svelte";
+    import { Login } from 'sveltegram';
+
+    let google = '' as unknown as HTMLElement;
+
+    onMount(() => {
+        if(browser){
+            interface googleRespond {
+                clientId: string,
+                credential: string
+            };
+            function decodeJwtResponse(token: string) {
+                console.log(token.split('.'));
+                let base64Url = token.split('.')[1]
+                let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                let jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload)
+            }
+            
+            let responsePayload;
+            function handleCredentialResponse(response: googleRespond) {
+                let credential = response.credential;
+                responsePayload = decodeJwtResponse(credential);
+                let id = responsePayload.sub;
+                let fullName = responsePayload.name;
+                let firstName = responsePayload.given_name;
+                let familyName = responsePayload.family_name;
+                let email = responsePayload.email;
+                
+                let data = {
+                    "client_id": credential,
+                    "id_token": id
+                };
+                console.log(data);
+                fetch('http://127.0.0.1:8000/auth/signin-google', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                }).then(res => {
+                    console.log(res);
+                }).catch(err => {
+                    console.log(err);
+                });
+            }
+            // @ts-ignore
+            window.google.accounts.id.initialize({
+                client_id: "868612228164-4rrjlhpktkg005qd25qp0f5sa55fuu5j.apps.googleusercontent.com",
+                re: handleCredentialResponse,
+            });
+            // @ts-ignore
+            window.google.accounts.id.renderButton(google, {});  
+        }
+    });
+    if(browser){
+        window.onTelegramAuth = (user)=>{
+            console.log(user);
+        }   
+    }
+    function onTelegramAuth (user: {detail: {first_name: string, username: string, id: number}}) {
+        // send a post request to the server with the user data
+        let data = {
+            "first_name": user.detail.id,
+            "username": user.detail.id,
+            "id": user.detail.id
+        };
+        console.log(user);
+        /*fetch('http://localhost:8000/auth/signin-telegram', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).then(res => {
+            console.log(res);
+        }).catch(err => {
+            console.log(err);
+        });*/
+    }   
 </script>
 
 <svelte:head>
@@ -11,6 +94,7 @@
     <meta name="description" content="Some description!">
     <title> App Name | Signup </title>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
+    <script src="http://userapi.com/js/api/openapi.js" type="text/javascript" charset="windows-1251"></script>
 </svelte:head>
 
 <section class="signup">
@@ -20,25 +104,38 @@
         <img src= {logoSrc} alt="logo" class="logo" />
         <p> Please sign up to continue </p>
         <div class="btn-group-vertical col-12">
-            <button class="btn btn-lg btn-block btn-outline" on:click={ () => goto(`${base}/participants/participantId`)}>
+            <!-- on:click={ () => goto(`${base}/participants/participantId`)} -->
+            <button class="btn btn-lg btn-block btn-outline">
                 <i class="fa fa-google"></i>
                 <span> Sign up with Google </span> 
                 <i class="fa fa-arrow-right"></i>
+                <div bind:this={google} class="googleBtnHolder"></div>
             </button>
-            <button class="btn btn-lg btn-block btn-outline"  on:click={ () => goto(`${base}/admin/adminId`)}> 
+            
+            <button class="btn btn-lg btn-block btn-outline" on:click={ () => goto(`${base}/admin/adminId`)}> 
                 <i class="fa fa-vk"></i>
                 <span> Sign up with VK </span> 
                 <i class="fa fa-arrow-right"></i>
+                <div id="vk_auth"></div> 
             </button>
-            <button class="btn btn-lg btn-block btn-outline"> 
+            <div class="btn btn-lg btn-block btn-outline"> 
                 <i class="fa fa-telegram"></i>
                 <span> Sign up with Telegram </span> 
                 <i class="fa fa-arrow-right"></i>
-            </button>
+                <div class="telegramBtnHolder">
+                    <Login username="zeyaddevbot" on:auth={onTelegramAuth}/>
+                </div>
+            </div>
         </div>
+        <script type="text/javascript">
+            VK.init({
+              apiId: 111,
+            });
+            VK.Widgets.Auth('vk_auth', {}); 
+          </script>
 	</div>
+    
 </section>
-
 <style lang="scss">
     @import "../lib/Assets/common.scss";
 
@@ -146,9 +243,32 @@
                     }
                 }
             }
+            .g_id_signin{
+                margin: 10px 0px;
+                border: 1px solid rgba(0, 0, 0, 0.1);
+                border-radius: 3px;
+                min-width: 300px;
+                display: flex;
+                flex-flow: row nowrap;
+                justify-content: left;
+                align-items: center;
+                overflow: hidden;
+                position: relative;
+                height: 30px;
+            }
 		}
     }
 
+    .googleBtnHolder, .telegramBtnHolder{
+        position: absolute;
+        width: calc(100% + 20px) !important;
+        height: 100% !important;
+        margin-left: -20px;
+        opacity: 1;
+        scale: 20;
+        opacity: 0.000000001;
+        z-index: 20;
+    }
     @media screen and (max-width: 450px){
         .signup-form{
             width: 100vw !important;
