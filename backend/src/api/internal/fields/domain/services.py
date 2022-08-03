@@ -5,10 +5,11 @@ from django.db.transaction import atomic
 from django.forms import model_to_dict
 
 from api.internal.db.models import Field
+from api.internal.db.repositories import field_repo, default_repo, form_value_repo
 from api.internal.db.repositories.default import IDefaultRepository
 from api.internal.db.repositories.field import IFieldRepository
 from api.internal.db.repositories.form_value import IFormValueRepository
-from api.internal.fields.domain.entities import FieldFilters, FieldSchema, FieldUpdatingIn
+from api.internal.fields.domain.entities import Filters, FieldSchema, FieldUpdatingIn
 
 
 class OperationStatus(IntEnum):
@@ -26,9 +27,9 @@ class FieldService:
         self._form_value_repo = form_value_repo
 
     def get(self, field_id) -> Optional[Field]:
-        return self._field_repo.get(field_id)
+        return self._field_repo.try_get(field_id)
 
-    def get_filtered(self, filters: FieldFilters) -> List[Field]:
+    def get_filtered(self, filters: Filters) -> List[Field]:
         return list(self._field_repo.get_filtered_by_id_and_name(filters.search))
 
     def exists(self, field_id: str) -> bool:
@@ -70,3 +71,6 @@ class FieldService:
         return FieldSchema(
             **model_to_dict(field), default_values=list(field.default_values.values_list("value", flat=True))
         )
+
+
+field_service = FieldService(field_repo, default_repo, form_value_repo)

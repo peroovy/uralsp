@@ -6,11 +6,12 @@ from django.db.models import QuerySet
 from django.utils.timezone import now
 
 from api.internal.db.models import Competition, Field
+from api.internal.utils import get_strip_filters
 
 
 class ICompetitionRepository(ABC):
     @abstractmethod
-    def get(self, competition_id: int) -> Optional[Competition]:
+    def try_get(self, competition_id: int) -> Optional[Competition]:
         ...
 
     @abstractmethod
@@ -57,7 +58,7 @@ class ICompetitionRepository(ABC):
 
 
 class CompetitionRepository(ICompetitionRepository):
-    def get(self, competition_id: int) -> Optional[Competition]:
+    def try_get(self, competition_id: int) -> Optional[Competition]:
         return Competition.objects.filter(id=competition_id).first()
 
     def get_for_update(self, competition_id: int) -> Competition:
@@ -70,18 +71,18 @@ class CompetitionRepository(ICompetitionRepository):
         self, name: Optional[str], admin_id: Optional[int], is_opened: Optional[bool], is_started: Optional[bool]
     ) -> QuerySet[Competition]:
         now_ = now()
+        filters = get_strip_filters(name__istartswith=name)
 
-        attr = dict(
-            (key, value) for key, value in [["name__istartswith", name], ["admins__id", admin_id]] if value is not None
-        )
+        if admin_id is not None:
+            filters["admins__id"] = admin_id
 
         if is_opened is not None:
-            attr[f"registration_before__{'gt' if is_opened else 'lte'}"] = now_
+            filters[f"registration_before__{'gt' if is_opened else 'lte'}"] = now_
 
         if is_started is not None:
-            attr[f"started_at__{'lte' if is_started else 'gt'}"] = now_
+            filters[f"started_at__{'lte' if is_started else 'gt'}"] = now_
 
-        return Competition.objects.filter(**attr)
+        return Competition.objects.filter(**filters)
 
     def create(
         self,

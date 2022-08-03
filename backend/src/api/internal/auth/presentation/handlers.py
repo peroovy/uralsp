@@ -47,7 +47,7 @@ class AuthHandlers:
         return response
 
     def refresh(self, request: HttpRequest) -> Response:
-        refresh_token: str = request.COOKIES.get(settings.REFRESH_TOKEN_COOKIE)
+        refresh_token: str = request.COOKIES.try_get(settings.REFRESH_TOKEN_COOKIE)
         if not refresh_token:
             raise NotFoundRefreshTokenException()
 

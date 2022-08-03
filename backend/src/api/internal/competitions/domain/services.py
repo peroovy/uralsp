@@ -8,13 +8,14 @@ from django.utils.timezone import now
 from api.internal.competitions.domain import MIN_PERSONS_AMOUNT
 from api.internal.competitions.domain.entities import (
     AdminsIn,
-    CompetitionFilters,
+    Filters,
     CompetitionIn,
     FieldDetailsOut,
     FormIn,
 )
 from api.internal.db.models import Competition, User
 from api.internal.db.models.user import Permissions
+from api.internal.db.repositories import competition_repo, user_repo, field_repo
 from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.field import IFieldRepository
 from api.internal.db.repositories.user import IUserRepository
@@ -40,11 +41,11 @@ class CompetitionService:
         self._user_repo = user_repo
         self._field_repo = field_repo
 
-    def get_filtered(self, filters: CompetitionFilters) -> List[Competition]:
+    def get_filtered(self, filters: Filters) -> List[Competition]:
         return list(self._competition_repo.get_filtered(filters.name, filters.admin, filters.opened, filters.started))
 
     def get(self, competition_id: int) -> Optional[Competition]:
-        return self._competition_repo.get(competition_id)
+        return self._competition_repo.try_get(competition_id)
 
     def exists(self, competition_id: int) -> bool:
         return self._competition_repo.exists(competition_id)
@@ -156,3 +157,6 @@ class CompetitionService:
         unique = set(ids)
 
         return len(unique) > 0 and len(unique) == len(ids) and self._field_repo.exist_all(unique)
+
+
+competition_service = CompetitionService(competition_repo, user_repo, field_repo)

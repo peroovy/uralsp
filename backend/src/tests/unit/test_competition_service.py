@@ -6,10 +6,9 @@ import pytest
 from django.utils.timezone import now
 
 from api.internal.competitions.domain import MIN_PERSONS_AMOUNT
-from api.internal.competitions.domain.entities import CompetitionFilters
-from api.internal.competitions.domain.services import CompetitionService, OperationStatus
+from api.internal.competitions.domain.entities import Filters
+from api.internal.competitions.domain.services import OperationStatus, competition_service
 from api.internal.db.models import Competition, Field, User
-from api.internal.db.repositories import competition_repo, field_repo, user_repo
 from tests.conftest import (
     AFTER_NOW,
     BAD_CREATING_DATE_DELTAS,
@@ -20,18 +19,23 @@ from tests.conftest import (
     get_competition_filters_by_name,
 )
 
-service = CompetitionService(competition_repo, user_repo, field_repo)
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_filtering__empty(competition: Competition, another_competition: Competition) -> None:
+    actual = sorted(competition_service.get_filtered(Filters()), key=lambda c: c.id)
+    assert actual == sorted([competition, another_competition], key=lambda c: c.id)
 
 
 @pytest.mark.unit
 @pytest.mark.django_db
 def test_filtering_by_name(competition: Competition) -> None:
     for search in get_competition_filters_by_name(competition):
-        actual = service.get_filtered(CompetitionFilters(name=search))
+        actual = competition_service.get_filtered(Filters(name=search))
         assert actual == [competition]
 
     for search in get_bad_competition_filters_by_name(competition):
-        actual = service.get_filtered(CompetitionFilters(name=search))
+        actual = competition_service.get_filtered(Filters(name=search))
         assert actual == []
 
 
@@ -40,8 +44,8 @@ def test_filtering_by_name(competition: Competition) -> None:
 def test_filtering_by_admin(competition: Competition, admin: User) -> None:
     competition.admins.add(admin)
 
-    assert service.get_filtered(CompetitionFilters(admin=admin.id)) == [competition]
-    assert service.get_filtered(CompetitionFilters(admin=-1)) == []
+    assert competition_service.get_filtered(Filters(admin=admin.id)) == [competition]
+    assert competition_service.get_filtered(Filters(admin=-1)) == []
 
 
 @pytest.mark.unit
@@ -59,8 +63,8 @@ def test_filtering_by_registration_date(competition: Competition, delta: timedel
     competition.registration_before = now() + delta
     competition.save(update_fields=["registration_before"])
 
-    assert service.get_filtered(CompetitionFilters(opened=is_opened)) == [competition]
-    assert service.get_filtered(CompetitionFilters(opened=not is_opened)) == []
+    assert competition_service.get_filtered(Filters(opened=is_opened)) == [competition]
+    assert competition_service.get_filtered(Filters(opened=not is_opened)) == []
 
 
 @pytest.mark.unit
@@ -78,29 +82,29 @@ def test_filtering_by_started_at(competition: Competition, delta: timedelta, is_
     competition.started_at = now() + delta
     competition.save(update_fields=["started_at"])
 
-    assert service.get_filtered(CompetitionFilters(started=is_started)) == [competition]
-    assert service.get_filtered(CompetitionFilters(started=not is_started)) == []
+    assert competition_service.get_filtered(Filters(started=is_started)) == [competition]
+    assert competition_service.get_filtered(Filters(started=not is_started)) == []
 
 
 @pytest.mark.unit
 @pytest.mark.django_db
 def test_getting_competition(competition: Competition) -> None:
-    assert service.get(competition.id) == competition
-    assert service.get(-1) is None
+    assert competition_service.try_get(competition.id) == competition
+    assert competition_service.try_get(-1) is None
 
 
 @pytest.mark.unit
 @pytest.mark.django_db
 def test_check_existing(competition: Competition) -> None:
-    assert service.exists(competition.id) is True
-    assert service.exists(-1) is False
+    assert competition_service.exists(competition.id) is True
+    assert competition_service.exists(-1) is False
 
 
 @pytest.mark.unit
 @pytest.mark.django_db
 def test_deleting(competition: Competition) -> None:
-    assert service.delete(competition.id) is True
-    assert service.delete(competition.id) is False
+    assert competition_service.delete(competition.id) is True
+    assert competition_service.delete(competition.id) is False
     assert Competition.objects.count() == 0
 
 
@@ -111,7 +115,7 @@ def test_creating__bad_persons_amount(amount: int) -> None:
     data = Mock()
     data.persons_amount = amount
 
-    assert service.create(data) == OperationStatus.BAD_PERSONS_AMOUNT
+    assert competition_service.create(data) == OperationStatus.BAD_PERSONS_AMOUNT
     assert Competition.objects.count() == 0
 
 
@@ -126,7 +130,7 @@ def test_creating__bad_dates(registration_delta: timedelta, started_delta: timed
     data.started_at = now() + started_delta
     data.end_at = now() + end_delta
 
-    assert service.create(data) == OperationStatus.BAD_DATES
+    assert competition_service.create(data) == OperationStatus.BAD_DATES
     assert Competition.objects.count() == 0
 
 
@@ -141,7 +145,7 @@ def test_creating__bad_admins(user: User, admin: User, super_admin: User) -> Non
 
     for admins in get_bad_admin_ids(user, admin, super_admin):
         data.admins = admins
-        assert service.create(data) == OperationStatus.BAD_ADMINS
+        assert competition_service.create(data) == OperationStatus.BAD_ADMINS
         assert Competition.objects.count() == 0
 
 
@@ -157,7 +161,7 @@ def test_creating__bad_fields(admin: User, field: Field) -> None:
 
     for fields in get_bad_field_ids(field):
         data.fields = fields
-        assert service.create(data) == OperationStatus.BAD_FIELDS
+        assert competition_service.create(data) == OperationStatus.BAD_FIELDS
         assert Competition.objects.count() == 0
 
 
@@ -175,7 +179,7 @@ def test_creating(admin: User, field: Field) -> None:
     data.admins = [admin.id]
     data.fields = [field.id]
 
-    assert service.create(data) == OperationStatus.OK
+    assert competition_service.create(data) == OperationStatus.OK
 
     competition = Competition.objects.get(
         name=data.name, request_template=data.request_template, persons_amount=data.persons_amount
@@ -190,7 +194,7 @@ def test_updating__bad_persons_amount(competition: Competition, amount: int) -> 
     data = Mock()
     data.persons_amount = amount
 
-    assert service.update(competition.id, data) == OperationStatus.BAD_PERSONS_AMOUNT
+    assert competition_service.update(competition.id, data) == OperationStatus.BAD_PERSONS_AMOUNT
     assert_not_updated_competition(competition)
 
 
@@ -207,7 +211,7 @@ def test_updating__bad_dates(
     data.started_at = now() + started_delta
     data.end_at = now() + end_delta
 
-    assert service.update(competition.id, data) == OperationStatus.BAD_DATES
+    assert competition_service.update(competition.id, data) == OperationStatus.BAD_DATES
     assert_not_updated_competition(competition)
 
 
@@ -222,7 +226,7 @@ def test_updating__bad_admins(competition: Competition, user: User, admin: User,
 
     for admins in get_bad_admin_ids(user, admin, super_admin):
         data.admins = admins
-        assert service.update(competition.id, data) == OperationStatus.BAD_ADMINS
+        assert competition_service.update(competition.id, data) == OperationStatus.BAD_ADMINS
         assert_not_updated_competition(competition)
 
 
@@ -238,7 +242,7 @@ def test_updating__bad_fields(competition: Competition, admin: User, field: Fiel
 
     for fields in get_bad_field_ids(field):
         data.fields = fields
-        assert service.update(competition.id, data) == OperationStatus.BAD_FIELDS
+        assert competition_service.update(competition.id, data) == OperationStatus.BAD_FIELDS
         assert_not_updated_competition(competition)
 
 
@@ -257,7 +261,7 @@ def test_updating(
     data.admins = [admin.id, another_admin.id]
     data.fields = [field.id, another_field.id]
 
-    assert service.update(competition.id, data) == OperationStatus.OK
+    assert competition_service.update(competition.id, data) == OperationStatus.OK
     assert_competition(Competition.objects.get(pk=competition.pk), data)
 
 
@@ -267,7 +271,7 @@ def test_updating_form__bad_fields(competition: Competition, field: Field) -> No
     data = Mock()
     for fields in get_bad_field_ids(field):
         data.fields = fields
-        assert service.update_form(competition.id, data) == OperationStatus.BAD_FIELDS
+        assert competition_service.update_form(competition.id, data) == OperationStatus.BAD_FIELDS
         assert competition.fields.count() == 0
 
 
@@ -279,7 +283,7 @@ def test_updating_form(competition: Competition, field: Field, another_field: Fi
 
     for fields in [[field.id], [field.id, another_field.id]]:
         data.fields = fields
-        assert service.update_form(competition.id, data) == OperationStatus.OK
+        assert competition_service.update_form(competition.id, data) == OperationStatus.OK
         assert sorted(competition.fields.values_list("id", flat=True)) == sorted(fields)
 
 
@@ -289,7 +293,7 @@ def test_updating_admins__bad_admins(competition: Competition, user: User, admin
     data = Mock()
     for admins in get_bad_admin_ids(user, admin, super_admin):
         data.admins = admins
-        assert service.update_admins(competition.id, data) == OperationStatus.BAD_ADMINS
+        assert competition_service.update_admins(competition.id, data) == OperationStatus.BAD_ADMINS
         assert_not_updated_competition(competition)
 
 
@@ -299,7 +303,7 @@ def test_updating_admins(competition: Competition, admin: User, another_admin: U
     data = Mock()
     for admins in [[admin.id], [admin.id, another_admin.id]]:
         data.admins = admins
-        assert service.update_admins(competition.id, data) == OperationStatus.OK
+        assert competition_service.update_admins(competition.id, data) == OperationStatus.OK
         assert sorted(competition.admins.values_list("id", flat=True)) == sorted(admins)
 
 
@@ -308,13 +312,13 @@ def test_updating_admins(competition: Competition, admin: User, another_admin: U
 def test_updating_request_template(competition: Competition) -> None:
     template = "<aaaaaaaa></aaaaaaaa>"
 
-    assert service.update_request_template(-1, template) is False
+    assert competition_service.update_request_template(-1, template) is False
     assert not Competition.objects.filter(pk=competition.pk, request_template=template).exists()
 
-    assert service.update_request_template(competition.id, template) is True
+    assert competition_service.update_request_template(competition.id, template) is True
     assert Competition.objects.filter(pk=competition.pk, request_template=template).exists()
 
-    assert service.update_request_template(competition.id, None) is True
+    assert competition_service.update_request_template(competition.id, None) is True
     assert Competition.objects.filter(pk=competition.pk, request_template=None).exists()
 
 
@@ -325,21 +329,21 @@ def test_check_access_for_admin(
 ) -> None:
     competition.admins.add(admin)
 
-    assert service.has_access(competition.id, admin) is True
-    assert service.has_access(competition.id, super_admin) is True
+    assert competition_service.has_access(competition.id, admin) is True
+    assert competition_service.has_access(competition.id, super_admin) is True
 
-    assert service.has_access(competition.id, another_admin) is False
-    assert service.has_access(competition.id, user) is False
+    assert competition_service.has_access(competition.id, another_admin) is False
+    assert competition_service.has_access(competition.id, user) is False
 
 
 @pytest.mark.unit
 @pytest.mark.django_db
 def test_getting_form_details(competition: Competition, field: Field, another_field: Field) -> None:
-    assert service.get_form_details(competition.id) == []
+    assert competition_service.get_form_details(competition.id) == []
 
     competition.fields.add(field, another_field)
 
-    actual = service.get_form_details(competition.id)
+    actual = competition_service.get_form_details(competition.id)
     expected = sorted([field, another_field], key=lambda f: f.id)
 
     assert len(actual) == len(expected)

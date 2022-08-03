@@ -4,7 +4,7 @@ from django.http import HttpRequest
 from ninja import Body, Query
 
 from api.internal.exceptions import NotFoundException, UnprocessableEntityException
-from api.internal.fields.domain.entities import FieldFilters, FieldSchema, FieldUpdatingIn
+from api.internal.fields.domain.entities import Filters, FieldSchema, FieldUpdatingIn
 from api.internal.fields.domain.services import FieldService, OperationStatus
 from api.internal.responses import SuccessResponse
 
@@ -19,7 +19,7 @@ class FieldHandlers:
     def __init__(self, field_service: FieldService):
         self._field_service = field_service
 
-    def get_fields(self, request: HttpRequest, filters: FieldFilters = Query(...)) -> List[FieldSchema]:
+    def get_fields(self, request: HttpRequest, filters: Filters = Query(...)) -> List[FieldSchema]:
         fields = self._field_service.get_filtered(filters)
 
         return self._field_service.get_field_outs(fields)

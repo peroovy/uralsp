@@ -6,6 +6,7 @@ from django.utils.timezone import now
 from api.internal.db.models import Request, User
 from api.internal.db.models.request import RequestStatus
 from api.internal.db.models.user import Permissions
+from api.internal.db.repositories import request_repo, competition_repo, user_repo, participation_repo, form_value_repo
 from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.form_value import FieldValue, IFormValueRepository
 from api.internal.db.repositories.participation import IParticipationRepository
@@ -40,13 +41,13 @@ class RequestService:
         return list(self._request_repo.get_requests(owner.id))
 
     def get_request(self, request_id: int) -> Optional[Request]:
-        return self._request_repo.get_request(request_id)
+        return self._request_repo.try_get_request(request_id)
 
     def exists(self, owner: User, request_id: int) -> bool:
         return self._request_repo.exists(owner.id, request_id)
 
     def validate_competition_for_registration(self, owner: User, data: RequestIn) -> bool:
-        competition = self._competition_repo.get(data.competition_id)
+        competition = self._competition_repo.try_get(data.competition_id)
         if not competition or self._request_repo.exists_request_on_competition(owner.id, competition.id):
             return False
 
@@ -161,3 +162,6 @@ class RequestService:
                     if field.field_id in expected_ids
                 ),
             )
+
+
+request_service = RequestService(request_repo, competition_repo, user_repo, participation_repo, form_value_repo)

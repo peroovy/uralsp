@@ -6,7 +6,7 @@ from api.internal.competitions.domain import MIN_PERSONS_AMOUNT
 from api.internal.db.models import Competition, Field, Request
 
 
-class CompetitionFilters(Schema):
+class Filters(Schema):
     name: Optional[str] = None
     admin: Optional[int] = None
     opened: Optional[bool] = None

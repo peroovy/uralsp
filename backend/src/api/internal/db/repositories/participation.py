@@ -38,12 +38,9 @@ class ParticipationRepository(IParticipationRepository):
         return Participation.objects.filter(request_id=request_id).prefetch_related("form")
 
     def exists_intersection(self, user_id_1: int, user_id_2: int) -> bool:
-        return (
-            Participation.objects.filter(user_id=user_id_1)
-            .values_list("request")
-            .intersection(Participation.objects.filter(user_id=user_id_2).values_list("request"))
-            .exists()
-        )
+        return Participation.objects.filter(
+            user_id=user_id_1, request=Participation.objects.filter(user_id=user_id_2).values("request")[:1]
+        ).exists()
 
     def migrate(self, from_user_id: int, to_user_id: int) -> int:
         return Participation.objects.filter(user_id=from_user_id).select_for_update().update(user_id=to_user_id)
