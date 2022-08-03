@@ -1,8 +1,8 @@
 from typing import List, Optional
 
+from django.conf import settings
 from ninja import Field as F, ModelSchema, Schema
 
-from api.internal.competitions.domain import MIN_PERSONS_AMOUNT
 from api.internal.db.models import Competition, Field, Request
 
 
@@ -20,7 +20,7 @@ class CompetitionOut(ModelSchema):
 
 
 class CompetitionIn(ModelSchema):
-    persons_amount: int = F(ge=MIN_PERSONS_AMOUNT)
+    persons_amount: int = F(ge=settings.MIN_PARTICIPANTS_AMOUNT)
     fields: List[str]
     admins: List[int]
 

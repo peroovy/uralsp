@@ -45,6 +45,12 @@ BAD_CREATING_DATE_DELTAS = [
     [timedelta(microseconds=-1), timedelta(microseconds=-1), timedelta(microseconds=-1)],
 ]
 
+VALID_CREATING_DATE_DELTAS = [
+    [timedelta(microseconds=1), timedelta(microseconds=2), timedelta(microseconds=3)],
+    [timedelta(hours=1), timedelta(hours=2), timedelta(hours=3)],
+    [timedelta(days=1), timedelta(days=2), timedelta(days=3)],
+]
+
 
 @pytest.fixture(scope="function")
 def user() -> User:

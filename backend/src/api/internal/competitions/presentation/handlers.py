@@ -14,7 +14,7 @@ from api.internal.competitions.domain.entities import (
     RequestOut,
     RequestTemplateIn,
 )
-from api.internal.competitions.domain.services import CompetitionService, OperationStatus
+from api.internal.competitions.domain.services import CompetitionService
 from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException
 from api.internal.fields.domain.services import FieldService
 from api.internal.requests.domain.services import RequestService
@@ -23,16 +23,16 @@ from api.internal.users.domain.services import UserService
 
 
 class CompetitionHandlers:
-    INVALID_DATES_ERROR = "Invalid dates"
-    INVALID_PERSONS_AMOUNT_ERROR = "Invalid amount of persons"
-    INVALID_FIELDS_ERROR = "Invalid field ids"
-    INVALID_ADMINS_ERROR = "Invalid admin ids"
+    INVALID_DATES = "Invalid dates"
+    INVALID_PERSONS_AMOUNT = "Invalid persons_amount"
+    INVALID_FIELDS = "Invalid field ids"
+    INVALID_ADMINS = "Invalid admin ids"
 
     COMPETITION = "competition"
     BAD_FIELDS = "bad fields"
     BAD_ADMINS = "bad admins"
     BAD_DATES = "bad dates"
-    BAD_PERSONS_AMOUNT = "bad persons amount"
+    BAD_PERSONS_AMOUNT = "bad persons_amount"
 
     def __init__(
         self,
@@ -64,8 +64,9 @@ class CompetitionHandlers:
         return self._competition_service.get_form_details(competition_id)
 
     def create_competition(self, request: HttpRequest, data: CompetitionIn = Body(...)) -> SuccessResponse:
-        status = self._competition_service.create(data)
-        self._handle_creating_or_updating_status(status)
+        self._assert_data_in(data)
+
+        self._competition_service.create(data)
 
         return SuccessResponse()
 
@@ -78,8 +79,9 @@ class CompetitionHandlers:
         if not self._competition_service.has_access(competition_id, request.user):
             raise ForbiddenException()
 
-        status = self._competition_service.update(competition_id, data)
-        self._handle_creating_or_updating_status(status)
+        self._assert_data_in(data)
+
+        self._competition_service.update(competition_id, data)
 
         return SuccessResponse()
 
@@ -107,10 +109,10 @@ class CompetitionHandlers:
         if not self._competition_service.has_access(competition_id, request.user):
             raise ForbiddenException()
 
-        status = self._competition_service.update_form(competition_id, data)
+        if not self._competition_service.validate_fields(data.fields):
+            raise UnprocessableEntityException(self.INVALID_FIELDS, error=self.BAD_FIELDS)
 
-        if status == OperationStatus.BAD_FIELDS:
-            raise UnprocessableEntityException(self.INVALID_FIELDS_ERROR, error=self.BAD_FIELDS)
+        self._competition_service.update_form(competition_id, data)
 
         return SuccessResponse()
 
@@ -118,10 +120,10 @@ class CompetitionHandlers:
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
-        status = self._competition_service.update_admins(competition_id, data)
+        if not self._competition_service.validate_admins(data.admins):
+            raise UnprocessableEntityException(self.INVALID_ADMINS, error=self.BAD_ADMINS)
 
-        if status == OperationStatus.BAD_ADMINS:
-            raise UnprocessableEntityException(self.INVALID_ADMINS_ERROR, error=self.BAD_ADMINS)
+        self._competition_service.update_admins(competition_id, data)
 
         return SuccessResponse()
 
@@ -134,20 +136,19 @@ class CompetitionHandlers:
         if not self._competition_service.has_access(competition_id, request.user):
             raise ForbiddenException()
 
-        self._competition_service.update_request_template(competition_id, data.request_template)
+        self._competition_service.update_request_template(competition_id, data)
 
         return SuccessResponse()
 
-    def _handle_creating_or_updating_status(self, status: OperationStatus) -> None:
-        match status:
-            case OperationStatus.BAD_PERSONS_AMOUNT:
-                raise UnprocessableEntityException(self.INVALID_PERSONS_AMOUNT_ERROR, error=self.BAD_PERSONS_AMOUNT)
+    def _assert_data_in(self, data: CompetitionIn) -> None:
+        if not self._competition_service.validate_persons_amount(data):
+            raise UnprocessableEntityException(self.INVALID_PERSONS_AMOUNT, error=self.BAD_PERSONS_AMOUNT)
 
-            case OperationStatus.BAD_DATES:
-                raise UnprocessableEntityException(self.INVALID_DATES_ERROR, error=self.BAD_DATES)
+        if not self._competition_service.validate_dates(data):
+            raise UnprocessableEntityException(self.INVALID_DATES, error=self.BAD_DATES)
 
-            case OperationStatus.BAD_FIELDS:
-                raise UnprocessableEntityException(self.INVALID_FIELDS_ERROR, error=self.BAD_FIELDS)
+        if not self._competition_service.validate_admins(data.admins):
+            raise UnprocessableEntityException(self.INVALID_ADMINS, error=self.BAD_ADMINS)
 
-            case OperationStatus.BAD_ADMINS:
-                raise UnprocessableEntityException(self.INVALID_ADMINS_ERROR, error=self.BAD_ADMINS)
+        if not self._competition_service.validate_fields(data.fields):
+            raise UnprocessableEntityException(self.INVALID_FIELDS, error=self.BAD_FIELDS)

@@ -1,27 +1,24 @@
-from enum import IntEnum, auto
 from typing import List, Optional
 
+from django.conf import settings
 from django.db.transaction import atomic
 from django.forms import model_to_dict
 from django.utils.timezone import now
 
-from api.internal.competitions.domain import MIN_PERSONS_AMOUNT
-from api.internal.competitions.domain.entities import AdminsIn, CompetitionIn, FieldDetailsOut, Filters, FormIn
+from api.internal.competitions.domain.entities import (
+    AdminsIn,
+    CompetitionIn,
+    FieldDetailsOut,
+    Filters,
+    FormIn,
+    RequestTemplateIn,
+)
 from api.internal.db.models import Competition, User
 from api.internal.db.models.user import Permissions
 from api.internal.db.repositories import competition_repo, field_repo, user_repo
 from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.field import IFieldRepository
 from api.internal.db.repositories.user import IUserRepository
-
-
-class OperationStatus(IntEnum):
-    OK = auto()
-    BAD_PERSONS_AMOUNT = auto()
-    BAD_DATES = auto()
-    BAD_FIELDS = auto()
-    BAD_ADMINS = auto()
-    BAD_COMPETITION = auto()
 
 
 class CompetitionService:
@@ -48,10 +45,7 @@ class CompetitionService:
         return self._competition_repo.delete(competition_id)
 
     @atomic
-    def create(self, data: CompetitionIn) -> OperationStatus:
-        if (validation_status := self._validate_competition_in(data)) != OperationStatus.OK:
-            return validation_status
-
+    def create(self, data: CompetitionIn) -> None:
         competition = self._competition_repo.create(
             data.name,
             data.started_at,
@@ -64,13 +58,8 @@ class CompetitionService:
         competition.fields.add(*data.fields)
         competition.admins.add(*data.admins)
 
-        return OperationStatus.OK
-
     @atomic
-    def update(self, competition_id: int, data: CompetitionIn) -> OperationStatus:
-        if (validation_status := self._validate_competition_in(data)) != OperationStatus.OK:
-            return validation_status
-
+    def update(self, competition_id: int, data: CompetitionIn) -> None:
         competition = self._competition_repo.get_for_update(competition_id)
         competition.name = data.name
         competition.started_at = data.started_at
@@ -87,32 +76,21 @@ class CompetitionService:
 
         competition.save()
 
-        return OperationStatus.OK
-
     @atomic
-    def update_form(self, competition_id: int, data: FormIn) -> OperationStatus:
-        if not self._validate_fields(data.fields):
-            return OperationStatus.BAD_FIELDS
-
+    def update_form(self, competition_id: int, data: FormIn) -> None:
         competition = self._competition_repo.get_for_update(competition_id)
         competition.fields.clear()
         competition.fields.add(*data.fields)
 
-        return OperationStatus.OK
-
     @atomic
-    def update_admins(self, competition_id: int, data: AdminsIn) -> OperationStatus:
-        if not self._validate_admins(data.admins):
-            return OperationStatus.BAD_ADMINS
-
+    def update_admins(self, competition_id: int, data: AdminsIn) -> None:
         competition = self._competition_repo.get_for_update(competition_id)
         competition.admins.clear()
         competition.admins.add(*data.admins)
 
-        return OperationStatus.OK
-
-    def update_request_template(self, competition_id: int, request_template: Optional[str]) -> bool:
-        return self._competition_repo.update(competition_id, request_template=request_template)
+    @atomic
+    def update_request_template(self, competition_id: int, data: RequestTemplateIn) -> bool:
+        return self._competition_repo.update(competition_id, request_template=data.request_template)
 
     def has_access(self, competition_id: int, user: User) -> bool:
         return user.permission == Permissions.SUPER_ADMIN or self._competition_repo.is_admin(competition_id, user.id)
@@ -127,27 +105,18 @@ class CompetitionService:
             for field in fields
         ]
 
-    def _validate_competition_in(self, data: CompetitionIn) -> OperationStatus:
-        if data.persons_amount < MIN_PERSONS_AMOUNT:
-            return OperationStatus.BAD_PERSONS_AMOUNT
+    def validate_persons_amount(self, data: CompetitionIn) -> bool:
+        return data.persons_amount >= settings.MIN_PARTICIPANTS_AMOUNT
 
-        if not (now() < data.registration_before < data.started_at < data.end_at):
-            return OperationStatus.BAD_DATES
+    def validate_dates(self, data: CompetitionIn) -> bool:
+        return now() < data.registration_before < data.started_at < data.end_at
 
-        if not self._validate_admins(data.admins):
-            return OperationStatus.BAD_ADMINS
-
-        if not self._validate_fields(data.fields):
-            return OperationStatus.BAD_FIELDS
-
-        return OperationStatus.OK
-
-    def _validate_admins(self, ids: List[int]) -> bool:
+    def validate_admins(self, ids: List[int]) -> bool:
         unique = set(ids)
 
         return len(unique) > 0 and len(unique) == len(ids) and self._user_repo.exist_all_admins(unique)
 
-    def _validate_fields(self, ids: List[str]) -> bool:
+    def validate_fields(self, ids: List[str]) -> bool:
         unique = set(ids)
 
         return len(unique) > 0 and len(unique) == len(ids) and self._field_repo.exist_all(unique)
