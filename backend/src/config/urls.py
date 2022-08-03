@@ -6,5 +6,5 @@ from api.internal.api import get_api
 api = get_api()
 
 urlpatterns = [
-    path("api/", api.urls),
+    path("", api.urls),
 ]
