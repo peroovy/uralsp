@@ -16,7 +16,6 @@
                 credential: string
             };
             function decodeJwtResponse(token: string) {
-                console.log(token.split('.'));
                 let base64Url = token.split('.')[1]
                 let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
                 let jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
@@ -36,11 +35,10 @@
                 let email = responsePayload.email;
                 
                 let data = {
-                    "client_id": credential,
-                    "id_token": id
+                    "client_id": id,
+                    "id_token": credential
                 };
-                console.log(data);
-                fetch('http://127.0.0.1:8000/auth/signin-google', {
+                fetch('http://localhost:8000/auth/signin-google', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -55,17 +53,12 @@
             // @ts-ignore
             window.google.accounts.id.initialize({
                 client_id: "868612228164-4rrjlhpktkg005qd25qp0f5sa55fuu5j.apps.googleusercontent.com",
-                re: handleCredentialResponse,
+                callback: handleCredentialResponse,
             });
             // @ts-ignore
             window.google.accounts.id.renderButton(google, {});  
         }
     });
-    if(browser){
-        window.onTelegramAuth = (user)=>{
-            console.log(user);
-        }   
-    }
     function onTelegramAuth (user: {detail: {first_name: string, username: string, id: number}}) {
         // send a post request to the server with the user data
         let data = {
