@@ -10,7 +10,7 @@ class Permissions(models.IntegerChoices):
 
 class User(models.Model):
     name = models.CharField(max_length=127)
-    surname = models.CharField(max_length=127)
+    surname = models.CharField(max_length=127, null=True)
     patronymic = models.CharField(max_length=127, null=True)
     permission = models.IntegerField(choices=Permissions.choices, default=Permissions.DEFAULT)
     email = models.EmailField(unique=True, null=True)

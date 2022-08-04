@@ -3,9 +3,9 @@ from unittest.mock import Mock
 import pytest
 from google.oauth2 import id_token
 
-from api.internal.auth.domain.social import GoogleAuth
 from api.internal.db.models import User
 from api.internal.db.repositories import google_repo
+from api.internal.socials.services import GoogleAuth
 
 
 @pytest.mark.unit

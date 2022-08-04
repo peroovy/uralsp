@@ -209,7 +209,7 @@ def another_field() -> Field:
 
 @pytest.fixture(scope="function")
 def vk_api() -> API:
-    api = patch("api.internal.auth.domain.social.API").start()
+    api = patch("api.internal.socials.services.API").start()
 
     instance = Mock()
     instance.account.getProfileInfo.return_value = Mock()
@@ -221,7 +221,7 @@ def vk_api() -> API:
 
 @pytest.fixture(scope="function")
 def google_api() -> id_token:
-    api = patch("api.internal.auth.domain.social.google_id_token").start()
+    api = patch("api.internal.socials.services.google_id_token").start()
 
     api.verify_oauth2_token = Mock()
 

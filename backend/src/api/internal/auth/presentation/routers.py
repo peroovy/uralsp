@@ -12,21 +12,28 @@ def get_auth_router(auth_handlers: AuthHandlers) -> Router:
         path="/signin-vkontakte",
         methods=["POST"],
         view_func=auth_handlers.signin_vkontakte,
-        response={200: TokenDetailsOut, 400: ErrorResponse, 401: ErrorResponse, 500: ErrorResponse},
+        response={200: TokenDetailsOut, 400: ErrorResponse, 401: ErrorResponse},
     )
 
     router.add_api_operation(
         path="/signin-google",
         methods=["POST"],
         view_func=auth_handlers.signin_google,
-        response={200: TokenDetailsOut, 400: ErrorResponse, 401: ErrorResponse, 500: ErrorResponse},
+        response={200: TokenDetailsOut, 400: ErrorResponse, 401: ErrorResponse},
+    )
+
+    router.add_api_operation(
+        path="/signin-telegram",
+        methods=["POST"],
+        view_func=auth_handlers.signin_telegram,
+        response={200: TokenDetailsOut, 400: ErrorResponse, 401: ErrorResponse},
     )
 
     router.add_api_operation(
         path="/refresh",
         methods=["POST"],
         view_func=auth_handlers.refresh,
-        response={200: TokenDetailsOut, 400: ErrorResponse, 422: ErrorResponse, 500: ErrorResponse},
+        response={200: TokenDetailsOut, 400: ErrorResponse, 422: ErrorResponse},
     )
 
     return router

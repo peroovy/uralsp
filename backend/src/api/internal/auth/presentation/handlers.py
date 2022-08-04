@@ -3,10 +3,9 @@ from django.http import HttpRequest
 from ninja import Body
 from ninja.responses import Response
 
-from api.internal.auth.domain.entities import GoogleCredentialsIn, TokenDetailsOut, VKCredentialsIn
+from api.internal.auth.domain.entities import TokenDetailsOut
 from api.internal.auth.domain.services import JWTService, TokenTypes
-from api.internal.auth.domain.social import GoogleAuth, SocialBase, VKAuth
-from api.internal.db.repositories import google_repo, vk_repo
+from api.internal.db.repositories import google_repo, telegram_repo, vk_repo
 from api.internal.exceptions import (
     ExpiredTokenException,
     InvalidPayloadException,
@@ -14,6 +13,8 @@ from api.internal.exceptions import (
     UnauthorizedException,
     UnprocessableEntityException,
 )
+from api.internal.socials.entities import GoogleCredentialsIn, TelegramCredentialsIn, VKCredentialsIn
+from api.internal.socials.services import GoogleAuth, SocialBase, TelegramAuth, VKAuth
 
 
 class AuthHandlers:
@@ -31,6 +32,9 @@ class AuthHandlers:
 
     def signin_google(self, request: HttpRequest, credentials: GoogleCredentialsIn = Body(...)) -> Response:
         return self.signin(GoogleAuth(credentials, google_repo))
+
+    def signin_telegram(self, request: HttpRequest, credentials: TelegramCredentialsIn = Body(...)) -> Response:
+        return self.signin(TelegramAuth(credentials, telegram_repo))
 
     def signin(self, social: SocialBase) -> Response:
         if not (user := social.signin()):

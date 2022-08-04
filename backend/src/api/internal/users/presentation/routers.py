@@ -84,6 +84,13 @@ def get_current_user_router(current_user_handlers: CurrentUserHandlers) -> Route
     )
 
     router.add_api_operation(
+        path="/link-telegram",
+        methods=["PATCH"],
+        view_func=current_user_handlers.link_telegram,
+        response={200: SuccessResponse, 401: ErrorResponse, 422: ErrorResponse},
+    )
+
+    router.add_api_operation(
         path="/unlink-vkontakte",
         methods=["PATCH"],
         view_func=current_user_handlers.unlink_vkontakte,
@@ -94,6 +101,13 @@ def get_current_user_router(current_user_handlers: CurrentUserHandlers) -> Route
         path="/unlink-google",
         methods=["PATCH"],
         view_func=current_user_handlers.unlink_google,
+        response={200: SuccessResponse, 401: ErrorResponse, 422: ErrorResponse},
+    )
+
+    router.add_api_operation(
+        path="/unlink-telegram",
+        methods=["PATCH"],
+        view_func=current_user_handlers.unlink_telegram,
         response={200: SuccessResponse, 401: ErrorResponse, 422: ErrorResponse},
     )
 

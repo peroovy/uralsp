@@ -4,9 +4,9 @@ import pytest
 from vk import API
 from vk.exceptions import VkException
 
-from api.internal.auth.domain.social import VKAuth
 from api.internal.db.models import User
 from api.internal.db.repositories import vk_repo
+from api.internal.socials.services import VKAuth
 
 
 @pytest.mark.unit

@@ -1,15 +1,15 @@
-from typing import Callable, List, Optional
+from typing import List
 
 from django.http import FileResponse, HttpRequest
 from django.utils.timezone import now
 from ninja import Body, Query
 from ninja.pagination import LimitOffsetPagination, paginate
 
-from api.internal.auth.domain.entities import GoogleCredentialsIn, VKCredentialsIn
-from api.internal.auth.domain.social import GoogleAuth, SocialBase, VKAuth
-from api.internal.db.repositories import google_repo, vk_repo
+from api.internal.db.repositories import google_repo, telegram_repo, vk_repo
 from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException
 from api.internal.responses import SuccessResponse
+from api.internal.socials.entities import GoogleCredentialsIn, TelegramCredentialsIn, VKCredentialsIn
+from api.internal.socials.services import GoogleAuth, SocialBase, TelegramAuth, VKAuth
 from api.internal.users.domain.entities import (
     CurrentProfileIn,
     Filters,
@@ -133,11 +133,17 @@ class CurrentUserHandlers:
     def link_google(self, request: HttpRequest, credentials: GoogleCredentialsIn = Body(...)) -> SuccessResponse:
         return self._link_social(request, GoogleAuth(credentials, google_repo))
 
+    def link_telegram(self, request: HttpRequest, credentials: TelegramCredentialsIn = Body(...)) -> SuccessResponse:
+        return self._link_social(request, TelegramAuth(credentials, telegram_repo))
+
     def unlink_vkontakte(self, request: HttpRequest) -> SuccessResponse:
         return self._unlink_social(request, VKAuth(None, vk_repo))
 
     def unlink_google(self, request: HttpRequest) -> SuccessResponse:
         return self._unlink_social(request, GoogleAuth(None, google_repo))
+
+    def unlink_telegram(self, request: HttpRequest) -> SuccessResponse:
+        return self._unlink_social(request, TelegramAuth(None, telegram_repo))
 
     def _link_social(self, request: HttpRequest, social: SocialBase):
         if social.link(request.user.id) is None:
