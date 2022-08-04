@@ -6,50 +6,71 @@
     import { browser } from '$app/env';
     import { onMount } from "svelte";
     import { Login } from 'sveltegram';
+    import { parsePayload } from '$lib/parse';
 
     let google = '' as unknown as HTMLElement;
 
     onMount(() => {
         if(browser){
+            function redirct(per: number, user_id: string) {
+                if(per == 1 || per == 2){
+                    goto(`${base}/admin/${user_id}`);
+                } else {
+                    goto(`${base}/participant/${user_id}`);
+                }
+            }
+
+            // Access token exists and not expired
+            let token = localStorage.getItem('access_token');
+            let exp = localStorage.getItem('expires_in');
+            console.log(token, exp);
+            if( token != null && exp != null){
+                // @ts-ignore
+                let date = new Date(parseInt(localStorage.getItem('expires_in'))*1000);
+                let now = new Date();
+                if(now < date){
+                    let payload = parsePayload(localStorage.getItem('access_token')!);
+                    let per = payload.permission;
+                    let id = payload.user_id;
+                    redirct(per, id);
+                } else {
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('expires_in');
+                }
+            }
+                
+
             interface googleRespond {
                 clientId: string,
                 credential: string
-            };
-            function decodeJwtResponse(token: string) {
-                let base64Url = token.split('.')[1]
-                let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                let jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                return JSON.parse(jsonPayload)
-            }
-            
-            let responsePayload;
+            };     
+
             async function handleCredentialResponse(response: googleRespond) {
                 let credential = response.credential;
-                responsePayload = decodeJwtResponse(credential);
-                let id = responsePayload.sub;
-                let fullName = responsePayload.name;
-                let firstName = responsePayload.given_name;
-                let familyName = responsePayload.family_name;
-                let email = responsePayload.email;
                 
                 let data = {
-                    "client_id": id,
                     "id_token": credential
                 }
-                await fetch('http://127.0.0.1:8000/api/auth/signin-google', {
+                await fetch('http://127.0.0.1:8000/auth/signin-google', {
                     method: 'POST',
                     headers: {
+                        Authorization: `Bearer ${response.credential}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(data)
                 }).then(res => {
-                    console.log(res);
-                }).catch(err => {
-                    console.log(err);
+                    res.json().then(res => {
+                        let expiresIn = res.expires_in;
+                        let token = res.access_token;
+                        localStorage.setItem('access_token', token);
+                        localStorage.setItem('expires_in', expiresIn);
+                        let per = parsePayload(localStorage.getItem('access_token')!).permission;  
+                        let id = parsePayload(localStorage.getItem('access_token')!).user_id;
+                        redirct(per, id);
+                    });
                 });
             }
+
             // @ts-ignore
             window.google.accounts.id.initialize({
                 client_id: "868612228164-4rrjlhpktkg005qd25qp0f5sa55fuu5j.apps.googleusercontent.com",
@@ -59,6 +80,7 @@
             window.google.accounts.id.renderButton(google, {});  
         }
     });
+
     function onTelegramAuth (user: {detail: {first_name: string, username: string, id: number}}) {
         // send a post request to the server with the user data
         let data = {
@@ -129,6 +151,7 @@
 	</div>
     
 </section>
+
 <style lang="scss">
     @import "../lib/Assets/common.scss";
 
@@ -259,9 +282,10 @@
         margin-left: -20px;
         opacity: 1;
         scale: 20;
-        opacity: 0.000000001;
+        opacity: 0.0000001;
         z-index: 20;
     }
+
     @media screen and (max-width: 450px){
         .signup-form{
             width: 100vw !important;
