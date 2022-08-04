@@ -33,11 +33,7 @@ class IRequestRepository(ABC):
         ...
 
     @abstractmethod
-    def update(self, request_id: int, team_name: str, status: RequestStatus, description: Optional[str]) -> None:
-        ...
-
-    @abstractmethod
-    def cancel(self, request_id: int) -> None:
+    def update(self, request_id: int, **kwargs) -> int:
         ...
 
     @abstractmethod
@@ -68,13 +64,8 @@ class RequestRepository(IRequestRepository):
     def exists_request_on_competition(self, owner_id: int, competition_id: int) -> bool:
         return Request.objects.filter(owner_id=owner_id, competition_id=competition_id).exists()
 
-    def update(self, request_id: int, team_name: str, status: RequestStatus, description: Optional[str]) -> None:
-        Request.objects.filter(id=request_id).select_for_update().update(
-            team_name=team_name, status=status, description=description
-        )
-
-    def cancel(self, request_id: int) -> None:
-        Request.objects.filter(id=request_id).select_for_update().update(status=RequestStatus.CANCELED)
+    def update(self, request_id: int, **kwargs) -> int:
+        return Request.objects.filter(id=request_id).select_for_update().update(**kwargs)
 
     def exists_intersection(self, owner_id_1: int, owner_id_2: int) -> bool:
         return Request.objects.filter(

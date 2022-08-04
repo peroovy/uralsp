@@ -4,7 +4,7 @@ from typing import Optional
 from django.http import HttpRequest
 from ninja.security import HttpBearer
 
-from api.internal.auth.domain.services import AuthService, TokenTypes
+from api.internal.auth.domain.services import JWTService, TokenTypes
 from api.internal.db.models import User
 from api.internal.db.models.user import Permissions
 from api.internal.db.repositories import refresh_repo, user_repo
@@ -12,7 +12,7 @@ from api.internal.exceptions import ForbiddenException, UnauthorizedException
 
 
 class JWTAuthentication(HttpBearer):
-    _service = AuthService(user_repo, refresh_repo)
+    _service = JWTService(user_repo, refresh_repo)
 
     def authenticate(self, request: HttpRequest, token: str) -> Optional[str]:
         request.user = None
@@ -24,8 +24,7 @@ class JWTAuthentication(HttpBearer):
             and self._service.is_token_type(payload, TokenTypes.ACCESS)
             and not self._service.is_token_expired(payload)
         ):
-            user = self._service.get_user(payload)
-            if not user:
+            if not (user := self._service.get_user(payload)):
                 raise UnauthorizedException()
 
             if not self.authorize(user):

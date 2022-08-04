@@ -1,19 +1,16 @@
-from itertools import permutations
-
 import pytest
-from django.forms import model_to_dict
 
 from api.internal.db.models import Competition, Field, FormValue, Participation, Request, User
 from api.internal.db.models.user import Permissions
 from api.internal.users.domain.entities import Filters, ProfileIn
-from api.internal.users.domain.services import OperationStatus, user_service
+from api.internal.users.domain.services import user_service
 from tests.conftest import get_bad_filters_by_string, get_filters_by_string
 
 
 @pytest.mark.unit
 @pytest.mark.django_db
 def test_getting_users__without_filtering(user: User, another: User) -> None:
-    actual = sorted(user_service.get_users(Filters()), key=lambda usr: usr.id)
+    actual = sorted(user_service.get_filtered(Filters()), key=lambda usr: usr.id)
     assert actual == sorted([user, another], key=lambda usr: usr.id)
 
 
@@ -33,7 +30,7 @@ def test_getting_users__filtering_by_school(user: User, search: str, is_found: b
     user.school = SCHOOL
     user.save(update_fields=["school"])
 
-    actual = user_service.get_users(Filters(school=search))
+    actual = user_service.get_filtered(Filters(school=search))
     assert actual == ([user] if is_found else [])
 
 
@@ -53,7 +50,7 @@ def test_getting_users__filtering_by_school_class(user: User, search: str, is_fo
     user.school_class = CLASS
     user.save(update_fields=["school_class"])
 
-    actual = user_service.get_users(Filters(school_class=search))
+    actual = user_service.get_filtered(Filters(school_class=search))
     assert actual == ([user] if is_found else [])
 
 
@@ -73,7 +70,7 @@ def test_getting_users__filtering_by_region(user: User, search: str, is_found: b
     user.region = REGION
     user.save(update_fields=["region"])
 
-    actual = user_service.get_users(Filters(region=search))
+    actual = user_service.get_filtered(Filters(region=search))
     assert actual == ([user] if is_found else [])
 
 
@@ -103,7 +100,7 @@ def test_getting_users__filtering_by_email(user: User, search: str, is_found: bo
     user.email = EMAIL
     user.save(update_fields=["email"])
 
-    actual = user_service.get_users(Filters(email=search))
+    actual = user_service.get_filtered(Filters(email=search))
     assert actual == ([user] if is_found else [])
 
 
@@ -111,7 +108,9 @@ def test_getting_users__filtering_by_email(user: User, search: str, is_found: bo
 @pytest.mark.django_db
 @pytest.mark.parametrize("permission", Permissions)
 def test_getting_users__filtering_by_permission(user: User, permission: Permissions) -> None:
-    assert user_service.get_users(Filters(permission=permission.value)) == ([user] if user.permission == permission else [])
+    assert user_service.get_filtered(Filters(permission=permission.value)) == (
+        [user] if user.permission == permission else []
+    )
 
 
 SURNAME, NAME, PATRONYMIC = "Petrov", "Petr", "Petrovich"
@@ -143,19 +142,19 @@ def test_getting_users_filtering_by_fcs(user: User, search: str, has_patronymic:
     user.patronymic = PATRONYMIC if has_patronymic else None
     user.save(update_fields=["name", "surname", "patronymic"])
 
-    actual = user_service.get_users(Filters(fcs=search))
+    actual = user_service.get_filtered(Filters(fcs=search))
     assert actual == ([user] if is_found else [])
 
 
 @pytest.mark.unit
 @pytest.mark.django_db
 def test_getting_user(user: User) -> None:
-    assert user_service.try_get(user.id) == user
-    assert user_service.try_get(-1) is None
+    assert user_service.get_user(user.id) == user
+    assert user_service.get_user(-1) is None
 
 
 @pytest.mark.unit
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_updating_user(user: User) -> None:
     data = ProfileIn(
         name="-1",
@@ -170,7 +169,7 @@ def test_updating_user(user: User) -> None:
         school_class="-3-3",
     )
 
-    assert user_service.update(user.id, data) is True
+    assert user_service.update(user, data) is True
 
     user.refresh_from_db()
     assert user.name == data.name
@@ -205,144 +204,3 @@ def test_getting_last_form_values(
 
     actual = user_service.get_last_form_values(user.id, {field.id, "unknown", another_field.id})
     assert actual == [expected]
-
-
-@pytest.mark.unit
-@pytest.mark.django_db(transaction=True)
-def test_merging__unknown_user(user: User, another: User, user_request: Request, participation: Participation) -> None:
-    assert_merging_error(OperationStatus.BAD_USER_IDS, [user.id, -1], [-1, another.id], [-1, -1])
-
-
-@pytest.mark.unit
-@pytest.mark.django_db(transaction=True)
-def test_merging__not_equal_permissions(
-    user: User, admin: User, super_admin: User, user_request: Request, participation: Participation
-) -> None:
-    assert_merging_error(OperationStatus.NOT_EQUALS_PERMISSIONS, *permutations([user.id, admin.id, super_admin.id], 2))
-
-
-@pytest.mark.unit
-@pytest.mark.django_db(transaction=True)
-def test_merging__exists_request_intersection(
-    user: User, another: User, user_request: Request, participation: Participation
-) -> None:
-    Request.objects.create(owner=another, competition_id=user_request.competition_id)
-
-    assert_merging_error(OperationStatus.INTERSECTION_REQUESTS_ERROR, [user.id, another.id], [another.id, user.id])
-
-
-@pytest.mark.unit
-@pytest.mark.django_db(transaction=True)
-def test_merging__exists_participation_intersection(
-    user: User, another: User, user_request: Request, participation: Participation
-) -> None:
-    Participation.objects.create(request=participation.request, user=another)
-
-    assert_merging_error(OperationStatus.INTERSECTION_PARTICIPATION_ERROR, [user.id, another.id], [another.id, user.id])
-
-
-@pytest.mark.unit
-@pytest.mark.django_db(transaction=True)
-def test_merging_default_users(
-    user: User,
-    another: User,
-    user_request: Request,
-    participation: Participation,
-    another_competition: Competition,
-    competition: Competition,
-    field: Field,
-) -> None:
-    assert_merging_default_users(user, user_request, participation, another, competition, another_competition, field)
-
-
-@pytest.mark.unit
-@pytest.mark.django_db(transaction=True)
-def test_merging_admins(
-    admin: User,
-    another_admin: User,
-    user_request: Request,
-    participation: Participation,
-    competition: Competition,
-    another_competition: Competition,
-    field: Field,
-) -> None:
-    user_request.owner = admin
-    user_request.save(update_fields=["owner"])
-    participation.user = admin
-    participation.save(update_fields=["user"])
-    competition.admins.add(admin)
-
-    assert_merging_default_users(
-        admin, user_request, participation, another_admin, competition, another_competition, field
-    )
-    assert competition.admins.count() == 0
-
-
-@pytest.mark.unit
-@pytest.mark.django_db(transaction=True)
-def test_merging_super_admins(
-    super_admin: User,
-    another_super_admin: User,
-    user_request: Request,
-    participation: Participation,
-    another_competition: Competition,
-    competition: Competition,
-    field: Field,
-) -> None:
-    user_request.owner = super_admin
-    user_request.save(update_fields=["owner"])
-    participation.user = super_admin
-    participation.save(update_fields=["user"])
-
-    assert_merging_default_users(super_admin, user_request, participation, another_super_admin, competition, another_competition, field)
-
-
-def assert_merging_default_users(
-    from_user: User,
-    from_request: Request,
-    from_participation: Participation,
-    to_user: User,
-    competition: Competition,
-    another_competition: Competition,
-    field: Field,
-) -> None:
-    another_user_request = Request.objects.create(owner=to_user, competition=another_competition)
-    another_user_participation = Participation.objects.create(user=to_user, request=another_user_request)
-
-    competition.fields.add(field)
-    user_form_value = FormValue.objects.create(participation=from_participation, field=field, value="123")
-
-    assert user_service.merge(from_user.id, to_user.id) == OperationStatus.OK
-    to_user.refresh_from_db()
-    from_request.refresh_from_db()
-    from_participation.refresh_from_db()
-    another_user_participation.refresh_from_db()
-    another_user_request.refresh_from_db()
-    user_form_value.refresh_from_db()
-
-    assert from_request.owner == to_user
-    assert from_participation.user == to_user
-    assert another_user_request.owner == to_user
-    assert another_user_participation.user == to_user
-    assert user_form_value.participation.user == to_user
-    assert not User.objects.filter(pk=from_user.pk).exists()
-
-    actual, expected = model_to_dict(to_user, exclude=["id"]), model_to_dict(from_user, exclude=["id"])
-    assert expected == actual
-
-
-def assert_merging_error(expected_status: OperationStatus, *pairs) -> None:
-    for from_id, to_id in pairs:
-        request_from, participation_from = list(Request.objects.filter(owner_id=from_id)), list(
-            Participation.objects.filter(user_id=from_id)
-        )
-        assert user_service.merge(from_id, to_id) == expected_status
-        assert User.objects.filter(id=from_id).exists() if from_id >= 0 else True
-
-        if len(participation_from) > 0:
-            assert not Participation.objects.filter(
-                user_id=to_id, id__in=set(map(lambda p: p.id, participation_from))
-            ).exists()
-
-        if len(request_from) > 0:
-            assert not Request.objects.filter(owner_id=to_id, id__in=set(map(lambda r: r.id, request_from))).exists()

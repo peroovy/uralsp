@@ -17,10 +17,7 @@ from api.internal.exceptions import (
     ForbiddenException,
     InvalidPayloadException,
     NotFoundException,
-    NotFoundRefreshTokenException,
-    RevokedRefreshTokenException,
     UnauthorizedException,
-    UnknownRefreshTokenException,
     UnprocessableEntityException,
 )
 from api.internal.fields.api import register_fields_api
@@ -46,14 +43,11 @@ def get_api() -> NinjaAPI:
 def subscribe_exception_handlers(api: NinjaAPI) -> None:
     outer_exceptions = [
         UnauthorizedException,
-        NotFoundRefreshTokenException,
         UnprocessableEntityException,
         InvalidPayloadException,
         ExpiredTokenException,
-        UnknownRefreshTokenException,
         BadRequestException,
         NotFoundException,
-        RevokedRefreshTokenException,
         ForbiddenException,
     ]
     inner_exceptions = [DatabaseError, ObjectDoesNotExist]

@@ -10,15 +10,15 @@ from api.internal.responses import SuccessResponse
 
 
 class RequestHandlers:
-    INVALID_COMPETITION_ERROR = "Invalid competition data"
-    INVALID_TEAM_ERROR = "Invalid user ids"
-    INVALID_ANY_FORMS_ERROR = "Invalid form details"
-    COMPETITION_ALREADY_STARTED_ERROR = "Competition already started"
+    INVALID_COMPETITION = "Validation competition error"
+    INVALID_TEAM = "Validation team error"
+    INVALID_FORMS = "Validation forms error"
+    COMPETITION_ALREADY_STARTED = "Competition already started"
 
     REQUEST = "request"
-    COMPETITION = "competition"
-    USERS = "users"
-    FORMS = "forms"
+    BAD_COMPETITION = "bad competition"
+    BAD_USERS = "bad users"
+    BAD_FORMS = "bad forms"
 
     def __init__(self, request_service: RequestService):
         self._request_service = request_service
@@ -32,41 +32,43 @@ class RequestHandlers:
         if not (user_request := self._request_service.get_request(request_id)):
             raise NotFoundException(self.REQUEST)
 
-        if not self._request_service.is_owner_or_admin_on_competition(request.user, user_request):
+        if not self._request_service.has_access(request.user, user_request):
             raise ForbiddenException()
 
         return self._request_service.get_request_details(user_request)
 
-    def create_request(self, request: HttpRequest, data: RequestIn = Body(...)) -> RequestOut:
+    def create_request(self, request: HttpRequest, data: RequestIn = Body(...)) -> SuccessResponse:
         if not self._request_service.validate_competition_for_registration(request.user, data):
-            raise UnprocessableEntityException(self.INVALID_COMPETITION_ERROR, error=self.COMPETITION)
+            raise UnprocessableEntityException(self.INVALID_COMPETITION, error=self.BAD_COMPETITION)
 
         if not self._request_service.validate_users(data):
-            raise UnprocessableEntityException(self.INVALID_TEAM_ERROR, error=self.USERS)
+            raise UnprocessableEntityException(self.INVALID_TEAM, error=self.BAD_USERS)
 
         if not self._request_service.validate_forms(data):
-            raise UnprocessableEntityException(self.INVALID_ANY_FORMS_ERROR, error=self.FORMS)
+            raise UnprocessableEntityException(self.INVALID_FORMS, error=self.BAD_FORMS)
 
-        return RequestOut.from_orm(self._request_service.create(request.user, data))
+        self._request_service.create(request.user, data)
+
+        return SuccessResponse()
 
     def update_request(self, request: HttpRequest, request_id: int, data: FormsIn = Body(...)) -> SuccessResponse:
         if not (user_request := self._request_service.get_request(request_id)):
             raise NotFoundException(self.REQUEST)
 
-        if not self._request_service.is_owner_or_admin_on_competition(request.user, user_request):
+        if not self._request_service.has_access(request.user, user_request):
             raise ForbiddenException()
 
         if not self._request_service.validate_competition_for_updating(user_request, data):
-            raise UnprocessableEntityException(self.INVALID_COMPETITION_ERROR, error=self.COMPETITION)
+            raise UnprocessableEntityException(self.INVALID_COMPETITION, error=self.BAD_COMPETITION)
 
         if not self._request_service.validate_users(data):
-            raise UnprocessableEntityException(self.INVALID_TEAM_ERROR, error=self.USERS)
+            raise UnprocessableEntityException(self.INVALID_TEAM, error=self.BAD_USERS)
 
-        request_in = RequestIn(competition_id=user_request.competition.id, team_name=data.team_name, team=data.team)
+        request_in = RequestIn(competition_id=user_request.competition_id, team_name=data.team_name, team=data.team)
         if not self._request_service.validate_forms(request_in):
-            raise UnprocessableEntityException(self.INVALID_ANY_FORMS_ERROR, error=self.FORMS)
+            raise UnprocessableEntityException(self.INVALID_FORMS, error=self.BAD_FORMS)
 
-        self._request_service.update(request_id, request_in)
+        self._request_service.update(user_request, request_in)
 
         return SuccessResponse()
 
@@ -74,13 +76,13 @@ class RequestHandlers:
         if not (user_request := self._request_service.get_request(request_id)):
             raise NotFoundException(self.REQUEST)
 
-        if not self._request_service.is_owner_or_admin_on_competition(request.user, user_request):
+        if not self._request_service.has_access(request.user, user_request):
             raise ForbiddenException()
 
         if self._request_service.is_competition_started(user_request):
-            raise UnprocessableEntityException(self.COMPETITION_ALREADY_STARTED_ERROR, error=self.COMPETITION)
+            raise UnprocessableEntityException(self.COMPETITION_ALREADY_STARTED, error=self.BAD_COMPETITION)
 
-        self._request_service.cancel(request_id)
+        self._request_service.cancel(user_request)
 
         return SuccessResponse()
 
@@ -88,7 +90,7 @@ class RequestHandlers:
         if not (user_request := self._request_service.get_request(request_id)):
             raise NotFoundException(self.REQUEST)
 
-        if not self._request_service.is_admin_on_competition(request.user, user_request):
+        if not self._request_service.has_access(request.user, user_request, only_admin=True):
             raise ForbiddenException()
 
         self._request_service.process(user_request, data)

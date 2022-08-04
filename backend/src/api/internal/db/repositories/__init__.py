@@ -5,7 +5,7 @@ from api.internal.db.repositories.form_value import FormValueRepository
 from api.internal.db.repositories.participation import ParticipationRepository
 from api.internal.db.repositories.refresh_token import RefreshTokenRepository
 from api.internal.db.repositories.request import RequestRepository
-from api.internal.db.repositories.social import GoogleRepository, VKontakteRepository
+from api.internal.db.repositories.social import GoogleRepository, VKRepository
 from api.internal.db.repositories.user import UserRepository
 
 user_repo = UserRepository()
@@ -17,7 +17,7 @@ form_value_repo = FormValueRepository()
 field_repo = FieldRepository()
 default_repo = DefaultRepository()
 
-vkontakte_repo = VKontakteRepository()
+vk_repo = VKRepository()
 google_repo = GoogleRepository()
 
 __all__ = [
@@ -29,6 +29,6 @@ __all__ = [
     "form_value_repo",
     "field_repo",
     "default_repo",
-    "vkontakte_repo",
+    "vk_repo",
     "google_repo",
 ]

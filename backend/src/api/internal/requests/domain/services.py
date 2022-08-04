@@ -5,8 +5,7 @@ from django.utils.timezone import now
 
 from api.internal.db.models import Request, User
 from api.internal.db.models.request import RequestStatus
-from api.internal.db.models.user import Permissions
-from api.internal.db.repositories import request_repo, competition_repo, user_repo, participation_repo, form_value_repo
+from api.internal.db.repositories import competition_repo, form_value_repo, participation_repo, request_repo, user_repo
 from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.form_value import FieldValue, IFormValueRepository
 from api.internal.db.repositories.participation import IParticipationRepository
@@ -46,8 +45,42 @@ class RequestService:
     def exists(self, owner: User, request_id: int) -> bool:
         return self._request_repo.exists(owner.id, request_id)
 
+    @atomic
+    def create(self, owner: User, data: RequestIn) -> Request:
+        request = self._request_repo.create(owner.id, data.competition, data.team_name)
+        self._create_participation_and_fill_form(request.id, data.competition, data.team)
+
+        return request
+
+    @atomic
+    def update(self, request: Request, data: RequestIn) -> None:
+        self._request_repo.update(request.id, team_name=data.team_name, status=RequestStatus.AWAITED, description=None)
+        self._participation_repo.delete_all(request.id)
+
+        self._create_participation_and_fill_form(request.id, data.competition, data.team)
+
+    @atomic
+    def cancel(self, request: Request) -> None:
+        self._request_repo.update(request.id, status=RequestStatus.CANCELED)
+
+    @atomic
+    def process(self, request: Request, data: ProcessIn) -> None:
+        self._request_repo.update(
+            request.id,
+            team_name=request.team_name,
+            status=RequestStatus(data.status.value),
+            description=data.description,
+        )
+
+    def has_access(self, user: User, request: Request, only_admin=False) -> bool:
+        return (
+            user.id == request.owner_id
+            and not only_admin
+            or self._competition_repo.is_admin(request.competition_id, user.id)
+        )
+
     def validate_competition_for_registration(self, owner: User, data: RequestIn) -> bool:
-        competition = self._competition_repo.try_get(data.competition_id)
+        competition = self._competition_repo.try_get(data.competition)
         if not competition or self._request_repo.exists_request_on_competition(owner.id, competition.id):
             return False
 
@@ -68,7 +101,7 @@ class RequestService:
         return len(unique_ids) == self._user_repo.get_count(unique_ids)
 
     def validate_forms(self, data: RequestIn) -> bool:
-        fields = list(self._competition_repo.get_form(data.competition_id))
+        fields = list(self._competition_repo.get_form(data.competition))
 
         if not fields:
             return True
@@ -90,28 +123,6 @@ class RequestService:
 
     def is_competition_started(self, request: Request) -> bool:
         return now() >= request.competition.started_at
-
-    @atomic
-    def create(self, owner: User, data: RequestIn) -> Request:
-        request = self._request_repo.create(owner.id, data.competition_id, data.team_name)
-        self._create_participation_and_fill_form(request.id, data.competition_id, data.team)
-
-        return request
-
-    @atomic
-    def update(self, request_id: int, data: RequestIn) -> None:
-        self._request_repo.update(request_id, data.team_name, status=RequestStatus.AWAITED, description=None)
-        self._participation_repo.delete_all(request_id)
-
-        self._create_participation_and_fill_form(request_id, data.competition_id, data.team)
-
-    @atomic
-    def cancel(self, request_id: int) -> None:
-        self._request_repo.cancel(request_id)
-
-    @atomic
-    def process(self, request: Request, data: ProcessIn) -> None:
-        self._request_repo.update(request.id, request.team_name, data.status, data.description)
 
     def get_requests_for(self, competition_id: int) -> List[Request]:
         return list(self._request_repo.get_requests_on_competition(competition_id))
@@ -137,14 +148,6 @@ class RequestService:
             created_at=request.created_at,
             participants=participation_outs,
         )
-
-    def is_admin_on_competition(self, user: User, request: Request) -> bool:
-        return user.permission == Permissions.SUPER_ADMIN or self._competition_repo.is_admin(
-            int(request.competition_id), user.id
-        )
-
-    def is_owner_or_admin_on_competition(self, user: User, request: Request) -> bool:
-        return user.id == request.owner_id or self.is_admin_on_competition(user, request)
 
     def _create_participation_and_fill_form(
         self, request_id: int, competition_id: int, team: Iterable[ParticipationSchema]

@@ -6,25 +6,25 @@ from api.internal.db.models import User
 
 class ISocialRepository(ABC):
     @abstractmethod
-    def try_get(self, social_id: int) -> Optional[User]:
+    def update_user(self, user_id: int, social_id: Optional[int]) -> bool:
         ...
 
     @abstractmethod
-    def create(self, social_id: int, surname: str, name: str) -> User:
+    def get_or_create(self, social_id: int, surname: str, name: str) -> User:
         ...
 
 
-class VKontakteRepository(ISocialRepository):
-    def try_get(self, social_id: int) -> Optional[User]:
-        return User.objects.filter(vkontakte_id=social_id).first()
+class VKRepository(ISocialRepository):
+    def update_user(self, user_id: int, social_id: Optional[int]) -> bool:
+        return User.objects.filter(id=user_id).update(vkontakte_id=social_id) > 0
 
-    def create(self, social_id: int, surname: str, name: str) -> User:
-        return User.objects.create(name=name, surname=surname, vkontakte_id=social_id)
+    def get_or_create(self, social_id: int, surname: str, name: str) -> User:
+        return User.objects.get_or_create(vkontakte_id=social_id, defaults={"surname": surname, "name": name})[0]
 
 
 class GoogleRepository(ISocialRepository):
-    def try_get(self, social_id: int) -> Optional[User]:
-        return User.objects.filter(google_id=social_id).first()
+    def update_user(self, user_id: int, social_id: Optional[int]) -> bool:
+        return User.objects.filter(id=user_id).update(google_id=social_id) > 0
 
-    def create(self, social_id: int, surname: str, name: str) -> User:
-        return User.objects.create(name=name, surname=surname, google_id=social_id)
+    def get_or_create(self, social_id: int, surname: str, name: str) -> User:
+        return User.objects.get_or_create(google_id=social_id, defaults={"surname": surname, "name": name})[0]

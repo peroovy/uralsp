@@ -14,7 +14,7 @@ def pytest_configure(config):
     logging.disable()
 
 
-AFTER_NOW = (
+AFTER_NOW = [
     timedelta(microseconds=1),
     timedelta(milliseconds=1),
     timedelta(seconds=1),
@@ -23,9 +23,9 @@ AFTER_NOW = (
     timedelta(days=1),
     timedelta(days=32),
     timedelta(days=365),
-)
+]
 
-BEFORE_NOW = tuple(-delta for delta in AFTER_NOW)
+BEFORE_NOW = [-delta for delta in AFTER_NOW]
 
 BAD_CREATING_DATE_DELTAS = [
     [timedelta(microseconds=2), timedelta(microseconds=2), timedelta(microseconds=3)],
@@ -43,6 +43,12 @@ BAD_CREATING_DATE_DELTAS = [
     [timedelta(microseconds=-10), timedelta(microseconds=-5), timedelta(microseconds=-1)],
     [timedelta(microseconds=-10), timedelta(microseconds=-5), timedelta(microseconds=-6)],
     [timedelta(microseconds=-1), timedelta(microseconds=-1), timedelta(microseconds=-1)],
+]
+
+VALID_CREATING_DATE_DELTAS = [
+    [timedelta(microseconds=1), timedelta(microseconds=2), timedelta(microseconds=3)],
+    [timedelta(hours=1), timedelta(hours=2), timedelta(hours=3)],
+    [timedelta(days=1), timedelta(days=2), timedelta(days=3)],
 ]
 
 
@@ -158,6 +164,7 @@ def another_super_admin() -> User:
         telegram_id="111111111111112222222222222",
     )
 
+
 @pytest.fixture(scope="function")
 def competition() -> Competition:
     return Competition.objects.create(
@@ -192,11 +199,7 @@ def participation(user: User, user_request: Request) -> Participation:
 
 @pytest.fixture(scope="function")
 def field() -> Field:
-    field = Field.objects.create(id="text_field", name="TextField", type=0)
-
-    DefaultValue.objects.create(field=field, value="ABOBA")
-
-    return field
+    return Field.objects.create(id="text_field", name="TextField", type=0)
 
 
 @pytest.fixture(scope="function")
@@ -206,7 +209,7 @@ def another_field() -> Field:
 
 @pytest.fixture(scope="function")
 def vk_api() -> API:
-    api = patch("api.internal.auth.domain.services.API").start()
+    api = patch("api.internal.auth.domain.social.API").start()
 
     instance = Mock()
     instance.account.getProfileInfo.return_value = Mock()
@@ -218,7 +221,7 @@ def vk_api() -> API:
 
 @pytest.fixture(scope="function")
 def google_api() -> id_token:
-    api = patch("api.internal.auth.domain.services.google_id_token").start()
+    api = patch("api.internal.auth.domain.social.google_id_token").start()
 
     api.verify_oauth2_token = Mock()
 

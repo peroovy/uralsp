@@ -22,7 +22,7 @@ def get_request_router(request_handlers: RequestHandlers) -> Router:
         path="",
         methods=["POST"],
         view_func=request_handlers.create_request,
-        response={200: RequestOut, 401: ErrorResponse, 403: ErrorResponse},
+        response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse},
     )
 
     router.add_api_operation(
