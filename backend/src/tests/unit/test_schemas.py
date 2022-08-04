@@ -41,7 +41,7 @@ def test_default_profile_in__invalid_phone(value: str) -> None:
 @pytest.mark.unit
 def test_request_in() -> None:
     json_ = {
-        "competition_id": 1,
+        "competition": 1,
         "team_name": "Baby",
         "team": [
             {"user_id": 1, "form": [{"field_id": "passport", "value": "123"}, {"field_id": "lisense", "value": "345"}]},

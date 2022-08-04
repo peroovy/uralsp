@@ -1,4 +1,3 @@
-
 import pytest
 
 from api.internal.db.models import Competition, Field, FormValue, Participation, Request, User

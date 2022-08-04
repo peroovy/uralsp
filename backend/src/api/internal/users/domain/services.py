@@ -14,7 +14,7 @@ from api.internal.db.repositories.form_value import IFormValueRepository
 from api.internal.db.repositories.participation import IParticipationRepository
 from api.internal.db.repositories.request import IRequestRepository
 from api.internal.db.repositories.user import IUserRepository
-from api.internal.users.domain.entities import Filters, ProfileIn, MergingIn
+from api.internal.users.domain.entities import Filters, MergingIn, ProfileIn
 
 
 class UserService:
@@ -41,14 +41,22 @@ class UserService:
         return self._user_repo.update(user.id, **data.dict())
 
     def has_access(self, user: User, permission_to_update: Permissions) -> bool:
-        return user.permission == Permissions.SUPER_ADMIN or permission_to_update not in [Permissions.ADMIN, Permissions.SUPER_ADMIN]
+        return user.permission == Permissions.SUPER_ADMIN or permission_to_update not in [
+            Permissions.ADMIN,
+            Permissions.SUPER_ADMIN,
+        ]
 
     def get_last_form_values(self, user_id: int, field_ids: Set[str]) -> List[FormValue]:
         return list(self._form_value_repo.get_lasts_for(user_id, field_ids))
 
+    def get_socials_amount(self, user_id: int) -> int:
+        return self._user_repo.get_socials_amount(user_id)
+
 
 class MergingService:
-    def __init__(self, user_repo: IUserRepository, request_repo: IRequestRepository, participation_repo: IParticipationRepository):
+    def __init__(
+        self, user_repo: IUserRepository, request_repo: IRequestRepository, participation_repo: IParticipationRepository
+    ):
         self._user_repo = user_repo
         self._request_repo = request_repo
         self._participation_repo = participation_repo

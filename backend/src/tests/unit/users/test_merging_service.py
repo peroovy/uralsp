@@ -3,7 +3,7 @@ from itertools import permutations
 import pytest
 from django.forms import model_to_dict
 
-from api.internal.db.models import Request, Participation, User, Competition, Field, FormValue
+from api.internal.db.models import Competition, Field, FormValue, Participation, Request, User
 from api.internal.users.domain.entities import MergingIn
 from api.internal.users.domain.services import merging_service
 
@@ -19,9 +19,7 @@ def test_existing_users(user: User, another: User) -> None:
 
 @pytest.mark.unit
 @pytest.mark.django_db
-def test_checking_equality_permissions(
-    user: User, admin: User, super_admin: User, another: User
-) -> None:
+def test_checking_equality_permissions(user: User, admin: User, super_admin: User, another: User) -> None:
     for from_id, to_id in permutations([user.id, admin.id, super_admin.id], 2):
         assert merging_service.equal_permissions(MergingIn(from_id=from_id, to_id=to_id)) is False
 

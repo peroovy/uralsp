@@ -5,8 +5,9 @@ from django.utils.timezone import now
 from ninja import Body, Query
 from ninja.pagination import LimitOffsetPagination, paginate
 
-from api.internal.auth.domain.entities import GoogleLoginIn, VKLoginIn
-from api.internal.auth.domain.services import SocialService
+from api.internal.auth.domain.entities import GoogleCredentialsIn, VKCredentialsIn
+from api.internal.auth.domain.social import GoogleAuth, SocialBase, VKAuth
+from api.internal.db.repositories import google_repo, vk_repo
 from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException
 from api.internal.responses import SuccessResponse
 from api.internal.users.domain.entities import (
@@ -18,7 +19,7 @@ from api.internal.users.domain.entities import (
     ProfileIn,
     ProfileOut,
 )
-from api.internal.users.domain.services import DocumentService, UserService, MergingService
+from api.internal.users.domain.services import DocumentService, MergingService, UserService
 
 
 class UserHandlers:
@@ -92,9 +93,7 @@ class UserHandlers:
             raise UnprocessableEntityException(self.INTERSECTION_REQUESTS, error=self.REQUESTS)
 
         if self._merging_service.exists_participation_intersection(users):
-            raise UnprocessableEntityException(
-                self.INTERSECTION_PARTICIPATION, error=self.PARTICIPATION
-            )
+            raise UnprocessableEntityException(self.INTERSECTION_PARTICIPATION, error=self.PARTICIPATION)
 
         self._merging_service.merge(users)
 
@@ -104,16 +103,16 @@ class UserHandlers:
 class CurrentUserHandlers:
     MIN_SOCIAL_AMOUNT = 1
 
-    SOCIAL_CONNECTING_ERROR = "Failed to get user information"
-    MIN_AMOUNT_SOCIALS_ERROR = f"Min amount of socials is {MIN_SOCIAL_AMOUNT}"
-    NOT_FOUND_ANY_FIELD_IDS_ERROR = "Any field ids were not found"
+    SOCIAL_CONNECTING = "Failed to get user information"
+    MIN_AMOUNT_SOCIALS = f"Min amount of socials is {MIN_SOCIAL_AMOUNT}"
+    NOT_FOUND_ANY_FIELD_IDS = "Any field ids were not found"
+    UNAUTHORIZED_IN_SOCIAL = "Unauthorized in social"
 
-    SOCIAL_CONNECTING = "social connecting"
-    SOCIALS_AMOUNT = "socials amount"
+    SOCIALS_AMOUNT = "socials_amount"
+    BAD_CREDENTIALS = "bad credentials"
 
-    def __init__(self, user_service: UserService, social_service: SocialService):
+    def __init__(self, user_service: UserService):
         self._user_service = user_service
-        self._social_service = social_service
 
     def get_profile(self, request: HttpRequest) -> FullProfileOut:
         return FullProfileOut.from_orm(request.user)
@@ -128,34 +127,28 @@ class CurrentUserHandlers:
 
         return [FormValueOut(id=form_value.field_id, value=form_value.value) for form_value in values]
 
-    def link_vkontakte(self, request: HttpRequest, data: VKLoginIn = Body(...)) -> SuccessResponse:
-        vk_id = self._social_service.try_get_vkontakte_id(data.access_token)
+    def link_vkontakte(self, request: HttpRequest, credentials: VKCredentialsIn = Body(...)) -> SuccessResponse:
+        return self._link_social(request, VKAuth(credentials, vk_repo))
 
-        return self._link_social(request, vk_id, self._social_service.update_vkontakte)
-
-    def link_google(self, request: HttpRequest, data: GoogleLoginIn = Body(...)) -> SuccessResponse:
-        google_id = self._social_service.try_get_google_id(data.id_token, data.client_id)
-
-        return self._link_social(request, google_id, self._social_service.update_google)
+    def link_google(self, request: HttpRequest, credentials: GoogleCredentialsIn = Body(...)) -> SuccessResponse:
+        return self._link_social(request, GoogleAuth(credentials, google_repo))
 
     def unlink_vkontakte(self, request: HttpRequest) -> SuccessResponse:
-        return self._unlink_social(request, self._social_service.update_vkontakte)
+        return self._unlink_social(request, VKAuth(None, vk_repo))
 
     def unlink_google(self, request: HttpRequest) -> SuccessResponse:
-        return self._unlink_social(request, self._social_service.update_google)
+        return self._unlink_social(request, GoogleAuth(None, google_repo))
 
-    def _link_social(self, request: HttpRequest, social_id: Optional[int], update_social: Callable[[int, int], int]):
-        if not social_id:
-            raise UnprocessableEntityException(self.SOCIAL_CONNECTING_ERROR, error=self.SOCIAL_CONNECTING)
-
-        update_social(request.user.id, social_id)
+    def _link_social(self, request: HttpRequest, social: SocialBase):
+        if social.link(request.user.id) is None:
+            raise UnprocessableEntityException(self.UNAUTHORIZED_IN_SOCIAL, error=self.BAD_CREDENTIALS)
 
         return SuccessResponse()
 
-    def _unlink_social(self, request: HttpRequest, update_social: Callable[[int, None], int]) -> SuccessResponse:
-        if self._social_service.get_socials_amount(request.user.id) <= self.MIN_SOCIAL_AMOUNT:
-            raise UnprocessableEntityException(self.MIN_AMOUNT_SOCIALS_ERROR, error=self.SOCIALS_AMOUNT)
+    def _unlink_social(self, request: HttpRequest, social: SocialBase) -> SuccessResponse:
+        if self._user_service.get_socials_amount(request.user.id) <= self.MIN_SOCIAL_AMOUNT:
+            raise UnprocessableEntityException(self.MIN_AMOUNT_SOCIALS, error=self.SOCIALS_AMOUNT)
 
-        update_social(request.user.id, None)
+        social.unlink(request.user.id)
 
         return SuccessResponse()

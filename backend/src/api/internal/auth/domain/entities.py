@@ -1,11 +1,11 @@
 from ninja import Schema
 
 
-class VKLoginIn(Schema):
+class VKCredentialsIn(Schema):
     access_token: str
 
 
-class GoogleLoginIn(Schema):
+class GoogleCredentialsIn(Schema):
     id_token: str
 
 

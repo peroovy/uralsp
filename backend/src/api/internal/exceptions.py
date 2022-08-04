@@ -65,26 +65,11 @@ class ForbiddenException(APIException):
         return Response(ErrorResponse(details="Forbidden"), status=403)
 
 
-class NotFoundRefreshTokenException(UnprocessableEntityException):
-    def __init__(self):
-        super().__init__(message="Refresh token was not found in cookies", error="bad cookies")
-
-
 class InvalidPayloadException(UnprocessableEntityException):
     def __init__(self, token_type: TokenTypes):
-        super().__init__(message=f"Payload of {token_type.value} token is broken", error="bad payload")
+        super().__init__(message=f"Invalid payload of {token_type.value} token", error="bad payload")
 
 
 class ExpiredTokenException(UnprocessableEntityException):
     def __init__(self, token_type: TokenTypes):
         super().__init__(message=f"{token_type.value.title()} token is expired", error="expired token")
-
-
-class UnknownRefreshTokenException(NotFoundException):
-    def __init__(self):
-        super().__init__(what="refresh token")
-
-
-class RevokedRefreshTokenException(UnprocessableEntityException):
-    def __init__(self):
-        super().__init__(message="Refresh token was revoked", error="revoked token")
