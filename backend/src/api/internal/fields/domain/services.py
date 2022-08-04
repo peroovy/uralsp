@@ -12,12 +12,6 @@ from api.internal.db.repositories.form_value import IFormValueRepository
 from api.internal.fields.domain.entities import FieldSchema, FieldUpdatingIn, Filters
 
 
-class OperationStatus(IntEnum):
-    OK = auto()
-    BAD_FIELD_ID = auto()
-    FORM_VALUE_EXISTS_ERROR = auto()
-
-
 class FieldService:
     def __init__(
         self, field_repo: IFieldRepository, default_repo: IDefaultRepository, form_value_repo: IFormValueRepository
@@ -38,31 +32,23 @@ class FieldService:
     def exist_all(self, ids: List[str]) -> bool:
         return self._field_repo.exist_all(set(ids))
 
-    @atomic
-    def create(self, data: FieldSchema) -> OperationStatus:
-        if self._field_repo.exists(data.id):
-            return OperationStatus.BAD_FIELD_ID
+    def exists_value(self, field_id: str) -> bool:
+        return self._form_value_repo.exists_field_value(field_id)
 
+    @atomic
+    def create(self, data: FieldSchema) -> None:
         field = self._field_repo.create(data.id, data.name, data.type, data.is_required, data.is_visible)
         self._default_repo.create(field.id, data.default_values)
 
-        return OperationStatus.OK
-
     @atomic
-    def update(self, field_id: str, data: FieldUpdatingIn) -> OperationStatus:
-        if not self._field_repo.update(field_id, data.name, data.type, data.is_required, data.is_visible):
-            return OperationStatus.BAD_FIELD_ID
+    def update(self, field: Field, data: FieldUpdatingIn) -> None:
+        self._field_repo.update(field.id, data.name, data.type, data.is_required, data.is_visible)
 
-        self._default_repo.delete_all(field_id)
-        self._default_repo.create(field_id, data.default_values)
+        self._default_repo.delete_all(field.id)
+        self._default_repo.create(field.id, data.default_values)
 
-        return OperationStatus.OK
-
-    def delete(self, field_id: str) -> OperationStatus:
-        if self._form_value_repo.exists_field_value(field_id):
-            return OperationStatus.FORM_VALUE_EXISTS_ERROR
-
-        return OperationStatus.OK if self._field_repo.delete(field_id) else OperationStatus.BAD_FIELD_ID
+    def delete(self, field_id: str) -> bool:
+        return self._field_repo.delete(field_id)
 
     def get_field_outs(self, fields: Iterable[Field]) -> List[FieldSchema]:
         return [self.get_field_out(field) for field in fields]

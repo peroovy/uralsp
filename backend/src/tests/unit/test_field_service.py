@@ -4,15 +4,15 @@ import pytest
 
 from api.internal.db.models import DefaultValue, Field, FormValue, Participation, Request, User
 from api.internal.fields.domain.entities import FieldSchema, Filters
-from api.internal.fields.domain.services import OperationStatus, field_service
+from api.internal.fields.domain.services import field_service
 from tests.conftest import get_bad_field_filters, get_field_filters
 
 
 @pytest.mark.unit
 @pytest.mark.django_db
 def test_getting_field(field: Field) -> None:
-    assert field_service.try_get(field.id) == field
-    assert field_service.try_get(-1) is None
+    assert field_service.get(field.id) == field
+    assert field_service.get(-1) is None
 
 
 @pytest.mark.unit
@@ -38,14 +38,14 @@ def test_getting_filtered(field: Field) -> None:
 
 @pytest.mark.unit
 @pytest.mark.django_db
-def test_check_existing(field: Field) -> None:
+def test_existing(field: Field) -> None:
     assert field_service.exists(field.id) is True
     assert field_service.exists("unknown") is False
 
 
 @pytest.mark.unit
 @pytest.mark.django_db
-def test_check_existing_all(field: Field, another_field: Field) -> None:
+def test_existing_all(field: Field, another_field: Field) -> None:
     unknown = "unknown"
 
     assert field_service.exist_all([field.id, another_field.id]) is True
@@ -55,13 +55,13 @@ def test_check_existing_all(field: Field, another_field: Field) -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.django_db(transaction=True)
-def test_creating__id_already_exists(field: Field) -> None:
-    data = Mock()
-    data.id = field.id
+@pytest.mark.django_db
+def test_existing_value(field: Field, another_field: Field, participation: Participation) -> None:
+    FormValue.objects.create(participation=participation, field=field, value="123")
 
-    assert field_service.create(data) == OperationStatus.BAD_FIELD_ID
-    assert Field.objects.filter(id=field.id).count() == 1
+    assert field_service.exists_value(field.id) is True
+    assert field_service.exists_value(another_field.id) is False
+    assert field_service.exists_value("-1") is False
 
 
 @pytest.mark.unit
@@ -69,7 +69,8 @@ def test_creating__id_already_exists(field: Field) -> None:
 def test_creating() -> None:
     data = get_field_mock()
 
-    assert field_service.create(data) == OperationStatus.OK
+    field_service.create(data)
+
     actual = Field.objects.get(
         id=data.id, name=data.name, type=data.type, is_required=data.is_required, is_visible=data.is_visible
     )
@@ -78,20 +79,11 @@ def test_creating() -> None:
 
 @pytest.mark.unit
 @pytest.mark.django_db(transaction=True)
-def test_updating__unknown_id(field: Field) -> None:
-    data = get_field_mock()
-
-    assert field_service.update("unknown", data) == OperationStatus.BAD_FIELD_ID
-    assert Field.objects.get(pk=field.pk) == field
-
-
-@pytest.mark.unit
-@pytest.mark.django_db(transaction=True)
 def test_updating(field: Field) -> None:
     DefaultValue.objects.create(field=field, value="-1")
     data = get_field_mock()
 
-    assert field_service.update(field.id, data) == OperationStatus.OK
+    field_service.update(field, data)
 
     actual = Field.objects.get(id=field.id)
     assert actual.name == data.name
@@ -101,26 +93,20 @@ def test_updating(field: Field) -> None:
     assert sorted(actual.default_values.values_list("value", flat=True)) == sorted(data.default_values)
 
     data.default_values = []
-    assert field_service.update(field.id, data) == OperationStatus.OK
+    field_service.update(field, data)
+
     assert field.default_values.count() == 0
 
 
 @pytest.mark.unit
 @pytest.mark.django_db
 def test_deleting(field: Field, another_field: Field, user: User, user_request: Request) -> None:
-    FormValue.objects.create(
-        participation=Participation.objects.create(request=user_request, user=user),
-        field=another_field,
-        value="abcdefg",
-    )
-    assert field_service.delete(another_field.id) == OperationStatus.FORM_VALUE_EXISTS_ERROR
-    assert Field.objects.filter(pk=another_field.pk).exists()
-
-    assert field_service.delete("unknown") == OperationStatus.BAD_FIELD_ID
+    field_service.delete("-1")
     assert Field.objects.count() == 2
 
-    assert field_service.delete(field.id) == OperationStatus.OK
-    assert not Field.objects.filter(pk=field.pk).exists()
+    for _ in range(2):
+        field_service.delete(field.id)
+        assert not Field.objects.filter(pk=field.pk).exists()
 
 
 @pytest.mark.unit

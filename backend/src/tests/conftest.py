@@ -199,11 +199,7 @@ def participation(user: User, user_request: Request) -> Participation:
 
 @pytest.fixture(scope="function")
 def field() -> Field:
-    field = Field.objects.create(id="text_field", name="TextField", type=0)
-
-    DefaultValue.objects.create(field=field, value="ABOBA")
-
-    return field
+    return Field.objects.create(id="text_field", name="TextField", type=0)
 
 
 @pytest.fixture(scope="function")
