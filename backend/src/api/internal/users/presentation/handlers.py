@@ -7,7 +7,6 @@ from ninja.pagination import LimitOffsetPagination, paginate
 
 from api.internal.auth.domain.entities import GoogleLoginIn, VKLoginIn
 from api.internal.auth.domain.services import SocialService
-from api.internal.db.models.user import Permissions, User
 from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException
 from api.internal.responses import SuccessResponse
 from api.internal.users.domain.entities import (
@@ -19,13 +18,13 @@ from api.internal.users.domain.entities import (
     ProfileIn,
     ProfileOut,
 )
-from api.internal.users.domain.services import DocumentService, OperationStatus, UserService
+from api.internal.users.domain.services import DocumentService, UserService, MergingService
 
 
 class UserHandlers:
-    INTERSECTION_REQUESTS_ERROR = "Users have a intersected request"
-    INTERSECTION_PARTICIPATION_ERROR = "Users have a intersected participation"
-    NOT_EQUAL_PERMISSIONS_ERROR = "Not equal permissions"
+    INTERSECTION_REQUESTS = "Users have a intersected request"
+    INTERSECTION_PARTICIPATION = "Users have a intersected participation"
+    NOT_EQUAL_PERMISSIONS = "Not equal permissions"
 
     USER_IDS = "user ids"
 
@@ -33,16 +32,17 @@ class UserHandlers:
     USER = "user"
     BAD_PERMISSIONS = "bad permissions"
     PERMISSION = "permission"
-    INTERSECTION_REQUESTS = "requests"
-    INTERSECTION_PARTICIPATION = "participation"
+    REQUESTS = "requests"
+    PARTICIPATION = "participation"
 
-    def __init__(self, user_service: UserService, document_service: DocumentService):
+    def __init__(self, user_service: UserService, merging_service: MergingService, document_service: DocumentService):
         self._user_service = user_service
+        self._merging_service = merging_service
         self._document_service = document_service
 
     @paginate(LimitOffsetPagination)
     def get_users(self, request: HttpRequest, filers: Filters = Query(...)) -> List[ProfileOut]:
-        return [ProfileOut.from_orm(user) for user in self._user_service.get_users(filers)]
+        return [ProfileOut.from_orm(user) for user in self._user_service.get_filtered(filers)]
 
     def get_user(self, request: HttpRequest, user_id: int) -> FullProfileOut:
         if not (user := self._user_service.get_user(user_id)):
@@ -51,19 +51,18 @@ class UserHandlers:
         return FullProfileOut.from_orm(user)
 
     def update_user(self, request: HttpRequest, user_id: int, data: ProfileIn = Body(...)) -> SuccessResponse:
-        if (
-            data.permission in [Permissions.ADMIN, Permissions.SUPER_ADMIN]
-            and request.user.permission != Permissions.SUPER_ADMIN
-        ):
+        if not (user := self._user_service.get_user(user_id)):
+            raise NotFoundException(self.USER)
+
+        if not self._user_service.has_access(request.user, data.permission):
             raise ForbiddenException()
 
-        if not self._user_service.update(user_id, data):
-            raise NotFoundException(self.USER)
+        self._user_service.update(user, data)
 
         return SuccessResponse()
 
     def get_users_xlsx(self, request: HttpRequest, filers: Filters = Query(...)) -> FileResponse:
-        users = self._user_service.get_users(filers)
+        users = self._user_service.get_filtered(filers)
         buffer = self._document_service.serialize_users_to_xlsx(users)
 
         return FileResponse(
@@ -73,7 +72,7 @@ class UserHandlers:
         )
 
     def get_users_csv(self, request: HttpRequest, filters: Filters = Query(...)) -> FileResponse:
-        users = self._user_service.get_users(filters)
+        users = self._user_service.get_filtered(filters)
         buffer = self._document_service.serialize_users_to_csv(users)
 
         return FileResponse(
@@ -83,22 +82,21 @@ class UserHandlers:
         )
 
     def merge_users(self, request: HttpRequest, users: MergingIn = Body(...)) -> SuccessResponse:
-        status = self._user_service.merge(users.from_id, users.to_id)
+        if not self._merging_service.exist_users(users):
+            raise NotFoundException(self.USER_IDS)
 
-        match status:
-            case OperationStatus.BAD_USER_IDS:
-                raise NotFoundException(self.USER_IDS)
+        if not self._merging_service.equal_permissions(users):
+            raise UnprocessableEntityException(self.NOT_EQUAL_PERMISSIONS, error=self.BAD_PERMISSIONS)
 
-            case OperationStatus.NOT_EQUALS_PERMISSIONS:
-                raise UnprocessableEntityException(self.NOT_EQUAL_PERMISSIONS_ERROR, error=self.BAD_PERMISSIONS)
+        if self._merging_service.exists_requests_intersection(users):
+            raise UnprocessableEntityException(self.INTERSECTION_REQUESTS, error=self.REQUESTS)
 
-            case OperationStatus.INTERSECTION_REQUESTS_ERROR:
-                raise UnprocessableEntityException(self.INTERSECTION_REQUESTS_ERROR, error=self.INTERSECTION_REQUESTS)
+        if self._merging_service.exists_participation_intersection(users):
+            raise UnprocessableEntityException(
+                self.INTERSECTION_PARTICIPATION, error=self.PARTICIPATION
+            )
 
-            case OperationStatus.INTERSECTION_PARTICIPATION_ERROR:
-                raise UnprocessableEntityException(
-                    self.INTERSECTION_PARTICIPATION_ERROR, error=self.INTERSECTION_PARTICIPATION
-                )
+        self._merging_service.merge(users)
 
         return SuccessResponse()
 
@@ -121,7 +119,7 @@ class CurrentUserHandlers:
         return FullProfileOut.from_orm(request.user)
 
     def update_profile(self, request: HttpRequest, data: CurrentProfileIn = Body(...)) -> SuccessResponse:
-        self._user_service.update(request.user.id, data)
+        self._user_service.update(request.user, data)
 
         return SuccessResponse()
 
