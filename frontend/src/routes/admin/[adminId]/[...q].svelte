@@ -291,7 +291,6 @@
 		XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
 		XLSX.writeFile(wb, `${fileName}.xlsx`);
 	}
-	
 </script>
 
 <svelte:head>
@@ -513,9 +512,6 @@
 											<span class="d-inline">{user.name}</span>
 											<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc"></i>
 										</div>
-										<!-- <small class="d-block">
-											<span class="role">{user.role}</span>
-										</small> -->
 									</div>
 								</div>
 								{/if}
@@ -593,7 +589,7 @@
 		</div>
 	</section>
 	<div class="alertCont" bind:this={alertCont} />
-	<div class="hide">keephide</div>
+	<div class="hide">keephideClass</div>
 {/if}
 
 <style lang="scss">
@@ -653,12 +649,6 @@
 			display: flex;
 			flex-flow: column nowrap;
 			justify-content: center;
-			h1{
-				font-size: 2.5rem;
-				font-weight: bold;
-				color: #212529;
-				margin-bottom: 1rem;
-			}
 			button, .card-body > button{
 				background-color: $secondary-color;
 				color: white;

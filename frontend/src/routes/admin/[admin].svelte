@@ -9,7 +9,10 @@
     import { republics } from '$lib/Assets/republics.json';
 	import { searchparams }  from '$lib/stores';
 	import { goto } from '$app/navigation';
+	import { browser } from '$app/env';
+	import { onMount } from 'svelte';
 
+	
 	let adminName = 'Admin';
 	let userName = "Admin";
 	let InstituteYear = [
@@ -26,6 +29,7 @@
 	let alertCont = '' as unknown as HTMLElement;
 	let sliderCont = '' as unknown as HTMLElement;
 	let formCont = '' as unknown as HTMLElement;
+	let compsBinds = [] as HTMLElement[];
 
 	let email: string, name: string, region: string | undefined, eduType: string | undefined, institute: string, year: string;
 	eduType = "Choose...";
@@ -79,12 +83,99 @@
 		}
 	}
 	function slider(target: string){
-		if(target === "users"){
-			sliderCont.style.marginLeft = "0px";
-		} else {
-			sliderCont.style.marginLeft = "-100vw";
+		if(browser){
+			if(target === "users"){
+				localStorage.setItem('basicNav', target);
+				sliderCont.style.marginLeft = "0px";
+			} else {
+				localStorage.setItem('basicNav', target);
+				sliderCont.style.marginLeft = "-100vw";
+			}
 		}
 	}
+	let comps = [
+		{
+			"id": 0,
+			"title": "Contest 1",
+		},
+		{
+			"id": 1,
+			"title": "Contest 2",
+		},
+		{
+			"id": 2,
+			"title": "Contest 3",
+		},
+		{
+			"id": 3,
+			"title": "Contest 4",
+		},
+		{
+			"id": 4,
+			"title": "Contest 5",
+		},
+		{
+			"id": 5,
+			"title": "Contest 6",
+		},
+		{
+			"id": 6,
+			"title": "Contest 7",
+		},
+		{
+			"id": 7,
+			"title": "Contest 8",
+		},
+		{
+			"id": 8,
+			"title": "Contest 9",
+		},
+		{
+			"id": 9,
+			"title": "Contest 10",
+		},
+		{
+			"id": 10,
+			"title": "Contest 11",
+		}
+	]
+	let resultsNumber = comps.length;
+	$: itemPerpage = 5;
+
+	function pagination(page: number): void {
+		let start = page * itemPerpage;
+		let end = start + itemPerpage;
+		if (end > comps.length) {
+			end = comps.length;
+		}
+		// Hide all the items
+		for (let i = 0; i < compsBinds.length; i++) {
+			//@ts-ignore
+			let e = compsBinds[i];
+			e!.classList.add('hide');
+		}
+		for (let i = start; i < end; i++) {
+			//@ts-ignore
+			let e = compsBinds[i];
+			e!.classList.remove('hide');
+		}
+	}
+	
+	onMount(()=>{
+		if(browser){
+			let basicNav = localStorage.getItem('basicNav');
+			if (basicNav == null || basicNav == undefined || basicNav == '') {
+				localStorage.setItem('basicNav', "users");
+			} else {
+				if(basicNav == "users"){
+					slider("users")
+				} else {
+					slider("comp")
+				}
+			}
+		}
+		pagination(0);
+	})
 </script>
 
 <svelte:head>
@@ -241,29 +332,92 @@
 			</div>
 		</div>
 		<div class="slide">
-			<div class="container">
-				<div class="row justify-content-center align-items-stretch shadow">
-					
+			<div class="container comps p-0">
+				<div class="row justify-content-center align-items-start justify-content-center">
+					<div class="card p-0 compt-filter col-sm-5 col-sm-6 shadow m-5 mt-0" style="max-width: max-content; min-width:min-content">
+						<h4 class="card-header">
+							<span class="fa fa-search" />
+							Filter
+						</h4>
+						<div class="car-body p-3">
+							<label class="form-label" for="compName"> Competion Title </label>
+							<input type="text" class="form-control"  placeholder="Enter title ..." id="compName">
+							<div class="d-flex justify-content-evenly">
+								<div class="form-check">
+									<input class="form-check-input" type="radio" name="flexRadioDefault" id="comptype1">
+									<label class="form-check-label" for="comptype1">
+										Ongoing
+									</label>
+								</div>
+								<div class="form-check">
+									<input class="form-check-input" type="radio" name="flexRadioDefault" id="comptype2" checked>
+									<label class="form-check-label" for="comptype2">
+										Ended
+									</label>
+								</div>
+							</div>
+							<button class="btn btn-primary btn-sm mt-3"> Filter </button>
+						</div>
+					</div>
+					<div class="card compt-holder p-0 col-sm-6 shadow m-5 mt-0" style="max-width: max-content; min-width:min-content">
+						<h4 class="card-header pe-5">
+							<span class="fa fa-book" />
+							Competitions
+						</h4>
+						<div class="card-body p-0 pt-1 shadow">
+							{#each comps as comp, i}
+							{#if i%2 == 0}
+								<div bind:this={compsBinds[i]} class="comp even hide d-flex flex-row align-items-stretch justify-content-between">
+									<span class="d-inline">{comp.title}</span>
+									<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc"></i>
+								</div>
+							{:else}
+								<div bind:this={compsBinds[i]} class="comp hide d-flex flex-row align-items-stretch justify-content-between">
+									<span class="d-inline">{comp.title}</span>
+									<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc"></i>
+								</div>
+							{/if}
+							{/each}
+						</div>
+						<div class="container-fluid p-0 pt-3 bg-light d-flex justify-content-center">
+							<div class="row col-md-6 paginationNav justify-content-center align-items-center">
+								<ul class="pagination m-0 p-3">
+									{#each Array(Math.ceil(resultsNumber / itemPerpage)) as _, i}
+										<li class="page-item page-link" on:click={() => pagination(i)}>{i + 1}</li>
+									{/each}
+								</ul>
+								<select class="form-select" bind:value={itemPerpage} on:change={() => pagination(0)}>
+									{#each [5, 10, 15, 20, 25, 50] as i}
+										<option class="dropdown-item">{i}</option>
+									{/each}
+								</select>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
 	</div>
+	<div class="hide">keephideClass</div>
 	<div bind:this={alertCont} class="alertCont"></div>
 </section>
 
 <style lang="scss">
 	@import '../../lib/Assets/common.scss';
-	.admin-container {
+	nav{
+		position: sticky !important;
+		background-color: rgb(236, 236, 236);
+	}
+	.admin-container{
+		@include bg;
+		@include navbar;
+		padding: 0;
+		margin: 0;
+		background-color: #fff;
+		min-height: 100vh;
+		background-image: linear-gradient(to bottom right, $primary-color, $secondary-color);;
 		width: 100vw;
 		min-height: 100vh;
-		align-items: center;
-		background-color: white;
-		@include bg;
-		text-align: left;
-		display: flex;
-		@include navbar;
-		background-image: linear-gradient(to bottom right, $primary-color, $secondary-color);;
-
 		nav{
 			width: 100vw !important;
 			background-color: rgb(248, 248, 248);
@@ -300,12 +454,11 @@
 				}
 			}
 		}
-		input, select{
+		input[type="text"], input[type="email"], select{
 			border-radius: 0;
 			border: 0px;
 			border-bottom: 2px solid $secondary-color;
 			margin-bottom: 20px;
-			//font-family: "Light";
 			font-size: 15px;
 			
 			&:focus{
@@ -319,20 +472,77 @@
 			position: relative;
 			z-index: 2;
 		}
-		.sliderCont{
-			width: 200vw;
-			display: flex;
-			flex-flow: row nowrap;
-			transition: all 0.3s ease-in-out;
-			.slide{
-				width: 100vw;
+	}
+
+	.sliderCont{
+		width: 200vw;
+		display: flex;
+		flex-flow: row nowrap;
+		transition: all 0.3s ease-in-out;
+		.slide{
+			width: 100vw;
+		}
+	}	
+	.paginationNav {
+		padding-bottom: 20px;
+		font-size: 18px;
+		font-family: 'Courier New', Courier, monospace;
+		select {
+			position: relative;
+			width: 70px;
+			font-size: 18px;
+			margin: 0px;
+			height: 100%;
+			border: none;
+			border-radius: 0px;
+			background-color: $secondary-color;
+			color: white;
+			&:focus {
+				outline: none;
+				box-shadow: none;
+				border: none !important;
 			}
+		}
+		.pagination {
+			padding: 0px !important;
+			max-width: max-content;
+
+			.page-link {
+				background-color: $secondary-color;
+				border: none;
+				width: 35px;
+				text-align: center;
+				color: white;
+				cursor: pointer;
+			}
+		}
+		display: flex;
+		flex-flow: row nowrap;
+		justify-content: space-between;
+		align-items: center;
+	}
+	.comps{
+		font-family: "light", sans-serif;
+		.comp{
+			padding: 6px 10px;
+		}
+		.even{
+			background-color: $bg-color;
+		}
+		.info{
+			width: 100%;
+			display: flex;
+			flex-flow: column nowrap;
+			
 		}
 	}
 	.alertCont{
 		position: fixed;
 		bottom: 30px;
 		left: 30px;
+	}
+	.hide {
+		display: none !important;
 	}
 	@media screen and (min-width: 1000px) {
 		.navbar-nav {
@@ -373,6 +583,12 @@
 		}
 		.lottie-animations {
 			display: none;
+		}
+	}
+	@media screen and (max-width: 750px){
+		.compt-filter, .compt-holder{
+			max-width: 100vw !important;
+			width: 100vw;
 		}
 	}
 </style>
