@@ -6,7 +6,7 @@ from django.db.models.functions import Concat
 from phonenumbers import PhoneNumber, PhoneNumberFormat, format_number
 
 from api.internal.db.models import User
-from api.internal.db.models.user import Permissions
+from api.internal.db.models.user import EducationalInstitution, Permissions
 from api.internal.utils import get_strip_filters
 
 
@@ -21,8 +21,10 @@ class IUserRepository(ABC):
         email: str = None,
         phone: PhoneNumber = None,
         region: str = None,
-        school: str = None,
-        school_class: str = None,
+        institution_type: EducationalInstitution = None,
+        institution_name: str = None,
+        institution_faculty: str = None,
+        institution_course: str = None,
         vkontakte_id: int = None,
         google_id: int = None,
         telegram_id: int = None,
@@ -35,7 +37,15 @@ class IUserRepository(ABC):
 
     @abstractmethod
     def get_filtered(
-        self, permission: Optional[int], school: str, school_class: str, region: str, email: str, fcs: str
+        self,
+        permission: Optional[int],
+        institution_type: Optional[EducationalInstitution],
+        institution_name: Optional[str],
+        institution_faculty: Optional[str],
+        institution_course: Optional[str],
+        region: Optional[str],
+        email: Optional[str],
+        fcs: Optional[str],
     ) -> QuerySet[User]:
         ...
 
@@ -74,8 +84,10 @@ class UserRepository(IUserRepository):
         email: str = None,
         phone: PhoneNumber = None,
         region: str = None,
-        school: str = None,
-        school_class: str = None,
+        institution_type: EducationalInstitution = None,
+        institution_name: str = None,
+        institution_faculty: str = None,
+        institution_course: str = None,
         vkontakte_id: int = None,
         google_id: int = None,
         telegram_id: int = None,
@@ -87,8 +99,10 @@ class UserRepository(IUserRepository):
             permission=permission,
             email=email,
             phone=format_number(phone, PhoneNumberFormat.E164) if phone is not None else None,
-            school=school,
-            school_class=school_class,
+            institution_type=institution_type,
+            institution_name=institution_name,
+            institution_faculty=institution_faculty,
+            institution_course=institution_course,
             vkontakte_id=vkontakte_id,
             google_id=google_id,
             telegram_id=telegram_id,
@@ -100,15 +114,18 @@ class UserRepository(IUserRepository):
     def get_filtered(
         self,
         permission: Optional[int],
-        school: Optional[str],
-        school_class: Optional[str],
+        institution_type: Optional[EducationalInstitution],
+        institution_name: Optional[str],
+        institution_faculty: Optional[str],
+        institution_course: Optional[str],
         region: Optional[str],
         email: Optional[str],
         fcs: Optional[str],
     ) -> QuerySet[User]:
         filters = get_strip_filters(
-            school__istartswith=school,
-            school_class__istartswith=school_class,
+            institution_name__istartswith=institution_name,
+            institution_faculty__istartswith=institution_faculty,
+            institution_course__istartswith=institution_course,
             region__istartswith=region,
             email__startswith=email,
         )
@@ -118,6 +135,9 @@ class UserRepository(IUserRepository):
 
         if permission is not None:
             filters["permission"] = permission
+
+        if institution_type is not None:
+            filters["institution_type"] = institution_type
 
         return User.objects.annotate(full_name=Concat("surname", "name", "patronymic")).filter(**filters)
 

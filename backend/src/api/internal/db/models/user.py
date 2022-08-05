@@ -8,6 +8,12 @@ class Permissions(models.IntegerChoices):
     SUPER_ADMIN = 3
 
 
+class EducationalInstitution(models.IntegerChoices):
+    SCHOOL = 0
+    COLLEGE = 1
+    UNIVERSITY = 2
+
+
 class User(models.Model):
     name = models.CharField(max_length=127)
     surname = models.CharField(max_length=127, null=True)
@@ -17,8 +23,12 @@ class User(models.Model):
     phone = models.CharField(max_length=15, null=True)
     city = models.CharField(max_length=255, null=True)
     region = models.CharField(max_length=255, null=True)
-    school = models.CharField(max_length=255, null=True)
-    school_class = models.CharField(max_length=15, null=True)
+
+    institution_type = models.IntegerField(choices=EducationalInstitution.choices, null=True)
+    institution_name = models.CharField(max_length=255, null=True)
+    institution_faculty = models.CharField(max_length=255, null=True)
+    institution_course = models.CharField(max_length=255, null=True)
+
     vkontakte_id = models.CharField(max_length=255, unique=True, null=True)
     google_id = models.CharField(max_length=255, unique=True, null=True)
     telegram_id = models.CharField(max_length=255, unique=True, null=True)

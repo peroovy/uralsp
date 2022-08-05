@@ -48,11 +48,12 @@ class CompetitionService:
     def create(self, data: CompetitionIn) -> None:
         competition = self._competition_repo.create(
             data.name,
+            data.registration_start,
+            data.registration_end,
             data.started_at,
-            data.registration_before,
-            data.end_at,
             data.persons_amount,
             data.request_template,
+            data.link
         )
 
         competition.fields.add(*data.fields)
@@ -62,11 +63,12 @@ class CompetitionService:
     def update(self, competition_id: int, data: CompetitionIn) -> None:
         competition = self._competition_repo.get_for_update(competition_id)
         competition.name = data.name
+        competition.registration_start = data.registration_start
+        competition.registration_end = data.registration_end
         competition.started_at = data.started_at
-        competition.registration_before = data.registration_before
-        competition.end_at = data.end_at
         competition.persons_amount = data.persons_amount
         competition.request_template = data.request_template
+        competition.link = data.link
 
         competition.fields.clear()
         competition.admins.clear()
@@ -109,7 +111,7 @@ class CompetitionService:
         return data.persons_amount >= settings.MIN_PARTICIPANTS_AMOUNT
 
     def validate_dates(self, data: CompetitionIn) -> bool:
-        return now() < data.registration_before < data.started_at < data.end_at
+        return now() < data.registration_start < data.registration_end < data.started_at
 
     def validate_admins(self, ids: List[int]) -> bool:
         unique = set(ids)

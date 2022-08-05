@@ -20,8 +20,8 @@ class FullProfileOut(ModelSchema):
 
 
 class ProfileIn(ModelSchema):
-    phone: str = Field(regex=r"^\+7[0-9]{10}")
-    email: str = EmailStr()
+    phone: Optional[str] = Field(regex=r"^\+7[0-9]{10}")
+    email: Optional[str] = EmailStr()
 
     class Config:
         model = User
@@ -41,13 +41,21 @@ class PermissionsIn(IntEnum):
     SUPER_ADMIN = 3
 
 
+class InstitutionTypes(IntEnum):
+    SCHOOL = 0
+    COLLEGE = 1
+    UNIVERSITY = 2
+
+
 class Filters(Schema):
-    permission: PermissionsIn = None
-    school: Optional[str] = None
-    school_class: Optional[str] = None
+    permission: Optional[PermissionsIn] = None
     region: Optional[str] = None
     email: Optional[str] = None
     fcs: Optional[str] = None
+    institution_type: Optional[InstitutionTypes] = None
+    institution_name: Optional[str] = None
+    institution_faculty: Optional[str] = None
+    institution_course: Optional[str] = None
 
 
 class FormValueOut(Schema):

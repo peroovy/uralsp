@@ -32,11 +32,12 @@ class ICompetitionRepository(ABC):
     def create(
         self,
         name: str,
+        registration_start: datetime,
+            registration_end: datetime,
         started_at: datetime,
-        registration_before: datetime,
-        end_at: datetime,
         person_amount: int,
         request_template: Optional[str],
+            link: Optional[str]
     ) -> Competition:
         ...
 
@@ -76,8 +77,9 @@ class CompetitionRepository(ICompetitionRepository):
         if admin_id is not None:
             filters["admins__id"] = admin_id
 
-        if is_opened is not None:
-            filters[f"registration_before__{'gt' if is_opened else 'lte'}"] = now_
+        if is_opened:
+            filters[f"registration_start__lte"] = now_
+            filters[f"registration_end__gt"] = now_
 
         if is_started is not None:
             filters[f"started_at__{'lte' if is_started else 'gt'}"] = now_
@@ -87,19 +89,21 @@ class CompetitionRepository(ICompetitionRepository):
     def create(
         self,
         name: str,
+            registration_start: datetime,
+            registration_end: datetime,
         started_at: datetime,
-        registration_before: datetime,
-        end_at: datetime,
         persons_amount: int,
         request_template: Optional[str],
+            link: Optional[str]
     ) -> Competition:
         return Competition.objects.create(
             name=name,
+            registration_start=registration_start,
+            registration_end=registration_end,
             started_at=started_at,
-            registration_before=registration_before,
-            end_at=end_at,
             persons_amount=persons_amount,
             request_template=request_template,
+            link=link
         )
 
     def delete(self, competition_id: int) -> bool:

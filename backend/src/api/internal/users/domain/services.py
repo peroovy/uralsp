@@ -29,7 +29,14 @@ class UserService:
     def get_filtered(self, filters: Filters) -> List[User]:
         return list(
             self._user_repo.get_filtered(
-                filters.permission, filters.school, filters.school_class, filters.region, filters.email, filters.fcs
+                filters.permission,
+                filters.institution_type,
+                filters.institution_name,
+                filters.institution_faculty,
+                filters.institution_course,
+                filters.region,
+                filters.email,
+                filters.fcs,
             )
         )
 
