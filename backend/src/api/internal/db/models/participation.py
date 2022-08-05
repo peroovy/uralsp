@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Participation(models.Model):
-    request = models.ForeignKey("Request", on_delete=models.CASCADE)
+    request = models.ForeignKey("Request", on_delete=models.CASCADE, related_name="participation")
     user = models.ForeignKey("User", on_delete=models.CASCADE)
 
     class Meta:

@@ -29,7 +29,7 @@ class RequestHandlers:
         return [RequestOut.from_orm(user_request) for user_request in requests]
 
     def get_request(self, request: HttpRequest, request_id: int) -> RequestDetailsOut:
-        if not (user_request := self._request_service.get_request(request_id)):
+        if not (user_request := self._request_service.get_request_with_participation_and_forms(request_id)):
             raise NotFoundException(self.REQUEST)
 
         if not self._request_service.has_access(request.user, user_request):

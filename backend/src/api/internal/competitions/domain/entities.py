@@ -1,4 +1,5 @@
-from typing import List, Optional
+from enum import IntEnum
+from typing import List, Optional, Set
 
 from django.conf import settings
 from ninja import Field as F, ModelSchema, Schema
@@ -67,3 +68,16 @@ class AdminsIn(Schema):
 
 class RequestTemplateIn(Schema):
     request_template: Optional[str]
+
+
+class Status(IntEnum):
+    AWAITED = 0
+    ACCEPTED = 1
+    REJECTED = 2
+    CANCELED = 3
+
+
+class RequestsSerializationIn(Schema):
+    fields: Set[str] = None
+    status: Status = None
+    has_headers: bool = False

@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import List, Optional
 
-from django.db.models import QuerySet
+from django.db.models import Prefetch, QuerySet
 
-from api.internal.db.models import Request
+from api.internal.db.models import FormValue, Request
 from api.internal.db.models.request import RequestStatus
 
 
@@ -14,10 +14,6 @@ class IRequestRepository(ABC):
 
     @abstractmethod
     def try_get_request(self, request_id: int) -> Optional[Request]:
-        ...
-
-    @abstractmethod
-    def get_requests_on_competition(self, competition_id: int) -> QuerySet[Request]:
         ...
 
     @abstractmethod
@@ -44,6 +40,10 @@ class IRequestRepository(ABC):
     def migrate(self, from_owner_id: int, to_owner_id: int) -> int:
         ...
 
+    @abstractmethod
+    def try_get_request_with_participation_and_forms(self, request_id: int) -> Optional[Request]:
+        ...
+
 
 class RequestRepository(IRequestRepository):
     def get_requests(self, owner_id: int) -> QuerySet[Request]:
@@ -51,9 +51,6 @@ class RequestRepository(IRequestRepository):
 
     def try_get_request(self, request_id: int) -> Optional[Request]:
         return Request.objects.filter(id=request_id).first()
-
-    def get_requests_on_competition(self, competition_id: int) -> QuerySet[Request]:
-        return Request.objects.filter(competition_id=competition_id)
 
     def create(self, owner_id: int, competition_id: int, team_name: str) -> Request:
         return Request.objects.create(owner_id=owner_id, competition_id=competition_id, team_name=team_name)
@@ -74,3 +71,12 @@ class RequestRepository(IRequestRepository):
 
     def migrate(self, from_owner_id: int, to_owner_id: int) -> int:
         return Request.objects.filter(owner_id=from_owner_id).select_for_update().update(owner_id=to_owner_id)
+
+    def try_get_request_with_participation_and_forms(self, request_id: int) -> Optional[Request]:
+        return (
+            Request.objects.filter(id=request_id)
+            .prefetch_related(
+                "participation", Prefetch("participation__form", queryset=FormValue.objects.order_by("field_id"))
+            )
+            .first()
+        )

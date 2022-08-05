@@ -8,7 +8,7 @@ class Permissions(models.IntegerChoices):
     SUPER_ADMIN = 3
 
 
-class EducationalInstitution(models.IntegerChoices):
+class Institution(models.IntegerChoices):
     SCHOOL = 0
     COLLEGE = 1
     UNIVERSITY = 2
@@ -24,7 +24,7 @@ class User(models.Model):
     city = models.CharField(max_length=255, null=True)
     region = models.CharField(max_length=255, null=True)
 
-    institution_type = models.IntegerField(choices=EducationalInstitution.choices, null=True)
+    institution_type = models.IntegerField(choices=Institution.choices, null=True)
     institution_name = models.CharField(max_length=255, null=True)
     institution_faculty = models.CharField(max_length=255, null=True)
     institution_course = models.CharField(max_length=255, null=True)

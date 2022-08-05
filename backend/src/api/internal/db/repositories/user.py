@@ -6,7 +6,7 @@ from django.db.models.functions import Concat
 from phonenumbers import PhoneNumber, PhoneNumberFormat, format_number
 
 from api.internal.db.models import User
-from api.internal.db.models.user import EducationalInstitution, Permissions
+from api.internal.db.models.user import Institution, Permissions
 from api.internal.utils import get_strip_filters
 
 
@@ -21,7 +21,7 @@ class IUserRepository(ABC):
         email: str = None,
         phone: PhoneNumber = None,
         region: str = None,
-        institution_type: EducationalInstitution = None,
+        institution_type: Institution = None,
         institution_name: str = None,
         institution_faculty: str = None,
         institution_course: str = None,
@@ -39,7 +39,7 @@ class IUserRepository(ABC):
     def get_filtered(
         self,
         permission: Optional[int],
-        institution_type: Optional[EducationalInstitution],
+        institution_type: Optional[Institution],
         institution_name: Optional[str],
         institution_faculty: Optional[str],
         institution_course: Optional[str],
@@ -84,7 +84,7 @@ class UserRepository(IUserRepository):
         email: str = None,
         phone: PhoneNumber = None,
         region: str = None,
-        institution_type: EducationalInstitution = None,
+        institution_type: Institution = None,
         institution_name: str = None,
         institution_faculty: str = None,
         institution_course: str = None,
@@ -114,7 +114,7 @@ class UserRepository(IUserRepository):
     def get_filtered(
         self,
         permission: Optional[int],
-        institution_type: Optional[EducationalInstitution],
+        institution_type: Optional[Institution],
         institution_name: Optional[str],
         institution_faculty: Optional[str],
         institution_course: Optional[str],

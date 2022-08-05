@@ -5,6 +5,7 @@ from django.utils.timezone import now
 
 from api.internal.db.models import Request, User
 from api.internal.db.models.request import RequestStatus
+from api.internal.db.models.user import Permissions
 from api.internal.db.repositories import competition_repo, form_value_repo, participation_repo, request_repo, user_repo
 from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.form_value import FieldValue, IFormValueRepository
@@ -42,6 +43,9 @@ class RequestService:
     def get_request(self, request_id: int) -> Optional[Request]:
         return self._request_repo.try_get_request(request_id)
 
+    def get_request_with_participation_and_forms(self, request_id: int) -> Optional[Request]:
+        return self._request_repo.try_get_request_with_participation_and_forms(request_id)
+
     def exists(self, owner: User, request_id: int) -> bool:
         return self._request_repo.exists(owner.id, request_id)
 
@@ -76,6 +80,7 @@ class RequestService:
         return (
             user.id == request.owner_id
             and not only_admin
+            or user.permission == Permissions.SUPER_ADMIN
             or self._competition_repo.is_admin(request.competition_id, user.id)
         )
 
@@ -124,14 +129,9 @@ class RequestService:
     def is_competition_started(self, request: Request) -> bool:
         return now() >= request.competition.started_at
 
-    def get_requests_for(self, competition_id: int) -> List[Request]:
-        return list(self._request_repo.get_requests_on_competition(competition_id))
-
     def get_request_details(self, request: Request) -> RequestDetailsOut:
-        team = self._participation_repo.get_with_forms(request.id)
-
         participation_outs = []
-        for participation in team:
+        for participation in request.participation.all():
             field_values = [
                 FieldValueSchema(field_id=field_value.field_id, value=field_value.value)
                 for field_value in participation.form.all()
