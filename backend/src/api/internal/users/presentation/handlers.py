@@ -1,10 +1,12 @@
-from typing import List
+from io import BytesIO
+from typing import Callable, List
 
 from django.http import FileResponse, HttpRequest
 from django.utils.timezone import now
 from ninja import Body, Query
 from ninja.pagination import LimitOffsetPagination, paginate
 
+from api.internal.db.models import User
 from api.internal.db.repositories import google_repo, telegram_repo, vk_repo
 from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException
 from api.internal.responses import SuccessResponse
@@ -19,7 +21,7 @@ from api.internal.users.domain.entities import (
     ProfileIn,
     ProfileOut,
 )
-from api.internal.users.domain.services import DocumentService, MergingService, UserService
+from api.internal.users.domain.services import MergingService, UserSerializer, UserService
 
 
 class UserHandlers:
@@ -29,17 +31,18 @@ class UserHandlers:
 
     USER_IDS = "user ids"
 
-    FILENAME = "{date}-users.{extension}"
     USER = "user"
     BAD_PERMISSIONS = "bad permissions"
     PERMISSION = "permission"
     REQUESTS = "requests"
     PARTICIPATION = "participation"
 
-    def __init__(self, user_service: UserService, merging_service: MergingService, document_service: DocumentService):
+    FILENAME = "{date}_users.{extension}"
+
+    def __init__(self, user_service: UserService, merging_service: MergingService, document_service: UserSerializer):
         self._user_service = user_service
         self._merging_service = merging_service
-        self._document_service = document_service
+        self._user_serializer = document_service
 
     @paginate(LimitOffsetPagination)
     def get_users(self, request: HttpRequest, filers: Filters = Query(...)) -> List[ProfileOut]:
@@ -63,24 +66,10 @@ class UserHandlers:
         return SuccessResponse()
 
     def get_users_xlsx(self, request: HttpRequest, filers: Filters = Query(...)) -> FileResponse:
-        users = self._user_service.get_filtered(filers)
-        buffer = self._document_service.serialize_users_to_xlsx(users)
-
-        return FileResponse(
-            buffer,
-            as_attachment=True,
-            filename=self.FILENAME.format(date=now().strftime("%Y-%m-%d %H-%M-%S"), extension="xlsx"),
-        )
+        return self._get_users_in_file(filers, self._user_serializer.to_xlsx, extension="xlsx")
 
     def get_users_csv(self, request: HttpRequest, filters: Filters = Query(...)) -> FileResponse:
-        users = self._user_service.get_filtered(filters)
-        buffer = self._document_service.serialize_users_to_csv(users)
-
-        return FileResponse(
-            buffer,
-            as_attachment=True,
-            filename=self.FILENAME.format(date=now().strftime("%Y-%m-%d %H-%M-%S"), extension="csv"),
-        )
+        return self._get_users_in_file(filters, self._user_serializer.to_csv, extension="csv")
 
     def merge_users(self, request: HttpRequest, users: MergingIn = Body(...)) -> SuccessResponse:
         if not self._merging_service.exist_users(users):
@@ -98,6 +87,18 @@ class UserHandlers:
         self._merging_service.merge(users)
 
         return SuccessResponse()
+
+    def _get_users_in_file(
+        self, filters: Filters, get_file: Callable[[List[User]], BytesIO], extension: str
+    ) -> FileResponse:
+        users = self._user_service.get_filtered(filters)
+        buffer = get_file(users)
+
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=self.FILENAME.format(date=now().strftime("%Y-%m-%d %H-%M-%S"), extension=extension),
+        )
 
 
 class CurrentUserHandlers:

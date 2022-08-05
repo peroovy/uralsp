@@ -1,13 +1,14 @@
 from datetime import datetime
 from enum import IntEnum
-from typing import Iterable, List, Optional
+from typing import List, Optional, Set
 
 from ninja import ModelSchema, Schema
 
-from api.internal.db.models import Participation, Request
+from api.internal.db.models import Request
 
 
 class Status(IntEnum):
+    AWAITED = 0
     ACCEPTED = 1
     REJECTED = 2
 

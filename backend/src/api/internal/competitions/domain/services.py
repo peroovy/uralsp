@@ -1,3 +1,4 @@
+from io import BytesIO
 from typing import List, Optional
 
 from django.conf import settings
@@ -11,14 +12,17 @@ from api.internal.competitions.domain.entities import (
     FieldDetailsOut,
     Filters,
     FormIn,
+    RequestsSerializationIn,
     RequestTemplateIn,
 )
 from api.internal.db.models import Competition, User
+from api.internal.db.models.request import RequestStatus
 from api.internal.db.models.user import Permissions
 from api.internal.db.repositories import competition_repo, field_repo, user_repo
 from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.field import IFieldRepository
 from api.internal.db.repositories.user import IUserRepository
+from api.internal.utils import serialize_to_csv, serialize_to_xlsx
 
 
 class CompetitionService:
@@ -38,6 +42,16 @@ class CompetitionService:
     def get(self, competition_id: int) -> Optional[Competition]:
         return self._competition_repo.try_get(competition_id)
 
+    def get_with_requests(self, competition_id: int) -> Optional[Competition]:
+        return self._competition_repo.try_get_with_requests(competition_id)
+
+    def get_with_requests_for_serialization(
+        self, competition_id: int, params: RequestsSerializationIn
+    ) -> Optional[Competition]:
+        return self._competition_repo.try_get_with_requests_for_serialization(
+            competition_id, params.status, params.fields
+        )
+
     def exists(self, competition_id: int) -> bool:
         return self._competition_repo.exists(competition_id)
 
@@ -53,7 +67,7 @@ class CompetitionService:
             data.started_at,
             data.persons_amount,
             data.request_template,
-            data.link
+            data.link,
         )
 
         competition.fields.add(*data.fields)
@@ -124,4 +138,40 @@ class CompetitionService:
         return len(unique) > 0 and len(unique) == len(ids) and self._field_repo.exist_all(unique)
 
 
+class CompetitionSerializer:
+    REQUEST_HEADERS = ["id", "owner_id", "team_name", "status", "created_at"]
+
+    def requests_to_xlsx(self, competition_with_sorted_fields: Competition, has_headers: bool = False) -> BytesIO:
+        return serialize_to_xlsx(self._get_rows(competition_with_sorted_fields, has_headers))
+
+    def requests_to_csv(self, competition_with_sorted_fields: Competition, has_headers: bool = False) -> BytesIO:
+        return serialize_to_csv(self._get_rows(competition_with_sorted_fields, has_headers))
+
+    def _get_rows(self, competition: Competition, has_headers: bool) -> List[List[str]]:
+        max_participants_amount = max(map(lambda r: r.participation.count(), competition.requests.all()))
+        fields = [field.id for field in competition.fields.all()]
+        headers = self.REQUEST_HEADERS + ["participant_id", *fields] * max_participants_amount
+
+        rows = [headers] if has_headers else []
+
+        for request in competition.requests.all():
+            row = [
+                request.id,
+                request.owner_id,
+                request.team_name,
+                RequestStatus(request.status).name.lower(),
+                request.created_at.strftime("%Y-%m-%d %H-%M-%S"),
+            ]
+
+            for participation in request.participation.all():
+                form_fields = dict((form_value.field_id, form_value.value) for form_value in participation.form.all())
+
+                row += [participation.user_id, *(form_fields.get(expected) or "-" for expected in fields)]
+
+            rows.append(row + ["-"] * (len(headers) - len(row)))
+
+        return rows
+
+
 competition_service = CompetitionService(competition_repo, user_repo, field_repo)
+competition_serializer = CompetitionSerializer()

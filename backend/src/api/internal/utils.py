@@ -1,9 +1,8 @@
 import csv
 from io import BytesIO, StringIO
-from typing import Dict, Optional, Iterable, List
+from typing import Dict, Iterable, Optional
 
 from openpyxl.workbook import Workbook
-from openpyxl.worksheet.worksheet import Worksheet
 
 
 def get_strip_filters(**kwargs: Optional[str]) -> Dict[str, str]:

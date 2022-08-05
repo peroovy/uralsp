@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
+from typing import List
 
-from django.db.models import QuerySet
+from django.db.models import Prefetch, QuerySet
 
-from api.internal.db.models import Participation
+from api.internal.db.models import FormValue, Participation
 
 
 class IParticipationRepository(ABC):
@@ -12,10 +13,6 @@ class IParticipationRepository(ABC):
 
     @abstractmethod
     def delete_all(self, request_id: int) -> None:
-        ...
-
-    @abstractmethod
-    def get_with_forms(self, request_id) -> QuerySet[Participation]:
         ...
 
     @abstractmethod
@@ -33,9 +30,6 @@ class ParticipationRepository(IParticipationRepository):
 
     def delete_all(self, request_id: int) -> None:
         Participation.objects.filter(request_id=request_id).delete()
-
-    def get_with_forms(self, request_id: int) -> QuerySet[Participation]:
-        return Participation.objects.filter(request_id=request_id).prefetch_related("form")
 
     def exists_intersection(self, user_id_1: int, user_id_2: int) -> bool:
         return Participation.objects.filter(

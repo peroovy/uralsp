@@ -8,13 +8,14 @@ from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
 from api.internal.db.models import FormValue, User
-from api.internal.db.models.user import Permissions
+from api.internal.db.models.user import Institution, Permissions
 from api.internal.db.repositories import form_value_repo, participation_repo, request_repo, user_repo
 from api.internal.db.repositories.form_value import IFormValueRepository
 from api.internal.db.repositories.participation import IParticipationRepository
 from api.internal.db.repositories.request import IRequestRepository
 from api.internal.db.repositories.user import IUserRepository
 from api.internal.users.domain.entities import Filters, MergingIn, ProfileIn
+from api.internal.utils import serialize_to_csv, serialize_to_xlsx
 
 
 class UserService:
@@ -92,8 +93,8 @@ class MergingService:
         self._user_repo.update(users.to_id, **migrated_data)
 
 
-class DocumentService:
-    USER_HEADERS = (
+class UserSerializer:
+    USER_HEADERS = [
         "id",
         "surname",
         "name",
@@ -103,67 +104,45 @@ class DocumentService:
         "phone",
         "city",
         "region",
-        "school",
-        "school_class",
+        "institution_type",
+        "institution_name",
+        "institution_faculty",
+        "institution_course",
         "vkontakte_id",
         "google_id",
         "telegram_id",
-    )
+    ]
 
-    def serialize_users_to_xlsx(self, users: Iterable[User]) -> BytesIO:
-        buffer = BytesIO()
-        workbook = Workbook()
-        worksheet = workbook.active
+    def to_xlsx(self, users: Iterable[User]) -> BytesIO:
+        return serialize_to_xlsx(self._get_rows(users))
 
-        self._add_row_to_xlsx(worksheet, self.USER_HEADERS, 1)
+    def to_csv(self, users: Iterable[User]) -> BytesIO:
+        return serialize_to_csv(self._get_rows(users))
 
-        for row, user in enumerate(users, 2):
-            values = self._get_user_row(user)
-            self._add_row_to_xlsx(worksheet, values, row)
+    def _get_rows(self, users: Iterable[User]) -> List[List[str]]:
+        return [self.USER_HEADERS] + [list(map(lambda s: s or "-", self._get_user_row(user))) for user in users]
 
-        workbook.save(buffer)
-        buffer.seek(0)
-
-        return buffer
-
-    def serialize_users_to_csv(self, users: Iterable[User]) -> BytesIO:
-        buffer = StringIO()
-        writer = csv.writer(buffer)
-
-        writer.writerow(self.USER_HEADERS)
-
-        for user in users:
-            writer.writerow(self._get_user_row(user))
-
-        buffer.seek(0)
-        return BytesIO(buffer.read().encode("utf-8"))
-
-    @staticmethod
-    def _get_user_row(user: User) -> List[str]:
+    def _get_user_row(self, user: User) -> list:
         return [
             user.id,
             user.surname,
             user.name,
             user.patronymic,
-            Permissions(user.permission).name,
+            Permissions(user.permission).name.lower(),
             user.email,
             user.phone,
             user.city,
             user.region,
-            user.school,
-            user.school_class,
+            Institution(user.institution_type).name.lower() if user.institution_type is not None else None,
+            user.institution_name,
+            user.institution_faculty,
+            user.institution_course,
             user.vkontakte_id,
             user.google_id,
             user.telegram_id,
         ]
 
-    @staticmethod
-    def _add_row_to_xlsx(worksheet: Worksheet, values: Iterable[str], row: int) -> None:
-        for column, value in enumerate(values, 1):
-            cell = worksheet.cell(row=row, column=column)
-            cell.value = value
-
 
 user_service = UserService(user_repo, form_value_repo)
 merging_service = MergingService(user_repo, request_repo, participation_repo)
-document_service = DocumentService()
+user_serializer = UserSerializer()
