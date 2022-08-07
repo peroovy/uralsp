@@ -53,7 +53,7 @@ class VKAuth(SocialBase):
 
     def authenticate(self) -> Optional[SocialData]:
         try:
-            api = API(access_token=self._credentials.access_token, v=settings.VKONTAKTE_API_VERSION)
+            api = API(access_token=self._credentials.access_token)
             data = api.account.getProfileInfo(access_token=self._credentials.access_token)
 
             return SocialData(data[self.ID], data[self.SURNAME], data[self.NAME])

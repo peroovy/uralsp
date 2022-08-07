@@ -60,6 +60,9 @@ class UserService:
     def get_socials_amount(self, user_id: int) -> int:
         return self._user_repo.get_socials_amount(user_id)
 
+    def exists_email(self, owner: User, email: str) -> bool:
+        return self._user_repo.exists_email(owner.id, email)
+
 
 class MergingService:
     def __init__(

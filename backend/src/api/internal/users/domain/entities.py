@@ -20,8 +20,8 @@ class FullProfileOut(ModelSchema):
 
 
 class ProfileIn(ModelSchema):
-    phone: Optional[str] = Field(regex=r"^\+7[0-9]{10}")
-    email: Optional[str] = EmailStr()
+    phone: Optional[str] = Field(regex=r"^\+[1-9][0-9]{10}")
+    email: EmailStr
 
     class Config:
         model = User

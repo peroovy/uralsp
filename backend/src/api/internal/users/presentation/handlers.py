@@ -28,11 +28,13 @@ class UserHandlers:
     INTERSECTION_REQUESTS = "Users have a intersected request"
     INTERSECTION_PARTICIPATION = "Users have a intersected participation"
     NOT_EQUAL_PERMISSIONS = "Not equal permissions"
+    EMAIL_ALREADY_EXISTS = "The email already exists"
 
     USER_IDS = "user ids"
 
     USER = "user"
     BAD_PERMISSIONS = "bad permissions"
+    BAD_EMAIL = "bad email"
     PERMISSION = "permission"
     REQUESTS = "requests"
     PARTICIPATION = "participation"
@@ -60,6 +62,9 @@ class UserHandlers:
 
         if not self._user_service.has_access(request.user, data.permission):
             raise ForbiddenException()
+
+        if self._user_service.exists_email(request.user, data.email):
+            raise UnprocessableEntityException(self.EMAIL_ALREADY_EXISTS, error=self.BAD_EMAIL)
 
         self._user_service.update(user, data)
 

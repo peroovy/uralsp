@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Iterable, Optional, Set
 
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 from django.db.models.functions import Concat
 from phonenumbers import PhoneNumber, PhoneNumberFormat, format_number
 
@@ -71,6 +71,10 @@ class IUserRepository(ABC):
 
     @abstractmethod
     def equal_permissions(self, user_id_1: int, user_id_2: int) -> bool:
+        ...
+
+    @abstractmethod
+    def exists_email(self, owner_id: int, email: str) -> bool:
         ...
 
 
@@ -164,3 +168,6 @@ class UserRepository(IUserRepository):
         permissions = User.objects.filter(id__in=[user_id_1, user_id_2]).values_list("permission", flat=True)
 
         return len(set(permissions)) == 1
+
+    def exists_email(self, owner_id: int, email: str) -> bool:
+        return User.objects.filter(email=email).filter(not Q(id=owner_id)).exists()
