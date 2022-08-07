@@ -74,7 +74,7 @@ class IUserRepository(ABC):
         ...
 
     @abstractmethod
-    def exists_email(self, owner_id: int, email: str) -> bool:
+    def can_update_email(self, owner_id: int, email: str) -> bool:
         ...
 
 
@@ -169,5 +169,5 @@ class UserRepository(IUserRepository):
 
         return len(set(permissions)) == 1
 
-    def exists_email(self, owner_id: int, email: str) -> bool:
-        return User.objects.filter(email=email).filter(not Q(id=owner_id)).exists()
+    def can_update_email(self, owner_id: int, email: str) -> bool:
+        return not User.objects.filter(not Q(id=owner_id) and Q(email=email)).exists()

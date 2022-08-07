@@ -63,7 +63,7 @@ class UserHandlers:
         if not self._user_service.has_access(request.user, data.permission):
             raise ForbiddenException()
 
-        if self._user_service.exists_email(request.user, data.email):
+        if not self._user_service.can_update_email(request.user, data.email):
             raise UnprocessableEntityException(self.EMAIL_ALREADY_EXISTS, error=self.BAD_EMAIL)
 
         self._user_service.update(user, data)
