@@ -170,4 +170,4 @@ class UserRepository(IUserRepository):
         return len(set(permissions)) == 1
 
     def can_update_email(self, owner_id: int, email: str) -> bool:
-        return not User.objects.filter(not Q(id=owner_id) and Q(email=email)).exists()
+        return not User.objects.filter(~Q(id=owner_id) & Q(email=email)).exists()

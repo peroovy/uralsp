@@ -2,6 +2,7 @@ import hashlib
 import hmac
 from abc import ABC, abstractmethod
 from collections import namedtuple
+from enum import IntEnum, auto
 from typing import Optional
 
 from django.conf import settings
@@ -16,6 +17,13 @@ from api.internal.socials.entities import GoogleCredentialsIn, TelegramCredentia
 SocialData = namedtuple("SocialData", ["id", "surname", "name"])
 
 
+class SocialAuthStatus(IntEnum):
+    UNKNOWN_USER = auto()
+    SOCIAL_ID_ALREADY_EXISTS = auto()
+    UNAUTHORIZED = auto()
+    OK = auto()
+
+
 class SocialBase(ABC):
     def __init__(self, social_repo: SocialBaseRepository):
         self._social_repo = social_repo
@@ -26,14 +34,23 @@ class SocialBase(ABC):
 
         return self._social_repo.get_or_create(data.id, data.surname, data.name)
 
-    def link(self, user_id: int) -> Optional[bool]:
+    def link(self, user_id: int) -> SocialAuthStatus:
         if not (data := self.authenticate()):
-            return None
+            return SocialAuthStatus.UNAUTHORIZED
 
-        return self._social_repo.update_user(user_id, data.id)
+        if self._social_repo.exists_social_id(data.id):
+            return SocialAuthStatus.SOCIAL_ID_ALREADY_EXISTS
 
-    def unlink(self, user_id: int) -> bool:
-        return self._social_repo.update_user(user_id, None)
+        if not self._social_repo.update_user(user_id, data.id):
+            return SocialAuthStatus.UNKNOWN_USER
+
+        return SocialAuthStatus.OK
+
+    def unlink(self, user_id: int) -> SocialAuthStatus:
+        if not self._social_repo.update_user(user_id, None):
+            return SocialAuthStatus.UNKNOWN_USER
+
+        return SocialAuthStatus.OK
 
     @abstractmethod
     def authenticate(self) -> Optional[SocialData]:

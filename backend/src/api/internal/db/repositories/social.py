@@ -16,6 +16,9 @@ class SocialBaseRepository(ABC):
             **{self._social_field_name: social_id}, defaults={"surname": surname, "name": name}
         )[0]
 
+    def exists_social_id(self, social_id: int) -> bool:
+        return User.objects.filter(**{self._social_field_name: social_id}).exists()
+
 
 class VKRepository(SocialBaseRepository):
     def __init__(self):

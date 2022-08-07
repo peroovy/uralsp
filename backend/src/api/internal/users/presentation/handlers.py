@@ -8,10 +8,11 @@ from ninja.pagination import LimitOffsetPagination, paginate
 
 from api.internal.db.models import User
 from api.internal.db.repositories import google_repo, telegram_repo, vk_repo
-from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException
+from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException, \
+    UnauthorizedException, ServerException
 from api.internal.responses import SuccessResponse
 from api.internal.socials.entities import GoogleCredentialsIn, TelegramCredentialsIn, VKCredentialsIn
-from api.internal.socials.services import GoogleAuth, SocialBase, TelegramAuth, VKAuth
+from api.internal.socials.services import GoogleAuth, SocialBase, TelegramAuth, VKAuth, SocialAuthStatus
 from api.internal.users.domain.entities import (
     CurrentProfileIn,
     Filters,
@@ -109,13 +110,17 @@ class UserHandlers:
 class CurrentUserHandlers:
     MIN_SOCIAL_AMOUNT = 1
 
+    EMAIL_ALREADY_EXISTS = "The email already exists"
+    BAD_EMAIL = "bad email"
+
     SOCIAL_CONNECTING = "Failed to get user information"
     MIN_AMOUNT_SOCIALS = f"Min amount of socials is {MIN_SOCIAL_AMOUNT}"
     NOT_FOUND_ANY_FIELD_IDS = "Any field ids were not found"
-    UNAUTHORIZED_IN_SOCIAL = "Unauthorized in social"
+    SOCIAL_ID_ALREADY_EXISTS = "social id already exists"
 
     SOCIALS_AMOUNT = "socials_amount"
     BAD_CREDENTIALS = "bad credentials"
+    BAD_SOCIAL_ID = "bad social id"
 
     def __init__(self, user_service: UserService):
         self._user_service = user_service
@@ -124,6 +129,9 @@ class CurrentUserHandlers:
         return FullProfileOut.from_orm(request.user)
 
     def update_profile(self, request: HttpRequest, data: CurrentProfileIn = Body(...)) -> SuccessResponse:
+        if not self._user_service.can_update_email(request.user, data.email):
+            raise UnprocessableEntityException(self.EMAIL_ALREADY_EXISTS, error=self.BAD_EMAIL)
+
         self._user_service.update(request.user, data)
 
         return SuccessResponse()
@@ -151,11 +159,20 @@ class CurrentUserHandlers:
     def unlink_telegram(self, request: HttpRequest) -> SuccessResponse:
         return self._unlink_social(request, TelegramAuth(None, telegram_repo))
 
-    def _link_social(self, request: HttpRequest, social: SocialBase):
-        if social.link(request.user.id) is None:
-            raise UnprocessableEntityException(self.UNAUTHORIZED_IN_SOCIAL, error=self.BAD_CREDENTIALS)
+    def _link_social(self, request: HttpRequest, social: SocialBase) -> SuccessResponse:
+        status = social.link(request.user.id)
 
-        return SuccessResponse()
+        match status:
+            case SocialAuthStatus.UNAUTHORIZED:
+                raise UnauthorizedException()
+
+            case SocialAuthStatus.SOCIAL_ID_ALREADY_EXISTS:
+                raise UnprocessableEntityException(self.SOCIAL_ID_ALREADY_EXISTS, error=self.BAD_SOCIAL_ID)
+
+            case SocialAuthStatus.OK:
+                return SuccessResponse()
+
+        raise ServerException()
 
     def _unlink_social(self, request: HttpRequest, social: SocialBase) -> SuccessResponse:
         if self._user_service.get_socials_amount(request.user.id) <= self.MIN_SOCIAL_AMOUNT:
