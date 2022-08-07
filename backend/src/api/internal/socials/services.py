@@ -8,8 +8,6 @@ from django.conf import settings
 from django.utils.timezone import now
 from google.auth.transport import requests
 from google.oauth2 import id_token as google_id_token
-from vk import API
-from vk.exceptions import VkException
 
 from api.internal.db.models import User
 from api.internal.db.repositories.social import SocialBaseRepository
@@ -43,22 +41,19 @@ class SocialBase(ABC):
 
 
 class VKAuth(SocialBase):
-    ID = "id"
-    SURNAME = "last_name"
-    NAME = "first_name"
-
     def __init__(self, credentials: Optional[VKCredentialsIn], vk_repo: SocialBaseRepository):
         super(VKAuth, self).__init__(vk_repo)
         self._credentials = credentials
 
     def authenticate(self) -> Optional[SocialData]:
-        try:
-            api = API(access_token=self._credentials.access_token)
-            data = api.account.getProfileInfo(access_token=self._credentials.access_token)
-
-            return SocialData(data[self.ID], data[self.SURNAME], data[self.NAME])
-        except VkException:
+        if not self._credentials:
             return None
+
+        check_string: str = settings.VKONTAKTE_APP_ID + str(self._credentials.uid) + settings.VKONTAKTE_APP_SECRET_KEY
+        if hashlib.md5(check_string.encode()).hexdigest() != self._credentials.hash:
+            return None
+
+        return SocialData(self._credentials.uid, self._credentials.last_name, self._credentials.first_name)
 
 
 class GoogleAuth(SocialBase):
@@ -71,6 +66,9 @@ class GoogleAuth(SocialBase):
         self._credentials = credentials
 
     def authenticate(self) -> Optional[SocialData]:
+        if not self._credentials:
+            return None
+
         try:
             data = google_id_token.verify_oauth2_token(self._credentials.id_token, requests.Request())
 
@@ -87,6 +85,9 @@ class TelegramAuth(SocialBase):
         self._credentials = credentials
 
     def authenticate(self) -> Optional[SocialData]:
+        if not self._credentials:
+            return None
+
         if int(now().timestamp()) - self._credentials.auth_date > settings.TELEGRAM_DATA_LIFETIME.seconds:
             return None
 

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Iterable, Optional, Set
 
-from django.db.models import QuerySet, Q
+from django.db.models import Q, QuerySet
 from django.db.models.functions import Concat
 from phonenumbers import PhoneNumber, PhoneNumberFormat, format_number
 

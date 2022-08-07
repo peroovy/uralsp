@@ -4,7 +4,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 from google.oauth2 import id_token
-from vk import API
 
 from api.internal.db.models import Competition, DefaultValue, Field, Participation, Request, User
 from api.internal.db.models.user import Permissions
@@ -205,18 +204,6 @@ def field() -> Field:
 @pytest.fixture(scope="function")
 def another_field() -> Field:
     return Field.objects.create(id="checkbox", name="Checkbox", type=1)
-
-
-@pytest.fixture(scope="function")
-def vk_api() -> API:
-    api = patch("api.internal.socials.services.API").start()
-
-    instance = Mock()
-    instance.account.getProfileInfo.return_value = Mock()
-
-    api.return_value = instance
-
-    return instance
 
 
 @pytest.fixture(scope="function")

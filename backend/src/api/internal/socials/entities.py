@@ -4,7 +4,10 @@ from ninja import Schema
 
 
 class VKCredentialsIn(Schema):
-    access_token: str
+    uid: int
+    first_name: str
+    last_name: str
+    hash: str
 
 
 class GoogleCredentialsIn(Schema):
