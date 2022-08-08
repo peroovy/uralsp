@@ -8,11 +8,16 @@ from ninja.pagination import LimitOffsetPagination, paginate
 
 from api.internal.db.models import User
 from api.internal.db.repositories import google_repo, telegram_repo, vk_repo
-from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException, \
-    UnauthorizedException, ServerException
+from api.internal.exceptions import (
+    ForbiddenException,
+    NotFoundException,
+    ServerException,
+    UnauthorizedException,
+    UnprocessableEntityException,
+)
 from api.internal.responses import SuccessResponse
 from api.internal.socials.entities import GoogleCredentialsIn, TelegramCredentialsIn, VKCredentialsIn
-from api.internal.socials.services import GoogleAuth, SocialBase, TelegramAuth, VKAuth, SocialAuthStatus
+from api.internal.socials.services import GoogleAuth, SocialAuthStatus, SocialBase, TelegramAuth, VKAuth
 from api.internal.users.domain.entities import (
     CurrentProfileIn,
     Filters,

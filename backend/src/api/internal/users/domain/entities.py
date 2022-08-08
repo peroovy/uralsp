@@ -1,10 +1,11 @@
-from enum import IntEnum
+from enum import Enum
 from typing import Optional
 
 from ninja import ModelSchema, Schema
 from pydantic import EmailStr, Field
 
 from api.internal.db.models import User
+from api.internal.db.models.user import Institution, Permissions
 
 
 class ProfileOut(ModelSchema):
@@ -20,39 +21,30 @@ class FullProfileOut(ModelSchema):
 
 
 class ProfileIn(ModelSchema):
+    permission: Permissions
     phone: Optional[str] = Field(regex=r"^\+[1-9][0-9]{10}")
-    email: EmailStr
+    email: Optional[EmailStr]
 
     class Config:
         model = User
         model_exclude = ["id", "vkontakte_id", "google_id", "telegram_id"]
 
 
-class CurrentProfileIn(ProfileIn):
+class CurrentProfileIn(ModelSchema):
+    phone: Optional[str] = Field(regex=r"^\+[1-9][0-9]{10}")
+    email: Optional[EmailStr]
+
     class Config:
         model = User
         model_exclude = ["id", "permission", "vkontakte_id", "google_id", "telegram_id"]
 
 
-class PermissionsIn(IntEnum):
-    DEFAULT = 0
-    TEACHER = 1
-    ADMIN = 2
-    SUPER_ADMIN = 3
-
-
-class InstitutionTypes(IntEnum):
-    SCHOOL = 0
-    COLLEGE = 1
-    UNIVERSITY = 2
-
-
 class Filters(Schema):
-    permission: Optional[PermissionsIn] = None
+    permission: Optional[Permissions] = None
     region: Optional[str] = None
     email: Optional[str] = None
     fcs: Optional[str] = None
-    institution_type: Optional[InstitutionTypes] = None
+    institution_type: Optional[Institution] = None
     institution_name: Optional[str] = None
     institution_faculty: Optional[str] = None
     institution_course: Optional[str] = None

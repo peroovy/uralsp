@@ -72,7 +72,7 @@ class RequestService:
         self._request_repo.update(
             request.id,
             team_name=request.team_name,
-            status=RequestStatus(data.status.value),
+            status=data.status,
             description=data.description,
         )
 

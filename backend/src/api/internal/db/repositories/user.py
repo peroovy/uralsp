@@ -38,7 +38,7 @@ class IUserRepository(ABC):
     @abstractmethod
     def get_filtered(
         self,
-        permission: Optional[int],
+        permission: Optional[Permissions],
         institution_type: Optional[Institution],
         institution_name: Optional[str],
         institution_faculty: Optional[str],
@@ -74,7 +74,7 @@ class IUserRepository(ABC):
         ...
 
     @abstractmethod
-    def can_update_email(self, owner_id: int, email: str) -> bool:
+    def exists_email(self, owner_id: int, email: str) -> bool:
         ...
 
 
@@ -117,7 +117,7 @@ class UserRepository(IUserRepository):
 
     def get_filtered(
         self,
-        permission: Optional[int],
+        permission: Optional[Permissions],
         institution_type: Optional[Institution],
         institution_name: Optional[str],
         institution_faculty: Optional[str],
@@ -169,5 +169,5 @@ class UserRepository(IUserRepository):
 
         return len(set(permissions)) == 1
 
-    def can_update_email(self, owner_id: int, email: str) -> bool:
+    def exists_email(self, owner_id: int, email: str) -> bool:
         return not User.objects.filter(~Q(id=owner_id) & Q(email=email)).exists()

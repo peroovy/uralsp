@@ -57,15 +57,6 @@ def user() -> User:
         name="Pachka",
         surname="Pupkin",
         permission=Permissions.DEFAULT,
-        email="123@123",
-        phone="+78005553535",
-        city="Rezh",
-        region="Topchik reg",
-        school="First",
-        school_class="10 Z",
-        vkontakte_id="111111111111111111",
-        google_id="2222222222222222222",
-        telegram_id="333333333333333333",
     )
 
 
@@ -76,15 +67,6 @@ def another() -> User:
         surname="Popolka",
         patronymic="Tankist",
         permission=Permissions.DEFAULT,
-        email="222222222222222@mail.com",
-        phone="+79321295838",
-        city="Moscow",
-        region="Mo",
-        school="Xz",
-        school_class="228 Z",
-        vkontakte_id="1",
-        google_id="1",
-        telegram_id="1",
     )
 
 
@@ -95,15 +77,6 @@ def admin() -> User:
         surname="Grechka",
         patronymic="What",
         permission=Permissions.ADMIN,
-        email="aaaaaaa@aaaaa",
-        phone="+79999999999",
-        region="a",
-        city="a",
-        school="Second",
-        school_class="1 I",
-        vkontakte_id="9999",
-        google_id="999",
-        telegram_id="999999999",
     )
 
 
@@ -114,15 +87,6 @@ def another_admin() -> User:
         surname="OPA-OPA",
         patronymic="asdf",
         permission=Permissions.ADMIN,
-        email="bbbbbbbb@aaaaa",
-        phone="+78888888888",
-        region="ab",
-        city="ab",
-        school="asdfasdcx",
-        school_class="1 aaa",
-        vkontakte_id="8888888888",
-        google_id="888888888",
-        telegram_id="888888888",
     )
 
 
@@ -133,15 +97,6 @@ def super_admin() -> User:
         surname="Ytrewq",
         patronymic="Qawa",
         permission=Permissions.SUPER_ADMIN,
-        email="qwwerty@qwerty",
-        phone="+70707070707",
-        city="q",
-        region="Opa",
-        school="Unknown",
-        school_class="10000 Z",
-        vkontakte_id="111111",
-        google_id="111",
-        telegram_id="11111111111111",
     )
 
 
@@ -152,15 +107,6 @@ def another_super_admin() -> User:
         surname="Ytrewqzxvcxvz",
         patronymic="Qawaasfqwerqe",
         permission=Permissions.SUPER_ADMIN,
-        email="qwwertyasdfasdf@qwerty",
-        phone="+70707070999",
-        city="qqq",
-        region="Opaqqqq",
-        school="Unknownqqqqqqq",
-        school_class="10000 Zqqqqqq",
-        vkontakte_id="11111122222222222",
-        google_id="111222222222222222222",
-        telegram_id="111111111111112222222222222",
     )
 
 
@@ -168,9 +114,9 @@ def another_super_admin() -> User:
 def competition() -> Competition:
     return Competition.objects.create(
         name="babies",
-        started_at=datetime(1337, 2, 28),
-        registration_before=datetime(1337, 3, 28),
-        end_at=datetime(2022, 12, 12),
+        registration_start=datetime(1337, 3, 28),
+        registration_end=datetime(2022, 12, 12),
+        started_at=datetime(3022, 2, 28),
         persons_amount=1,
     )
 
@@ -179,10 +125,10 @@ def competition() -> Competition:
 def another_competition() -> Competition:
     return Competition.objects.create(
         name="OPA",
-        started_at=datetime(2002, 2, 28),
-        registration_before=datetime(2001, 3, 28),
-        end_at=datetime(2013, 12, 12),
-        persons_amount=1,
+        registration_start=datetime(1337, 3, 30),
+        registration_end=datetime(2022, 12, 27),
+        started_at=datetime(3022, 2, 13),
+        persons_amount=2,
     )
 
 

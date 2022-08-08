@@ -159,7 +159,7 @@ class CompetitionSerializer:
                 request.id,
                 request.owner_id,
                 request.team_name,
-                RequestStatus(request.status).name.lower(),
+                request.status,
                 request.created_at.strftime("%Y-%m-%d %H-%M-%S"),
             ]
 

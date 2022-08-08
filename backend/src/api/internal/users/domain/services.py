@@ -1,11 +1,8 @@
-import csv
-from io import BytesIO, StringIO
+from io import BytesIO
 from typing import Iterable, List, Optional, Set
 
 from django.db.transaction import atomic
 from django.forms import model_to_dict
-from openpyxl import Workbook
-from openpyxl.worksheet.worksheet import Worksheet
 
 from api.internal.db.models import FormValue, User
 from api.internal.db.models.user import Institution, Permissions
@@ -61,7 +58,10 @@ class UserService:
         return self._user_repo.get_socials_amount(user_id)
 
     def can_update_email(self, owner: User, email: str) -> bool:
-        return self._user_repo.can_update_email(owner.id, email)
+        if email is None:
+            return True
+
+        return self._user_repo.exists_email(owner.id, email)
 
 
 class MergingService:
@@ -131,12 +131,12 @@ class UserSerializer:
             user.surname,
             user.name,
             user.patronymic,
-            Permissions(user.permission).name.lower(),
+            user.permission,
             user.email,
             user.phone,
             user.city,
             user.region,
-            Institution(user.institution_type).name.lower() if user.institution_type is not None else None,
+            user.institution_type,
             user.institution_name,
             user.institution_faculty,
             user.institution_course,

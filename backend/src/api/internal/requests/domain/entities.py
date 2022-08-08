@@ -1,16 +1,10 @@
 from datetime import datetime
-from enum import IntEnum
-from typing import List, Optional, Set
+from typing import List, Optional
 
 from ninja import ModelSchema, Schema
 
 from api.internal.db.models import Request
-
-
-class Status(IntEnum):
-    AWAITED = 0
-    ACCEPTED = 1
-    REJECTED = 2
+from api.internal.db.models.request import RequestStatus
 
 
 class FieldValueSchema(Schema):
@@ -54,5 +48,5 @@ class SwitchOut(Schema):
 
 
 class ProcessIn(Schema):
-    status: Status
+    status: RequestStatus
     description: Optional[str] = None
