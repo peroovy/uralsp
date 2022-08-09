@@ -30,7 +30,7 @@ class Payload:
     EXPIRES_IN = "expires_in"
     PERMISSION = "permission"
 
-    def __init__(self, token_type: str, expires_in: float, user_id: int, permission: int):
+    def __init__(self, token_type: str, expires_in: float, user_id: int, permission: str):
         self._token_type = token_type
         self._user_id = user_id
         self._expires_in = int(expires_in)
@@ -49,7 +49,7 @@ class Payload:
         return self._user_id
 
     @property
-    def permission(self) -> int:
+    def permission(self) -> str:
         return self._permission
 
     def to_dictionary(self) -> dict:
