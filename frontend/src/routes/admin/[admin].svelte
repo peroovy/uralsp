@@ -86,10 +86,10 @@
 	function slider(target: string){
 		if(browser){
 			if(target === "users"){
-				localStorage.setItem('basicNav', target);
+				localStorage.setItem('oldLocation', target);
 				sliderCont.style.marginLeft = "0px";
 			} else {
-				localStorage.setItem('basicNav', target);
+				localStorage.setItem('oldLocation', target);
 				sliderCont.style.marginLeft = "-100vw";
 			}
 		}
@@ -141,7 +141,7 @@
 		}
 	]
 	let resultsNumber = comps.length;
-	$: itemPerpage = 5;
+	$: itemPerpage = 20;
 	$: selectedComp = '';
 	function pagination(page: number): void {
 		let start = page * itemPerpage;
@@ -161,14 +161,21 @@
 			e!.classList.remove('hide');
 		}
 	}
-	
+	let filterCont = '' as unknown as HTMLElement; 
+	function filterSlider(){
+		if(filterCont.style.marginRight=="0px"){
+			filterCont.style.marginRight = "-220px";
+		} else {
+			filterCont.style.marginRight = "0px";
+		}
+	}
 	onMount(()=>{
 		if(browser){
-			let basicNav = localStorage.getItem('basicNav');
-			if (basicNav == null || basicNav == undefined || basicNav == '') {
+			let oldLocation = localStorage.getItem('oldLocation');
+			if (oldLocation == null || oldLocation == undefined || oldLocation == '') {
 				localStorage.setItem('basicNav', "users");
 			} else {
-				if(basicNav == "users"){
+				if(oldLocation == "users"){
 					slider("users")
 				} else {
 					slider("comp")
@@ -177,6 +184,17 @@
 		}
 		pagination(0);
 	})
+
+
+function selectedCompItem(arg0: string) {
+	if(browser){
+		if (arg0 == "users") {
+			slider("users");
+		} else {
+			slider("comp");
+		}
+	}
+}
 </script>
 
 <svelte:head>
@@ -190,7 +208,7 @@
 	<img class="d1" src={dotsSrc} alt="" />
 	<div class="d2" />
 
-	<nav class="navbar navbar-expand-lg navbar-light mb-5 sticky-top shadow">
+	<nav class="navbar navbar-expand-lg navbar-light mb-5 sticky-top shadow-sm">
 		<div class="container-fluid p-0 d-flex justify-content-lg-around">
 			<div class="navbar-brand">
 				<img {src} alt="Logo" />
@@ -249,7 +267,7 @@
 	</nav>
 	<div class="sliderCont" bind:this={sliderCont}>
 		<div class="slide">
-			<div class="container">
+			<div class="container pt-5">
 				<div class="row justify-content-center align-items-stretch shadow">
 					<div class="form col-lg-6 p-4 m-0" bind:this={formCont}>
 						<h1 class="form-header">
@@ -332,8 +350,9 @@
 				</div>
 			</div>
 		</div>
-		<div class="slide">
-			<div class="card menu">
+		<div class="slide compHolder">
+			<div class="card menu" bind:this={filterCont}>
+				<li class="fa fa-filter" on:click={filterSlider}></li>
 				<input type="text" class="form-control"  placeholder="Search by competition title ..." id="compName">
 				<select class="form-select form-select-sm" aria-label="Default select example" id="compType">
 					<option selected>Choose competition status ...</option>
@@ -345,7 +364,7 @@
 			</div>
 			<div class="container-fluid mt-5">
 				<div class="row justify-content-center">
-					<div class="card col-md-6 comps p-0 col-sm-6 shadow m-5 mt-0" style="max-width: max-content; min-width:min-content">
+					<div class="card col-md-6 comps compt-holder p-0 col-sm-6 shadow me-5 mt-0" style="max-width: max-content; min-width:min-content">
 						<h4 class="card-header" style:padding-right="100px">
 							<span class="fa fa-book" />
 							Competitions
@@ -380,12 +399,8 @@
 							</div>
 						</div>
 					</div>
-					{#if selectedComp === ""}
+					{#if selectedComp === "" }
 					<div class="card p-0 col-md-6">
-						<h4 class="card-header">
-							<span class="fa fa-book" />
-							Competition Details
-						</h4>
 						<div class="card-body p-0 pt-1 shadow">
 							<div class="noComp">
 								<img src={lottieSelect} alt="" class="gif">
@@ -422,6 +437,7 @@
 			</div>
 		</div>
 	</div>
+
 	<div class="hide">keephideClass</div>
 	<div bind:this={alertCont} class="alertCont"></div>
 </section>
@@ -429,8 +445,9 @@
 <style lang="scss">
 	@import '../../lib/Assets/common.scss';
 	nav{
-		position: sticky !important;
+		position: relative !important;
 		background-color: rgb(236, 236, 236);
+		margin-bottom: 0px !important; 
 	}
 	.admin-container{
 		@include bg;
@@ -504,8 +521,11 @@
 		transition: all 0.3s ease-in-out;
 		.slide{
 			width: 100vw;
+			position: relative;
+			z-index: 2;
+			padding-bottom: 30px;
 		}
-	}	
+	}
 	.paginationNav {
 		padding-bottom: 20px;
 		font-size: 18px;
@@ -549,31 +569,40 @@
 		bottom: 30px;
 		left: 30px;
 	}
+	.card{
+		border: none;
+		border-radius: 0;
+		background-color: #fff;
+	}
 	.hide {
 		display: none !important;
 	}
 	.menu{
-		position: fixed !important;
+		position: sticky;
+		top: 0;
+		z-index: 5;
 		display: flex !important;
-		flex-flow: row nowrap !important;
+		flex-flow: row wrap!important;
 		justify-content: center !important;
 		padding: 20px 0px;
 		gap: 10px !important;
 		margin-bottom: 20px !important;
-		top: 66px;
 		border-radius: 0px;
 		width: 100vw !important;
-		z-index: 10 !important;
 		background: $secondary-color !important;
 		color: white;
 		font-family: "Light", sans-serif;
 		
 		input, select, button{
-			width: fit-content !important;
-			height: 40px !important;
+			width: 300px;
+			height: 40px;
 			border: none !important;
 			margin: 0px !important;
-			padding: 0px 30px
+			border-radius: 20px !important;
+			padding: 0px 30px !important;
+		}
+		button{
+			width: fit-content;
 		}
 
 	}
@@ -588,16 +617,19 @@
 		align-items: center;
 		overflow: hidden;
 		p{
-			font-size: 15px;
+			font-size: 14px;
 			align-self: center;
 			color: #212529;
-			margin-top: 100px;
+			margin-top: 190px;
 			position: absolute;
+			.fa{
+				opacity: 0.3;
+			}
 		}
 		.gif{
-			width: 300px;
-			height: 300px;
-			margin-top: -100px;
+			width: 250px;
+			height: 250px;
+			margin-top: 0px;
 			padding: 0px;
 		}
 	}
@@ -658,10 +690,57 @@
 			display: none;
 		}
 	}
-	@media screen and (max-width: 750px){
+	@media screen and (max-width: 800px){
 		.compt-filter, .compt-holder{
 			max-width: 100vw !important;
+			margin: 0px !important;
+			margin-bottom: 50px !important;
 			width: 100vw;
+		}
+		.menu{
+			--height: 180px;
+			height: var(--height);
+			position: absolute;
+			right: 0px;
+			top: calc(50% - var(--height)/2);
+			flex-flow: column nowrap !important;
+			padding: 20px !important;
+			justify-content: left !important;
+			width: fit-content !important;
+			transition: all 0.3s ease-in-out;
+			margin-right: -220px;
+			input, select, button{
+				width: 200px;
+				height: 40px !important;
+				border: none !important;
+				margin: 0px !important;
+				padding: 0px 30px;
+				margin-left: 40px !important;
+			}
+			.fa{
+				height: var(--height);
+				margin-top: -20px;
+				margin-left: -20px;
+				width: 60px;
+				position: absolute;
+				font-size: 20px;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				cursor: pointer;
+			}
+			button{
+				width: fit-content;
+				background-color: $primary-color;
+				color: white;
+			}
+		}
+	}
+	@media screen and (min-width: 800px){
+		.menu{
+			.fa{
+				display: none !important;
+			}
 		}
 	}
 </style>
