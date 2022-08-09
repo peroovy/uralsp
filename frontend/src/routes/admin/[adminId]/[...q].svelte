@@ -91,19 +91,15 @@
 	let userBinds = [] as HTMLElement[];
 	function handleSelect(index: number) {
 		let e = userBinds[index];
-		let b = (e.parentElement?.nextElementSibling as HTMLElement).children[2].children[0];
-		let id = b?.getAttribute('id');
+		let id = e?.getAttribute('id');
 		if (e!.classList.contains('fa-square-o')) {
 			e!.classList.remove('fa-square-o');
 			e!.classList.add('fa-check-square-o');
-			b!.innerHTML = `<i class="fa fa-minus me-1"></i>  
-            Deselect`;
 			selectedIds.add(id!);
 		} else {
 			e!.classList.remove('fa-check-square-o');
 			e!.classList.add('fa-square-o');
 			selectedIds.delete(id!);
-			b!.innerHTML = `<i class="fa fa-plus me-1"></i> Select`;
 		}
 	}
 
@@ -187,13 +183,10 @@
 	function sellectAll(): void {
 		for (let i in userBinds) {
 			let e = userBinds[i];
-			let b = (e.parentElement?.nextElementSibling as HTMLElement).children[2].children[0];
-			let id = b?.getAttribute('id');
+			let id = e?.getAttribute('id');
 			if (e!.classList.contains('fa-square-o')) {
 				e!.classList.remove('fa-square-o');
 				e!.classList.add('fa-check-square-o');
-				b!.innerHTML = `<i class="fa fa-minus me-1"></i>  
-                Deselect`;
 				selectedIds.add(id!);
 			}
 		}
@@ -201,13 +194,11 @@
 	function deselectAll(): void {
 		for (let i in userBinds) {
 			let e = userBinds[i];
-			let b = (e.parentElement?.nextElementSibling as HTMLElement).children[2].children[0];
-			let id = b?.getAttribute('id');
+			let id = e?.getAttribute('id');
 			if (e!.classList.contains('fa-check-square-o')) {
 				e!.classList.remove('fa-check-square-o');
 				e!.classList.add('fa-square-o');
 				selectedIds.delete(id!);
-				b!.innerHTML = `<i class="fa fa-plus me-1"></i> Select`;
 			}
 		}
 	}

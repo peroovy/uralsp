@@ -17,16 +17,26 @@
 					}
 				}
 
-				let response = await fetch(`http://localhost:8000/users/current/profile`, {
+				let userData = await fetch(`http://localhost:8000/users/current/profile`, {
 					method: 'GET',
 					headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + token
                     }
 				});
-				let data = await response.json();
+				let competitions = await fetch(`http://localhost:8000/competitions`, {
+					method: 'GET',
+					headers: {
+                        'Content-Type': 'application/json',
+                    }
+				});
+				let userInfo = await userData.json();
+				let competitionsInfo = await competitions.json();
 				return {
-					props: data
+					props: {
+						userInfo,
+						competitionsInfo
+					}
 				}
 			} else {
 				return {
@@ -44,43 +54,30 @@
 	import src from '$lib/Assets/imgs/logo.png';
 	import tempPhoto from '$lib/Assets/imgs/temp-photo.png';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
-	import type { ContestType }  from '$lib/types'
+	import type { ContestType, UserData}  from '$lib/types'
 	import { goto } from '$app/navigation';
-	export let data;
-	let userName = "userName";
+	import { onMount } from 'svelte';
+	export let userInfo : UserData;
+	export let competitionsInfo;
+
+	console.log(userInfo);
+	let userId :number;
+	onMount(()=>{
+		userId = userInfo.id;
+	});
 	let paricipantName = 'Participant Name';
-    let contestObject : ContestType= {
-		contestID: 'ID',
-		contestTitle: 'Contest Name',
-		description:
-			'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Cras fermentum odio eu feugiat pretium nibh ipsum consequat nisl. Etiam erat velit scelerisque in dictum non consectetur a. Rhoncus aenean vel elit scelerisque mauris. Rutrum quisque non tellus orci. Aliquam sem fringilla ut morbi tincidunt. Nullam ac tortor vitae purus faucibus ornare suspendisse sed nisi. Leo vel orci porta non. Eget dolor morbi non arcu risus quis varius quam quisque. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar sapien. Congue eu consequat ac felis donec. Sit amet massa vitae tortor condimentum lacinia quis. Consequat mauris nunc congue nisi vitae suscipit tellus. Montes nascetur ridiculus mus mauris vitae ultricies. Viverra ipsum nunc aliquet bibendum enim facilisis gravida neque convallis. Etiam tempor orci eu lobortis elementum nibh tellus molestie nunc. Maecenas accumsan lacus vel facilisis volutpat est. Gravida rutrum quisque non tellus orci. At imperdiet dui accumsan sit. Adipiscing elit duis tristique sollicitudin nibh sit amet. Tellus molestie nunc non blandit massa enim nec dui. Pellentesque dignissim enim sit amet venenatis urna. Et odio pellentesque diam volutpat. Habitasse platea dictumst vestibulum rhoncus est pellentesque elit. Tortor at auctor urna nunc. Pulvinar neque laoreet suspendisse interdum consectetur. Magna sit amet purus gravida quis blandit turpis cursus in. Velit scelerisque in dictum non consectetur a erat. At tempor commodo ullamcorper a lacus vestibulum. Massa ultricies mi quis hendrerit dolor. Vitae sapien pellentesque habitant morbi tristique senectus. Ut placerat orci nulla pellentesque dignissim. Nibh tellus molestie nunc non. In pellentesque massa placerat duis ultricies lacus sed turpis. Enim ut tellus elementum sagittis.',
-        start_time: 'August 1, 2022',
-		end_time: 'August 22, 2022',
-		writerName: 'Writer Name',
-		form: {
-            shortQuestion: ["What is your first name?", "What is your last name?"],
-            longQuestion: ["How is your life Going?"],
-            mcqs: [{
-				question: "What is your favorite color?",
-				numberOfOptions: 4,
-				options: ["Red", "Blue", "Green", "Yellow"],
-				numberOFAllowedOptions: {
-					one: 1,
-					more: 0
-				}
-			}, 
-			{
-				question: "What is your favorite food?",
-				numberOfOptions: 4,
-				options: ["Pizza", "Pasta", "Burger", "Sandwich"],
-				numberOFAllowedOptions: {
-					one: 0,
-					more: 1
-				}
-			}],
-			uploads: ["Upload your CV"],
-		},
-    }
+    let contestObject : ContestType= [
+		{
+			"id": 0,
+			"name": "string",
+			"registration_start": "2022-08-08T17:48:45.367Z",
+			"registration_end": "2022-08-08T17:48:45.367Z",
+			"started_at": "2022-08-08T17:48:45.367Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
+		}
+	]
     let showContest = () => {
 		contest.set(JSON.stringify(contestObject));
     }
@@ -169,7 +166,8 @@
 							<li class:active={$page.url.pathname === '/info'}>
 								<a
 									sveltekit:prefetch
-									href="{base}/info/{userName}"
+									href="{base}/info/{userId}"
+									target="_blank"
 									content="Home"
 									class="dropdown-item nav-link"
 								>
@@ -224,20 +222,15 @@
 						</nav>
 					</div>
 					<div class="card-body gap-2">
-						<p class="contest-description">
-							Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec euismod, nisl eget
-							consectetur sagittis, nisl nisi consectetur nisi, euismod eget nisl nisi euismod eget
-							nisl nisi.
-						</p>
 						<div class="btn btn-group gap-2 on:click={showContest}">
 							<button class="btn btn-primary">
-								<a class="link-light" href="/contests/apply/{contestObject.contestID}-apply" target="_blank">
+								<a class="link-light" href="/contests/apply/-apply" target="_blank">
 									<span class="fa fa-check-square-o" />
 									<span class="ptn-count"> Apply </span>
 								</a>
 							</button>
 							<button class="btn btn-primary" on:click={showContest}>
-								<a class="link-light" href="/contests/{contestObject.contestID}" target="_blank">
+								<a class="link-light" href="/contests/" target="_blank">
 									<span class="fa fa-eye" />
 									<span> View full Contest</span>
 								</a>
@@ -281,20 +274,15 @@
 						</nav>
 					</div>
 					<div class="card-body gap-2">
-						<p class="contest-description">
-							Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec euismod, nisl eget
-							consectetur sagittis, nisl nisi consectetur nisi, euismod eget nisl nisi euismod eget
-							nisl nisi.
-						</p>
 						<div class="btn btn-group gap-2 on:click={showContest}">
 							<button class="btn btn-primary">
-								<a class="link-light" href="/contests/apply/{contestObject.contestID}-apply" target="_blank">
+								<a class="link-light" href="/contests/apply/-apply" target="_blank">
 									<span class="fa fa-check-square-o" />
 									<span class="ptn-count"> Apply </span>
 								</a>
 							</button>
 							<button class="btn btn-primary" on:click={showContest}>
-								<a class="link-light" href="/contests/{contestObject.contestID}" target="_blank">
+								<a class="link-light" href="/contests/" target="_blank">
 									<span class="fa fa-eye" />
 									<span> View full Contest</span>
 								</a>
@@ -338,20 +326,15 @@
 						</nav>
 					</div>
 					<div class="card-body gap-2">
-						<p class="contest-description">
-							Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec euismod, nisl eget
-							consectetur sagittis, nisl nisi consectetur nisi, euismod eget nisl nisi euismod eget
-							nisl nisi.
-						</p>
 						<div class="btn btn-group gap-2">
 							<button class="btn btn-primary on:click={showContest}">
-								<a class="link-light" href="/contests/apply/{contestObject.contestID}-apply" target="_blank">
+								<a class="link-light" href="/contests/apply/-apply" target="_blank">
 									<span class="fa fa-pencil" />
 									<span class="ptn-count"> Edit Your Application </span>
 								</a>
 							</button>
 							<button class="btn btn-primary" on:click={showContest}>
-								<a class="link-light" href="/contests/{contestObject.contestID}" target="_blank">
+								<a class="link-light" href="/contests/" target="_blank">
 									<span class="fa fa-eye" />
 									<span> View full Contest</span>
 								</a>
@@ -395,14 +378,9 @@
 						</nav>
 					</div>
 					<div class="card-body gap-2">
-						<p class="contest-description">
-							Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec euismod, nisl eget
-							consectetur sagittis, nisl nisi consectetur nisi, euismod eget nisl nisi euismod eget
-							nisl nisi.
-						</p>
 						<div class="btn btn-group gap-2">
 							<button class="btn btn-primary" on:click={showContest}>
-								<a class="link-light" href="/contests/{contestObject.contestID}" target="_blank">
+								<a class="link-light" href="/contests/" target="_blank">
 									<span class="fa fa-eye" />
 									<span> View full Contest</span>
 								</a>
@@ -458,6 +436,8 @@
 	}
 	nav{
 		position: sticky !important;
+		z-index: 10 !important;
+		background-color: #f8f9fa !important;
 	}
 	@media screen and (min-width: 1000px) {
 		.navbar-nav {

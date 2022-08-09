@@ -16,6 +16,8 @@
         font-size: 12px;
         font-family: 'light';
         margin: 0px;
+        position: relative;
+        z-index: 10;
         p{
             padding: 0px;
             margin: 0px;

@@ -31,12 +31,34 @@ export interface Draft{
     }[],
 }
 
-export type ContestType = {
-    contestID: string,
-    writerName: string,
-    contestTitle: string,
-    description: string,
-    start_time: string,
-    end_time: string,
-    form: Form,
-} 
+export type ContestType = [
+    {
+        "id": number,
+        "name": string,
+        "registration_start": string,
+        "registration_end": string,
+        "started_at": string,
+        "persons_amount": number,
+        "request_template": string,
+        "link": string
+    }
+] 
+
+export type UserData = {
+    "id": number,
+    "name": string,
+    "surname": string,
+    "patronymic": string,
+    "permission": number,
+    "email": string,
+    "phone": string,
+    "city": string,
+    "region": string,
+    "institution_type": number,
+    "institution_name": string,
+    "institution_faculty": string,
+    "institution_course": string,
+    "vkontakte_id": string,
+    "google_id": string,
+    "telegram_id": string
+}

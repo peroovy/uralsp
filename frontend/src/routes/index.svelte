@@ -7,23 +7,22 @@
     import { onMount } from "svelte";
     import { Login } from 'sveltegram';
     import { parsePayload } from '$lib/parse';
-
+    
     let google = '' as unknown as HTMLElement;
 
+    function redirct(per: number, user_id: string) {
+        if(per == 0 || per == 1){
+            goto(`${base}/participant/${user_id}`);
+        } else {
+            goto(`${base}/admin/${user_id}`);
+        }
+    }
     onMount(() => {
         if(browser){
-            function redirct(per: number, user_id: string) {
-                if(per == 1 || per == 2){
-                    goto(`${base}/admin/${user_id}`);
-                } else {
-                    goto(`${base}/participant/${user_id}`);
-                }
-            }
 
             // Access token exists and not expired
             let token = localStorage.getItem('access_token');
             let exp = localStorage.getItem('expires_in');
-            console.log(token, exp);
             if( token != null && exp != null){
                 // @ts-ignore
                 let date = new Date(parseInt(localStorage.getItem('expires_in'))*1000);
@@ -54,8 +53,7 @@
                 await fetch('http://127.0.0.1:8000/auth/signin-google', {
                     method: 'POST',
                     headers: {
-                        Authorization: `Bearer ${response.credential}`,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(data)
                 }).then(res => {
@@ -77,30 +75,78 @@
                 callback: handleCredentialResponse,
             });
             // @ts-ignore
-            window.google.accounts.id.renderButton(google, {});  
+            window.google.accounts.id.renderButton(google, {});
+            // @ts-ignore  
+            VK.init({
+                apiId: 51395235
+            });
+            // @ts-ignore  
+            VK.Widgets.Auth('vk_auth', {
+                onAuth: async function(data:{uid:string, hash:string, first_name:string, last_name:string}) {
+                    let uid = data.uid;
+                    let hash = data.hash;
+                    let fn = data.first_name;
+                    let ln = data.last_name;
+                    let authData = {
+                        "uid": uid,
+                        "first_name": fn,
+                        "last_name": ln,
+                        "hash": hash
+                    }
+                    await fetch('http://127.0.0.1:8000/auth/signin-vkontakte',{
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(authData)
+                    }).then(res => {
+                        res.json().then(res => {
+                            let expiresIn = res.expires_in;
+                            let token = res.access_token;
+                            localStorage.setItem('access_token', token);
+                            localStorage.setItem('expires_in', expiresIn);
+                            let per = parsePayload(localStorage.getItem('access_token')!).permission;  
+                            let id = parsePayload(localStorage.getItem('access_token')!).user_id;
+                            redirct(per, id);
+                        });
+                });
+                }
+            }); 
         }
     });
-
-    function onTelegramAuth (user: {detail: {first_name: string, username: string, id: number}}) {
+    function onTelegramAuth (user: {detail: {first_name: string, last_name: string ,username: string, photo_url: "string",id: number, auth_date: number, hash: string}}) {
         // send a post request to the server with the user data
         let data = {
-            "first_name": user.detail.id,
-            "username": user.detail.id,
-            "id": user.detail.id
+            "id": user.detail.id,
+            "first_name": user.detail.first_name,
+            "last_name": user.detail.last_name,
+            "username": user.detail.username,
+            "photo_url": user.detail.photo_url,
+            "auth_date": user.detail.auth_date,
+            "hash": user.detail.hash
         };
-        console.log(user);
-        /*fetch('http://localhost:8000/auth/signin-telegram', {
+        console.log(data);
+        fetch('http://localhost:8000/auth/signin-telegram', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
             body: JSON.stringify(data)
         }).then(res => {
-            console.log(res);
+            res.json().then(res => {
+                        let expiresIn = res.expires_in;
+                        let token = res.access_token;
+                        localStorage.setItem('access_token', token);
+                        localStorage.setItem('expires_in', expiresIn);
+                        let per = parsePayload(localStorage.getItem('access_token')!).permission;  
+                        let id = parsePayload(localStorage.getItem('access_token')!).user_id;
+                        redirct(per, id);
+                    });
         }).catch(err => {
             console.log(err);
-        });*/
-    }   
+        });
+    }
+
 </script>
 
 <svelte:head>
@@ -119,7 +165,6 @@
         <img src= {logoSrc} alt="logo" class="logo" />
         <p> Please sign up to continue </p>
         <div class="btn-group-vertical col-12">
-            <!-- on:click={ () => goto(`${base}/participants/participantId`)} -->
             <button class="btn btn-lg btn-block btn-outline">
                 <i class="fa fa-google"></i>
                 <span> Sign up with Google </span> 
@@ -127,11 +172,11 @@
                 <div bind:this={google} class="googleBtnHolder"></div>
             </button>
             
-            <button class="btn btn-lg btn-block btn-outline" on:click={ () => goto(`${base}/admin/adminId`)}> 
+            <button class="btn btn-lg btn-block btn-outline"> 
                 <i class="fa fa-vk"></i>
                 <span> Sign up with VK </span> 
                 <i class="fa fa-arrow-right"></i>
-                <div id="vk_auth"></div> 
+                <div id="vk_auth" class="vkHolder"></div>
             </button>
             <div class="btn btn-lg btn-block btn-outline"> 
                 <i class="fa fa-telegram"></i>
@@ -142,12 +187,6 @@
                 </div>
             </div>
         </div>
-        <script type="text/javascript">
-            VK.init({
-              apiId: 111,
-            });
-            VK.Widgets.Auth('vk_auth', {}); 
-          </script>
 	</div>
     
 </section>
@@ -259,19 +298,6 @@
                     }
                 }
             }
-            .g_id_signin{
-                margin: 10px 0px;
-                border: 1px solid rgba(0, 0, 0, 0.1);
-                border-radius: 3px;
-                min-width: 300px;
-                display: flex;
-                flex-flow: row nowrap;
-                justify-content: left;
-                align-items: center;
-                overflow: hidden;
-                position: relative;
-                height: 30px;
-            }
 		}
     }
 
@@ -281,11 +307,17 @@
         height: 100% !important;
         margin-left: -20px;
         opacity: 1;
-        scale: 20;
-        opacity: 0.0000001;
+        scale: 1;
+        opacity: 0.000001;
         z-index: 20;
     }
-
+    .vkHolder {
+        margin-top: -180px;
+        margin-left: 50px;
+        position: absolute;
+        scale: 2;
+        opacity: 0.000001;
+    }
     @media screen and (max-width: 450px){
         .signup-form{
             width: 100vw !important;

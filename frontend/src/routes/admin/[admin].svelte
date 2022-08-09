@@ -6,6 +6,7 @@
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
 	import type { ContestType }  from '$lib/types';
 	import lottie  from '$lib/Assets/animations/lottie-search?url';
+	import lottieSelect from '$lib/Assets/animations/lottie-select.gif';
     import { republics } from '$lib/Assets/republics.json';
 	import { searchparams }  from '$lib/stores';
 	import { goto } from '$app/navigation';
@@ -141,7 +142,7 @@
 	]
 	let resultsNumber = comps.length;
 	$: itemPerpage = 5;
-
+	$: selectedComp = '';
 	function pagination(page: number): void {
 		let start = page * itemPerpage;
 		let end = start + itemPerpage;
@@ -227,7 +228,7 @@
 							<li class:active={$page.url.pathname === '/info'}>
 								<a
 									sveltekit:prefetch
-									href="{base}/info/{userName}"
+									href="{base}/info/{1}"
 									content="Home"
 									class="dropdown-item nav-link"
 								>
@@ -332,35 +333,20 @@
 			</div>
 		</div>
 		<div class="slide">
-			<div class="container comps p-0">
-				<div class="row justify-content-center align-items-start justify-content-center">
-					<div class="card p-0 compt-filter col-sm-5 col-sm-6 shadow m-5 mt-0" style="max-width: max-content; min-width:min-content">
-						<h4 class="card-header">
-							<span class="fa fa-search" />
-							Filter
-						</h4>
-						<div class="car-body p-3">
-							<label class="form-label" for="compName"> Competion Title </label>
-							<input type="text" class="form-control"  placeholder="Enter title ..." id="compName">
-							<div class="d-flex justify-content-evenly">
-								<div class="form-check">
-									<input class="form-check-input" type="radio" name="flexRadioDefault" id="comptype1">
-									<label class="form-check-label" for="comptype1">
-										Ongoing
-									</label>
-								</div>
-								<div class="form-check">
-									<input class="form-check-input" type="radio" name="flexRadioDefault" id="comptype2" checked>
-									<label class="form-check-label" for="comptype2">
-										Ended
-									</label>
-								</div>
-							</div>
-							<button class="btn btn-primary btn-sm mt-3"> Filter </button>
-						</div>
-					</div>
-					<div class="card compt-holder p-0 col-sm-6 shadow m-5 mt-0" style="max-width: max-content; min-width:min-content">
-						<h4 class="card-header pe-5">
+			<div class="card menu">
+				<input type="text" class="form-control"  placeholder="Search by competition title ..." id="compName">
+				<select class="form-select form-select-sm" aria-label="Default select example" id="compType">
+					<option selected>Choose competition status ...</option>
+					<option>ongoing</option>
+					<option>upcoming</option>
+					<option>past</option>
+				</select>
+				<button class="btn btn-light rounded-0"> Filter </button>
+			</div>
+			<div class="container-fluid mt-5">
+				<div class="row justify-content-center">
+					<div class="card col-md-6 comps p-0 col-sm-6 shadow m-5 mt-0" style="max-width: max-content; min-width:min-content">
+						<h4 class="card-header" style:padding-right="100px">
 							<span class="fa fa-book" />
 							Competitions
 						</h4>
@@ -394,6 +380,44 @@
 							</div>
 						</div>
 					</div>
+					{#if selectedComp === ""}
+					<div class="card p-0 col-md-6">
+						<h4 class="card-header">
+							<span class="fa fa-book" />
+							Competition Details
+						</h4>
+						<div class="card-body p-0 pt-1 shadow">
+							<div class="noComp">
+								<img src={lottieSelect} alt="" class="gif">
+								<p>No Competition Selected, please click on <i class="fa fa-edit" />.</p>
+							</div>
+						</div>
+					</div>
+					{:else}
+					<div class="card col-md-6 p-0">
+						<div class="card-header">
+							<span class="fa fa-info-circle" />
+							Information
+						</div>
+						<div class="card-body">
+
+						</div>
+						<div class="card-header">
+							<span class="fa-solid fa-tasks" />
+							Form
+						</div>
+						<div class="card-body">
+							
+						</div>
+						<div class="card-header">
+							<span class="fa fa-users" />
+							Applications
+						</div>
+						<div class="card-body">
+							
+						</div>
+					</div>
+					{/if}
 				</div>
 			</div>
 		</div>
@@ -473,7 +497,6 @@
 			z-index: 2;
 		}
 	}
-
 	.sliderCont{
 		width: 200vw;
 		display: flex;
@@ -521,8 +544,66 @@
 		justify-content: space-between;
 		align-items: center;
 	}
+	.alertCont{
+		position: fixed;
+		bottom: 30px;
+		left: 30px;
+	}
+	.hide {
+		display: none !important;
+	}
+	.menu{
+		position: fixed !important;
+		display: flex !important;
+		flex-flow: row nowrap !important;
+		justify-content: center !important;
+		padding: 20px 0px;
+		gap: 10px !important;
+		margin-bottom: 20px !important;
+		top: 66px;
+		border-radius: 0px;
+		width: 100vw !important;
+		z-index: 10 !important;
+		background: $secondary-color !important;
+		color: white;
+		font-family: "Light", sans-serif;
+		
+		input, select, button{
+			width: fit-content !important;
+			height: 40px !important;
+			border: none !important;
+			margin: 0px !important;
+			padding: 0px 30px
+		}
+
+	}
+	.noComp{
+		font-family: 'Light', sans-serif;
+		height: 100%;
+		text-align: center;
+		display: flex;
+		flex-flow: row wrap;
+		align-items: center;
+		justify-content: center;
+		align-items: center;
+		overflow: hidden;
+		p{
+			font-size: 15px;
+			align-self: center;
+			color: #212529;
+			margin-top: 100px;
+			position: absolute;
+		}
+		.gif{
+			width: 300px;
+			height: 300px;
+			margin-top: -100px;
+			padding: 0px;
+		}
+	}
 	.comps{
 		font-family: "light", sans-serif;
+		margin-top: 100px;
 		.comp{
 			padding: 6px 10px;
 		}
@@ -535,14 +616,6 @@
 			flex-flow: column nowrap;
 			
 		}
-	}
-	.alertCont{
-		position: fixed;
-		bottom: 30px;
-		left: 30px;
-	}
-	.hide {
-		display: none !important;
 	}
 	@media screen and (min-width: 1000px) {
 		.navbar-nav {
