@@ -12,7 +12,7 @@ def get_users_router(users_handlers: UserHandlers) -> Router:
     router = Router(tags=["users"])
 
     router.add_api_operation(
-        path="", methods=["GET"], view_func=users_handlers.get_users, response={200: List[ProfileOut]}
+        path="", methods=["GET"], view_func=users_handlers.get_users, response={200: List[ProfileOut], 422: dict}
     )
 
     router.add_api_operation(

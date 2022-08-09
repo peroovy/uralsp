@@ -9,7 +9,6 @@ from ninja.pagination import LimitOffsetPagination, paginate
 from api.internal.db.models import User
 from api.internal.db.repositories import google_repo, telegram_repo, vk_repo
 from api.internal.exceptions import (
-    ForbiddenException,
     NotFoundException,
     ServerException,
     UnauthorizedException,
@@ -31,16 +30,20 @@ from api.internal.users.domain.services import MergingService, UserSerializer, U
 
 
 class UserHandlers:
-    INTERSECTION_REQUESTS = "Users have a intersected request"
-    INTERSECTION_PARTICIPATION = "Users have a intersected participation"
-    NOT_EQUAL_PERMISSIONS = "Not equal permissions"
+    INTERSECTION_REQUESTS = "Request intersects"
+    INTERSECTION_PARTICIPATION = "Participation intersects"
+    NOT_EQUAL_PERMISSIONS = "Permissions must be equal"
     EMAIL_ALREADY_EXISTS = "The email already exists"
+    UPDATING_SELF_IS_NOT_ALLOWED = "Updating self is not allowed"
+    PERMISSION_CANNOT_BE_UPDATED = "The permission cannot be updated"
 
-    USER_IDS = "user ids"
-
-    USER = "user"
+    BAD_USER = "bad user"
     BAD_PERMISSIONS = "bad permissions"
+    BAD_PERMISSION = "bad permission"
     BAD_EMAIL = "bad email"
+
+    USERS = "users"
+    USER = "user"
     PERMISSION = "permission"
     REQUESTS = "requests"
     PARTICIPATION = "participation"
@@ -66,10 +69,13 @@ class UserHandlers:
         if not (user := self._user_service.get_user(user_id)):
             raise NotFoundException(self.USER)
 
-        if not self._user_service.has_access(request.user, data.permission):
-            raise ForbiddenException()
+        if request.user == user:
+            raise UnprocessableEntityException(self.UPDATING_SELF_IS_NOT_ALLOWED, error=self.BAD_USER)
 
-        if not self._user_service.can_update_email(request.user, data.email):
+        if not self._user_service.can_update_permission(request.user, user, data.permission):
+            raise UnprocessableEntityException(self.PERMISSION_CANNOT_BE_UPDATED, error=self.BAD_PERMISSION)
+
+        if not self._user_service.can_update_email(user, data.email):
             raise UnprocessableEntityException(self.EMAIL_ALREADY_EXISTS, error=self.BAD_EMAIL)
 
         self._user_service.update(user, data)
@@ -84,7 +90,7 @@ class UserHandlers:
 
     def merge_users(self, request: HttpRequest, users: MergingIn = Body(...)) -> SuccessResponse:
         if not self._merging_service.exist_users(users):
-            raise NotFoundException(self.USER_IDS)
+            raise NotFoundException(self.USERS)
 
         if not self._merging_service.equal_permissions(users):
             raise UnprocessableEntityException(self.NOT_EQUAL_PERMISSIONS, error=self.BAD_PERMISSIONS)

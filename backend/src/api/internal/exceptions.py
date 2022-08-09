@@ -28,7 +28,7 @@ class NotFoundException(APIException):
 
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(ErrorResponse(details=f"Not found {exc.what}"), status=404)
+        return Response(ErrorResponse(error="not found", details=f"Not found {exc.what}"), status=404)
 
 
 class UnprocessableEntityException(APIException):
@@ -62,7 +62,7 @@ class UnauthorizedException(APIException):
 class ForbiddenException(APIException):
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(ErrorResponse(details="Forbidden"), status=403)
+        return Response(ErrorResponse(error="forbidden", details="Permission denied"), status=403)
 
 
 class InvalidPayloadException(UnprocessableEntityException):
