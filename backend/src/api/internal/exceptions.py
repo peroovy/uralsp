@@ -56,7 +56,7 @@ class UnauthorizedException(APIException):
 
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(ErrorResponse(details=exc.message), status=401)
+        return Response(ErrorResponse(error="bad token", details=exc.message), status=401)
 
 
 class ForbiddenException(APIException):
