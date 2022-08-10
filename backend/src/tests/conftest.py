@@ -152,15 +152,6 @@ def another_field() -> Field:
     return Field.objects.create(id="checkbox", name="Checkbox", type=1)
 
 
-@pytest.fixture(scope="function")
-def google_api() -> id_token:
-    api = patch("api.internal.socials.services.google_id_token").start()
-
-    api.verify_oauth2_token = Mock()
-
-    return api
-
-
 def get_bad_admin_ids(user: User, admin: User, super_admin: User) -> list:
     return [[], [-1], [user.id], [super_admin.id], [user.id, admin.id], [admin.id, admin.id], [user.id, user.id]]
 

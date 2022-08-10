@@ -68,11 +68,11 @@ class UserService:
     def get_socials_amount(self, user_id: int) -> int:
         return self._user_repo.get_socials_amount(user_id)
 
-    def can_update_email(self, owner: User, email: str) -> bool:
+    def exists_email(self, owner: User, email: str) -> bool:
         if email is None:
-            return True
+            return False
 
-        return not self._user_repo.exists_email(owner.id, email)
+        return self._user_repo.exists_email(owner.id, email)
 
 
 class MergingService:

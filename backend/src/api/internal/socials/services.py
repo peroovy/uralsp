@@ -6,7 +6,6 @@ from enum import IntEnum, auto
 from typing import Optional
 
 from django.conf import settings
-from django.utils.timezone import now
 from google.auth.transport import requests
 from google.oauth2 import id_token as google_id_token
 
@@ -38,7 +37,7 @@ class SocialBase(ABC):
         if not (data := self.authenticate()):
             return SocialAuthStatus.UNAUTHORIZED
 
-        if self._social_repo.exists_social_id(data.id):
+        if self._social_repo.have_others_social_id(user_id, data.id):
             return SocialAuthStatus.SOCIAL_ID_ALREADY_EXISTS
 
         if not self._social_repo.update_user(user_id, data.id):
@@ -105,17 +104,14 @@ class TelegramAuth(SocialBase):
         if not self._credentials:
             return None
 
-        if int(now().timestamp()) - self._credentials.auth_date > settings.TELEGRAM_DATA_LIFETIME.seconds:
-            return None
-
         data = dict((key, value) for key, value in self._credentials.dict().items() if value is not None)
         del data[self.HASH]
 
         data_check_string = "\n".join(f"{key}={value}" for key, value in sorted(data.items(), key=lambda p: p[0]))
         secret_key = hashlib.sha256(settings.TELEGRAM_BOT_TOKEN.encode()).digest()
-        _hash = hmac.new(secret_key, msg=data_check_string.encode(), digestmod=hashlib.sha256).hexdigest()
+        hash_ = hmac.new(secret_key, msg=data_check_string.encode(), digestmod=hashlib.sha256).hexdigest()
 
-        if _hash != self._credentials.hash:
+        if hash_ != self._credentials.hash:
             return None
 
         return SocialData(self._credentials.id, self._credentials.last_name, self._credentials.first_name)

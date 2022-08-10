@@ -75,7 +75,7 @@ class UserHandlers:
         if not self._user_service.can_update_permission(request.user, user, data.permission):
             raise UnprocessableEntityException(self.PERMISSION_CANNOT_BE_UPDATED, error=self.BAD_PERMISSION)
 
-        if not self._user_service.can_update_email(user, data.email):
+        if self._user_service.exists_email(user, data.email):
             raise UnprocessableEntityException(self.EMAIL_ALREADY_EXISTS, error=self.BAD_EMAIL)
 
         self._user_service.update(user, data)
@@ -122,12 +122,13 @@ class CurrentUserHandlers:
     MIN_SOCIAL_AMOUNT = 1
 
     EMAIL_ALREADY_EXISTS = "The email already exists"
+    INVALID_CREDENTIALS = "Invalid credentials"
     BAD_EMAIL = "bad email"
 
     SOCIAL_CONNECTING = "Failed to get user information"
     MIN_AMOUNT_SOCIALS = f"Min amount of socials is {MIN_SOCIAL_AMOUNT}"
     NOT_FOUND_ANY_FIELD_IDS = "Any field ids were not found"
-    SOCIAL_ID_ALREADY_EXISTS = "social id already exists"
+    SOCIAL_ID_ALREADY_EXISTS = "Social id already exists"
 
     SOCIALS_AMOUNT = "socials_amount"
     BAD_CREDENTIALS = "bad credentials"
@@ -140,15 +141,15 @@ class CurrentUserHandlers:
         return FullProfileOut.from_orm(request.user)
 
     def update_profile(self, request: HttpRequest, data: CurrentProfileIn = Body(...)) -> SuccessResponse:
-        if not self._user_service.can_update_email(request.user, data.email):
+        if self._user_service.exists_email(request.user, data.email):
             raise UnprocessableEntityException(self.EMAIL_ALREADY_EXISTS, error=self.BAD_EMAIL)
 
         self._user_service.update(request.user, data)
 
         return SuccessResponse()
 
-    def get_form_values(self, request: HttpRequest, field_ids: List[str] = Query(...)) -> List[FormValueOut]:
-        values = self._user_service.get_last_form_values(request.user.id, set(field_ids))
+    def get_form_values(self, request: HttpRequest, field_id: List[str] = Query(...)) -> List[FormValueOut]:
+        values = self._user_service.get_last_form_values(request.user.id, set(field_id))
 
         return [FormValueOut(id=form_value.field_id, value=form_value.value) for form_value in values]
 
@@ -175,7 +176,7 @@ class CurrentUserHandlers:
 
         match status:
             case SocialAuthStatus.UNAUTHORIZED:
-                raise UnauthorizedException()
+                raise UnprocessableEntityException(self.INVALID_CREDENTIALS, error=self.BAD_CREDENTIALS)
 
             case SocialAuthStatus.SOCIAL_ID_ALREADY_EXISTS:
                 raise UnprocessableEntityException(self.SOCIAL_ID_ALREADY_EXISTS, error=self.BAD_SOCIAL_ID)

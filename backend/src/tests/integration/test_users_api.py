@@ -1,4 +1,4 @@
-from itertools import permutations, product
+from itertools import permutations
 from typing import Optional
 
 import pytest
@@ -8,6 +8,9 @@ from django.test.client import Client
 from api.internal.db.models import Competition, Field, FormValue, Participation, Request, User
 from api.internal.db.models.user import Institution, Permissions
 from tests.integration.conftest import (
+    EMAIL__IS_CORRECT,
+    INSTITUTION__IS_CORRECT,
+    PHONE__IS_CORRECT,
     TokenOwner,
     assert_200,
     assert_403,
@@ -15,7 +18,6 @@ from tests.integration.conftest import (
     assert_422,
     assert_validation_error,
     get,
-    get_headers,
     post,
     put,
 )
@@ -208,36 +210,29 @@ def assert_getting_users_by_filter(client: Client, filter: str, is_enum: bool, v
 
 @pytest.mark.integration
 @pytest.mark.django_db
-def test_getting_user(client: Client, user: User, user_token: str, admin_token: str, super_admin_token: str) -> None:
-    uri = f"/users/{user.id}"
+def test_getting_user(client: Client, user: User, super_admin_token: str) -> None:
+    response = get(client, f"/users/{user.id}", super_admin_token)
+    assert response.status_code == 200
 
-    response = get(client, uri, user_token)
-    assert_403(response)
-
-    for token in [admin_token, super_admin_token]:
-        response = get(client, uri, token)
-        assert response.status_code == 200
-
-        expected = {
-            "id": user.id,
-            "name": user.name,
-            "surname": user.surname,
-            "patronymic": user.patronymic,
-            "permission": user.permission,
-            "email": user.email,
-            "phone": user.phone,
-            "city": user.city,
-            "region": user.region,
-            "institution_type": user.institution_type,
-            "institution_name": user.institution_name,
-            "institution_faculty": user.institution_faculty,
-            "institution_course": user.institution_course,
-            "vkontakte_id": user.vkontakte_id,
-            "google_id": user.google_id,
-            "telegram_id": user.telegram_id,
-        }
-
-        assert response.json() == expected
+    expected = {
+        "id": user.id,
+        "name": user.name,
+        "surname": user.surname,
+        "patronymic": user.patronymic,
+        "permission": user.permission,
+        "email": user.email,
+        "phone": user.phone,
+        "city": user.city,
+        "region": user.region,
+        "institution_type": user.institution_type,
+        "institution_name": user.institution_name,
+        "institution_faculty": user.institution_faculty,
+        "institution_course": user.institution_course,
+        "vkontakte_id": user.vkontakte_id,
+        "google_id": user.google_id,
+        "telegram_id": user.telegram_id,
+    }
+    assert response.json() == expected
 
     assert_404(get(client, "/users/0", super_admin_token), what="user")
 
@@ -247,32 +242,17 @@ def test_getting_user(client: Client, user: User, user_token: str, admin_token: 
 def test_updating_user(
     client: Client,
     user: User,
-    admin: User,
-    super_admin: User,
-    user_token: str,
-    admin_token: str,
     super_admin_token: str,
 ) -> None:
     body = get_body_for_updating()
 
-    for token, account in {user_token: user, admin_token: admin, super_admin_token: super_admin}.items():
-        response = put(client, f"/users/{user.id}", token, body)
-
-        if account is user:
-            assert_403(response)
-            assert_not_updating(user)
-            continue
-
-        assert_200(response)
-        assert_updating(user, body)
-
-        User.objects.filter(pk=user.pk).update(**model_to_dict(user, exclude=["id"]))
+    assert_200(put(client, f"/users/{user.id}", super_admin_token, body))
+    assert_updating(user, body)
 
     for key in list(body.keys()):
         del body[key]
-        response = put(client, f"/users/{user.id}", super_admin_token, body)
 
-        assert_validation_error(response)
+        assert_validation_error(put(client, f"/users/{user.id}", super_admin_token, body))
         assert_not_updating(user)
 
 
@@ -280,87 +260,60 @@ def test_updating_user(
 @pytest.mark.django_db
 def test_updating_unknown_user(
     client: Client,
-    user: User,
-    admin: User,
-    super_admin: User,
-    user_token: str,
-    admin_token: str,
     super_admin_token: str,
 ) -> None:
     body = get_body_for_updating()
 
-    for token, account in {user_token: user, admin_token: admin, super_admin_token: super_admin}.items():
-        response = put(client, "/users/0", token, body)
-        assert_403(response) if token is user_token else assert_404(response, what="user")
+    assert_404(put(client, "/users/0", super_admin_token, body), what="user")
 
 
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_updating_self(
     client: Client,
-    user: User,
-    admin: User,
     super_admin: User,
-    user_token: str,
-    admin_token: str,
     super_admin_token: str,
 ) -> None:
     body = get_body_for_updating()
 
-    for token, account in {user_token: user, admin_token: admin, super_admin_token: super_admin}.items():
-        response = put(client, f"/users/{account.id}", token, body)
+    response = put(client, f"/users/{super_admin.id}", super_admin_token, body)
 
-        assert_403(response) if account is user else assert_422(
-            response, error="bad user", details="Updating self is not allowed"
-        )
-        assert_not_updating(account)
+    assert_422(response, error="bad user", details="Updating self is not allowed")
+    assert_not_updating(super_admin)
 
 
 @pytest.mark.integration
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize(
-    ["token_owner", "value", "is_correct"],
+    ["value", "is_correct"],
     [
-        [TokenOwner.ADMIN, "default", True],
-        [TokenOwner.ADMIN, "teacher", True],
-        [TokenOwner.ADMIN, "admin", True],
-        [TokenOwner.ADMIN, "super_admin", False],
-        [TokenOwner.SUPER_ADMIN, "default", True],
-        [TokenOwner.SUPER_ADMIN, "teacher", True],
-        [TokenOwner.SUPER_ADMIN, "admin", True],
-        [TokenOwner.SUPER_ADMIN, "super_admin", True],
-        *[
-            [owner, value, None]
-            for owner, value in product([TokenOwner.ADMIN, TokenOwner.SUPER_ADMIN], [None, "null", "", " ", "unknown"])
-        ],
+        ["default", True],
+        ["teacher", True],
+        ["admin", True],
+        *[[value, False] for value in [None, "null", "", " ", "unknown"]],
     ],
 )
 def test_updating_permission(
     client: Client,
     user: User,
-    admin: User,
-    admin_token: str,
     super_admin_token: str,
     competition: Competition,
-    token_owner: TokenOwner,
     value: Optional[str],
-    is_correct: Optional[bool],
+    is_correct: bool,
 ) -> None:
     body = get_body_for_updating()
-    error, details = "bad permission", "The permission cannot be updated"
-    token = admin_token if token_owner == TokenOwner.ADMIN else super_admin_token
 
     user.permission = Permissions.DEFAULT
     user.save(update_fields=["permission"])
 
     body["permission"] = value
-    response = put(client, f"/users/{user.id}", token, body)
+    response = put(client, f"/users/{user.id}", super_admin_token, body)
 
     if is_correct:
         assert_200(response)
         assert_updating(user, body)
     else:
-        assert_422(response, error=error, details=details) if is_correct is False else assert_validation_error(response)
+        assert_validation_error(response)
         assert_not_updating(user)
 
 
@@ -388,16 +341,7 @@ def test_updating_permission__competition_has_the_admin(
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize(
     ["value", "is_correct"],
-    [
-        [None, False],
-        ["null", False],
-        ["", False],
-        ["  ", False],
-        ["unknown", False],
-        ["school", True],
-        ["college", True],
-        ["university", True],
-    ],
+    INSTITUTION__IS_CORRECT,
 )
 def test_updating_institution_type(
     client: Client, user: User, super_admin_token: str, value: Optional[str], is_correct: bool
@@ -419,15 +363,7 @@ def test_updating_institution_type(
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize(
     ["value", "is_correct"],
-    [
-        [None, True],
-        ["", False],
-        ["asd", False],
-        ["asd@", False],
-        ["asd@asd", False],
-        ["asd@asd.", False],
-        ["asd@asd.a", True],
-    ],
+    EMAIL__IS_CORRECT,
 )
 def test_updating_email(
     client: Client, user: User, another: User, super_admin_token: str, value: Optional[str], is_correct: bool
@@ -468,15 +404,7 @@ def test_updating_email__already_exists(client: Client, user: User, another: Use
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize(
     ["value", "is_correct"],
-    [
-        *[[f"+{dig}" + "1" * 10, True] for dig in range(10)],
-        *[[f"   +{dig}" + "1" * 10, False] for dig in range(1, 10)],
-        *[[f"+{dig}" + "1" * 10 + "  ", False] for dig in range(1, 10)],
-        *[[str(dig) + "1" * 10, False] for dig in range(10)],
-        ["+7" + "a" * 10, False],
-        ["+" + "a" * 11, False],
-        ["a" * 11, False],
-    ],
+    PHONE__IS_CORRECT,
 )
 def test_updating_phone(
     client: Client, user: User, super_admin_token: str, value: Optional[str], is_correct: bool
@@ -498,10 +426,12 @@ def test_updating_phone(
 
 
 def assert_updating(user: User, expected: dict) -> None:
+    not_updated = ["id", "vkontakte_id", "google_id", "telegram_id"]
     actual = User.objects.get(pk=user.pk)
 
     assert actual.id == user.id
-    assert model_to_dict(actual, exclude=["id", "vkontakte_id", "google_id", "telegram_id"]) == expected
+    assert model_to_dict(actual, exclude=not_updated) == expected
+    assert model_to_dict(actual, fields=not_updated) == model_to_dict(user, fields=not_updated)
 
 
 def assert_not_updating(user: User) -> None:
@@ -527,9 +457,9 @@ def get_body_for_updating() -> dict:
 
 @pytest.mark.integration
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.parametrize("access", [TokenOwner.ADMIN, TokenOwner.SUPER_ADMIN])
 def test_merging_defaults(
     client: Client,
+    super_admin_token: str,
     user: User,
     user_request: Request,
     participation: Participation,
@@ -537,22 +467,18 @@ def test_merging_defaults(
     competition: Competition,
     another_competition: Competition,
     field: Field,
-    access: TokenOwner,
-    admin_token: str,
-    super_admin_token: str,
 ) -> None:
-    token = admin_token if access == TokenOwner.ADMIN else super_admin_token
 
     assert_merging_default_users(
-        client, token, user, user_request, participation, another, competition, another_competition, field
+        client, super_admin_token, user, user_request, participation, another, competition, another_competition, field
     )
 
 
 @pytest.mark.integration
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.parametrize("access", [TokenOwner.ADMIN, TokenOwner.SUPER_ADMIN])
 def test_merging_admins(
     client: Client,
+    super_admin_token: str,
     admin: User,
     another_admin: User,
     user_request: Request,
@@ -560,28 +486,32 @@ def test_merging_admins(
     competition: Competition,
     another_competition: Competition,
     field: Field,
-    access: TokenOwner,
-    admin_token: str,
-    super_admin_token: str,
 ) -> None:
     user_request.owner = admin
     user_request.save(update_fields=["owner"])
     participation.user = admin
     participation.save(update_fields=["user"])
     competition.admins.add(admin)
-    token = admin_token if access == TokenOwner.ADMIN else super_admin_token
 
     assert_merging_default_users(
-        client, token, admin, user_request, participation, another_admin, competition, another_competition, field
+        client,
+        super_admin_token,
+        admin,
+        user_request,
+        participation,
+        another_admin,
+        competition,
+        another_competition,
+        field,
     )
     assert competition.admins.count() == 0
 
 
 @pytest.mark.unit
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.parametrize("access", [TokenOwner.ADMIN, TokenOwner.SUPER_ADMIN])
 def test_merging_super_admins(
     client: Client,
+    super_admin_token: str,
     super_admin: User,
     another_super_admin: User,
     user_request: Request,
@@ -589,19 +519,15 @@ def test_merging_super_admins(
     another_competition: Competition,
     competition: Competition,
     field: Field,
-    access: TokenOwner,
-    admin_token: str,
-    super_admin_token: str,
 ) -> None:
     user_request.owner = super_admin
     user_request.save(update_fields=["owner"])
     participation.user = super_admin
     participation.save(update_fields=["user"])
-    token = admin_token if access == TokenOwner.ADMIN else super_admin_token
 
     assert_merging_default_users(
         client,
-        token,
+        super_admin_token,
         super_admin,
         user_request,
         participation,
@@ -648,12 +574,6 @@ def assert_merging_default_users(
 
     actual, expected = model_to_dict(to_user, exclude=["id"]), model_to_dict(from_user, exclude=["id"])
     assert expected == actual
-
-
-@pytest.mark.integration
-@pytest.mark.django_db
-def test_merging__permission_denied(client: Client, user: User, another: User, user_token: str) -> None:
-    assert_403(post(client, "/users/merge", user_token, get_body_for_merging(user.id, another.id)))
 
 
 @pytest.mark.integration
