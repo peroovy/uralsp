@@ -256,6 +256,9 @@
 		}
 		alertCont.innerHTML= '';
 		let fileName = prompt('Enter file name:', 'users');
+		if(!fileName){
+			return;
+		}
 		if(fileName == null) fileName = 'users';
 		let jsondata = JSON.parse(JSON.stringify(Array.from(selectedUsersArray)));
 		let wb = XLSX.utils.book_new();
@@ -275,6 +278,9 @@
 		}
 		alertCont.innerHTML= '';
 		let fileName = prompt('Enter file name:', 'users');
+		if(!fileName){
+			return;
+		}
 		if(fileName == null) fileName = 'users';
 		let jsondata = JSON.parse(JSON.stringify(Array.from(selectedUsersArray)));
 		let wb = XLSX.utils.book_new();
@@ -682,18 +688,18 @@
 			top: calc(50% - var(--height) / 2);
 			width: max-content;
 			height: var(--height);
-			background-color: white;
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
 			transition: all 0.3s ease-in-out;
-			background-color: $primary-color;
-
+			background-color: $secondary-color;
+			z-index: 6;
 			.fa-cogs {
 				padding: 10px;
+				padding-left: 20px;
 				font-size: 30px;
 				cursor: pointer;
-				color: $secondary-color;
+				color: white
 			}
 			.toolbarBtn {
 				color: white;

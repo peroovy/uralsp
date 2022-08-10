@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
+	import { browser } from '$app/env';
+	import { onMount } from 'svelte';
+    import * as XLSX from 'xlsx';
+	
 	import src from '$lib/Assets/imgs/logo.png';
 	import tempPhoto from '$lib/Assets/imgs/temp-photo.png';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
@@ -9,11 +14,9 @@
 	import lottieSelect from '$lib/Assets/animations/lottie-select.gif';
     import { republics } from '$lib/Assets/republics.json';
 	import { searchparams }  from '$lib/stores';
-	import { goto } from '$app/navigation';
-	import { browser } from '$app/env';
-	import { onMount } from 'svelte';
+	const { utils } = XLSX;
 
-	
+	// Dummy data
 	let adminName = 'Admin';
 	let userName = "Admin";
 	let InstituteYear = [
@@ -27,11 +30,43 @@
         "2 (master)",
     ]
 
+	// Bind variables
 	let alertCont = '' as unknown as HTMLElement;
 	let sliderCont = '' as unknown as HTMLElement;
 	let formCont = '' as unknown as HTMLElement;
 	let compsBinds = [] as HTMLElement[];
+	
+	// Component slider
+	let navBar = "" as unknown as HTMLElement;
+	function slider(target: string){
+		controlActive(target);
+		if(browser){
+			if(target === "Users"){
+				filterCont.style.visibility = "hidden";
+				localStorage.setItem('oldLocation', target);
+				sliderCont.style.marginLeft = "0px";
+			} else {
+				localStorage.setItem('oldLocation', target);
+				sliderCont.style.marginLeft = "-100vw";
+				filterCont.style.visibility = "visible";
+			}
+		}
+	}
+	function controlActive(activeEle : string): void{
+		let navs = navBar.querySelectorAll(".nav-link");
+		for(let ele in navs){
+			if(navs[ele].nodeName == "SPAN" && navs[ele].id === activeEle && navs[ele].classList.contains("active")){
+				return;
+			}
+		}
+		for(let i = 0; i < navs.length; i++){		
+			if(navs[i].nodeName == "SPAN"){
+				navs[i].classList.toggle("active");
+			}
+		}
+	}
 
+	// User controls
 	let email: string, name: string, region: string | undefined, eduType: string | undefined, institute: string, year: string;
 	eduType = "Choose...";
 	interface searchParams {
@@ -83,84 +118,205 @@
 			queryParams();
 		}
 	}
-	function slider(target: string){
-		if(browser){
-			if(target === "users"){
-				localStorage.setItem('oldLocation', target);
-				sliderCont.style.marginLeft = "0px";
-			} else {
-				localStorage.setItem('oldLocation', target);
-				sliderCont.style.marginLeft = "-100vw";
-			}
-		}
-	}
+
+	// Pagination competitions and applications
 	let comps = [
 		{
 			"id": 0,
-			"title": "Contest 1",
+			"name": "Contest 1",
+			"registration_start": "2022-08-8T10:42:25.340Z",
+			"registration_end": "2022-08-9T10:42:25.340Z",
+			"started_at": "2022-08-11T10:42:25.340Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
 		},
 		{
 			"id": 1,
-			"title": "Contest 2",
+			"name": "Contest 2",
+			"registration_start": "2022-08-13T10:42:25.340Z",
+			"registration_end": "2022-08-10T10:42:25.340Z",
+			"started_at": "2022-08-9T10:42:25.340Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
 		},
 		{
 			"id": 2,
-			"title": "Contest 3",
+			"name": "Contest 3",
+			"registration_start": "2022-08-10T10:42:25.340Z",
+			"registration_end": "2022-08-13T10:42:25.340Z",
+			"started_at": "2022-08-10T10:42:25.340Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
 		},
 		{
 			"id": 3,
-			"title": "Contest 4",
+			"name": "Contest 4",
+			"registration_start": "2022-08-11T10:42:25.340Z",
+			"registration_end": "2022-08-13T10:42:25.340Z",
+			"started_at": "2022-08-10T10:42:25.340Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
 		},
 		{
 			"id": 4,
-			"title": "Contest 5",
+			"name": "Contest 5",
+			"registration_start": "2022-08-2T10:42:25.340Z",
+			"registration_end": "2022-08-5T10:42:25.340Z",
+			"started_at": "2022-08-10T10:42:25.340Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
 		},
 		{
 			"id": 5,
-			"title": "Contest 6",
+			"name": "Contest 6",
+			"registration_start": "2022-08-19T10:42:25.340Z",
+			"registration_end": "2022-08-20T10:42:25.340Z",
+			"started_at": "2022-08-10T10:42:25.340Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
 		},
 		{
 			"id": 6,
-			"title": "Contest 7",
+			"name": "Contest 7",
+			"registration_start": "2022-08-23T10:42:25.340Z",
+			"registration_end": "2022-08-29T10:42:25.340Z",
+			"started_at": "2022-08-10T10:42:25.340Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
 		},
 		{
 			"id": 7,
-			"title": "Contest 8",
+			"name": "Contest 8",
+			"registration_start": "2022-08-10T10:42:25.340Z",
+			"registration_end": "2022-09-10T10:42:25.340Z",
+			"started_at": "2022-08-10T10:42:25.340Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
 		},
 		{
 			"id": 8,
-			"title": "Contest 9",
+			"name": "Contest 9",
+			"registration_start": "2022-08-10T10:42:25.340Z",
+			"registration_end": "2022-08-10T10:42:25.340Z",
+			"started_at": "2022-08-10T10:42:25.340Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
 		},
 		{
 			"id": 9,
-			"title": "Contest 10",
+			"name": "Contest 10",
+			"registration_start": "2022-08-10T10:42:25.340Z",
+			"registration_end": "2022-08-10T10:42:25.340Z",
+			"started_at": "2022-08-10T10:42:25.340Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
 		},
 		{
 			"id": 10,
-			"title": "Contest 11",
-		}
+			"name": "Contest 11",
+			"registration_start": "2022-08-10T10:42:25.340Z",
+			"registration_end": "2022-08-10T10:42:25.340Z",
+			"started_at": "2022-08-10T10:42:25.340Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
+		},
+		{
+			"id": 11,
+			"name": "Contest 12",
+			"registration_start": "2022-08-10T10:42:25.340Z",
+			"registration_end": "2022-08-10T10:42:25.340Z",
+			"started_at": "2022-08-10T10:42:25.340Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
+		},
+		{
+			"id": 12,
+			"name": "Contest 13",
+			"registration_start": "2022-08-10T10:42:25.340Z",
+			"registration_end": "2022-08-10T10:42:25.340Z",
+			"started_at": "2022-08-10T10:42:25.340Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
+		},
+		{
+			"id": 13,
+			"name": "Contest 14",
+			"registration_start": "2022-08-10T10:42:25.340Z",
+			"registration_end": "2022-08-10T10:42:25.340Z",
+			"started_at": "2022-08-10T10:42:25.340Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
+		},
+		{
+			"id": 14,
+			"name": "Contest 15",
+			"registration_start": "2022-08-10T10:42:25.340Z",
+			"registration_end": "2022-08-10T10:42:25.340Z",
+			"started_at": "2022-08-10T10:42:25.340Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "string"
+		},
 	]
-	let resultsNumber = comps.length;
 	$: itemPerpage = 20;
-	$: selectedComp = '';
 	function pagination(page: number): void {
 		let start = page * itemPerpage;
 		let end = start + itemPerpage;
-		if (end > comps.length) {
-			end = comps.length;
+		console.log(filtered)
+		if (end > resultsNumber) {
+			end = filtered.length;
 		}
 		// Hide all the items
-		for (let i = 0; i < compsBinds.length; i++) {
+		for (let i = 0; i < resultsNumber; i++) {
 			//@ts-ignore
+			console.log("hideing")
 			let e = compsBinds[i];
 			e!.classList.add('hide');
 		}
+		console.log("Done 1")
 		for (let i = start; i < end; i++) {
 			//@ts-ignore
 			let e = compsBinds[i];
 			e!.classList.remove('hide');
 		}
+		console.log("Done 2")
 	}
+	$: appsPerPage = 5;
+	function applicationPage(page: number): void {
+		let start = page * appsPerPage;
+		let end = start + appsPerPage;
+		if (end > appLength) {
+			end = appLength;
+		}
+		// Hide all the items		
+		for (let i = 0; i < appLength; i++) {
+			//@ts-ignore
+			let e = applicationBinds[i];
+			e!.classList.add('hide');
+		}
+		for (let i = start; i < end; i++) {
+			//@ts-ignore
+			let e = applicationBinds[i];
+			e!.classList.remove('hide');
+			console.log("what is going on");
+		}		
+	}
+
+	// The competition filter slider for mobile view
 	let filterCont = '' as unknown as HTMLElement; 
 	function filterSlider(){
 		if(filterCont.style.marginRight=="0px"){
@@ -169,6 +325,257 @@
 			filterCont.style.marginRight = "0px";
 		}
 	}
+	$: filtered = comps;
+	let resultsNumber = comps.length;
+	let compName = '', compStatus = 'Choose competition status ...';
+	function filter(){
+		filtered = comps.filter(item => {
+			let now = new Date();
+			if(compName !== ''){
+				if(item.name.toLowerCase().indexOf(compName.toLowerCase()) === -1){
+					return false;
+				}
+			}
+			if(compStatus !== 'Choose competition status ...'){
+				let status = '';
+				let start = new Date(item.registration_start);
+				let end = new Date(item.registration_end);
+				if(start > now){
+					status = 'Upcoming';
+				} else if(end > now){
+					status = 'Ongoing';
+				} else {
+					status = 'Finished';
+				}
+
+				if(status !== compStatus){
+					return false;
+				}
+			}
+			return true;
+		});
+		resultsNumber = filtered.length;
+		setTimeout(() => {
+			pagination(0);
+		}, 0);
+	}
+	// Competition' view and edit
+	function selectedCompItem(arg0: string) {
+		if(browser){
+			if (arg0 == "users") {
+				slider("users");
+			} else {
+				slider("comp");
+			}
+		}
+	}
+	$: selectedComp = '';
+	$: appLength = 0;
+	$: req = [];
+	function editComp(id: number){
+		// TODO: request to server
+		let comp = {
+			"id": 0,
+			"name": "Bubble sort",
+			"registration_start": "2022-08-09T17:14:42.938Z",
+			"registration_end": "2022-08-09T17:14:42.938Z",
+			"started_at": "2022-08-09T17:14:42.938Z",
+			"persons_amount": 0,
+			"request_template": "string",
+			"link": "https://www.google.com",
+		}
+
+		let requests = [
+			{
+				"id": 0,
+				"owner": 0,
+				"status": "awaited",
+				"description": "string",
+				"created_at": "2022-08-09T20:50:47.243Z",
+				"participants": [
+				0
+				]
+			},
+			{
+				"id": 1,
+				"owner": 0,
+				"status": "awaited",
+				"description": "string",
+				"created_at": "2022-08-09T20:50:47.243Z",
+				"participants": [
+				0
+				]
+			},
+			{
+				"id": 2,
+				"owner": 0,
+				"status": "awaited",
+				"description": "string",
+				"created_at": "2022-08-09T20:50:47.243Z",
+				"participants": [
+				0
+				]
+			},
+			{
+				"id": 3,
+				"owner": 0,
+				"status": "awaited",
+				"description": "string",
+				"created_at": "2022-08-09T20:50:47.243Z",
+				"participants": [
+				0
+				]
+			},
+			{
+				"id": 4,
+				"owner": 0,
+				"status": "awaited",
+				"description": "string",
+				"created_at": "2022-08-09T20:50:47.243Z",
+				"participants": [
+				0
+				]
+			},
+			{
+				"id": 5,
+				"owner": 0,
+				"status": "awaited",
+				"description": "string",
+				"created_at": "2022-08-09T20:50:47.243Z",
+				"participants": [
+				0
+				]
+			},
+			{
+				"id": 6,
+				"owner": 0,
+				"status": "awaited",
+				"description": "string",
+				"created_at": "2022-08-09T20:50:47.243Z",
+				"participants": [
+				0
+				]
+			},
+			{
+				"id": 7,
+				"owner": 0,
+				"status": "awaited",
+				"description": "string",
+				"created_at": "2022-08-09T20:50:47.243Z",
+				"participants": [
+				0
+				]
+			},
+			{
+				"id": 8,
+				"owner": 0,
+				"status": "awaited",
+				"description": "string",
+				"created_at": "2022-08-09T20:50:47.243Z",
+				"participants": [
+				0
+				]
+			},
+			{
+				"id": 9,
+				"owner": 0,
+				"status": "awaited",
+				"description": "string",
+				"created_at": "2022-08-09T20:50:47.243Z",
+				"participants": [
+				0
+				]
+			},
+			{
+				"id": 10,
+				"owner": 0,
+				"status": "awaited",
+				"description": "string",
+				"created_at": "2022-08-09T20:50:47.243Z",
+				"participants": [
+				0
+				]
+			}
+		]
+		req = requests;
+		appLength = requests.length;
+		selectedComp = comp.name;
+		setTimeout(() => {
+			applicationPage(0);
+		}, 0);
+	}
+
+	// Select and download Application
+	let applicationBinds = [] as HTMLElement[];
+	let selectedAppsId = new Set<number>();
+	function selectApp(index: number): void{
+		let e = applicationBinds[index].children[0].children[0];
+		let p = applicationBinds[index];
+		let id = parseInt(p.id);
+		if(selectedAppsId.has(id)){
+			selectedAppsId.delete(id);
+			e.classList.remove("fa-check-square");
+			e.classList.add("fa-square-o");
+		} else {
+			selectedAppsId.add(id);
+			e.classList.remove("fa-square-o");
+			e.classList.add("fa-check-square");
+		}		
+	}
+	let selectAllBtn = '' as unknown as HTMLElement;
+	function selectAll(){
+		for(let i = 0; i < applicationBinds.length; i++){
+			let e = applicationBinds[i].children[0].children[0];
+			let p = applicationBinds[i];
+			let id = parseInt(p.id);
+			if(selectedAppsId.has(id)){
+				selectedAppsId.delete(id);
+				e.classList.remove("fa-check-square");
+				e.classList.add("fa-square-o");
+				selectAllBtn.innerHTML = ">> Select All";
+			} else {
+				selectedAppsId.add(id);
+				e.classList.remove("fa-square-o");
+				e.classList.add("fa-check-square");
+				selectAllBtn.innerHTML = ">> Deselect All";
+			}
+		}
+	}
+
+	let selectedAppArray = new Set();
+	function updateSelected(){
+		selectedAppArray = new Set();
+		for (let i = 0; i < req.length; i++) {
+			if (selectedAppsId.has(req[i].id)) {
+				selectedAppArray.add(req[i]);
+			}
+		}
+	}
+
+	function downloadasExcel(){
+		updateSelected();
+			//check for empty set
+			if(selectedAppArray.size === 0){
+			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+										<strong>Error!</strong> Please sellect at least one user.
+										<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+									</div>`;
+			return;
+		}
+		alertCont.innerHTML= '';
+		let fileName = prompt('Enter file name:', 'New request');
+		if(!fileName){ // cancel
+			return;
+		}
+		if(fileName == null) fileName = 'New request';
+		let jsondata = JSON.parse(JSON.stringify(Array.from(selectedAppArray)));
+		let wb = XLSX.utils.book_new();
+		let ws = XLSX.utils.json_to_sheet(jsondata);
+		XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+		XLSX.writeFile(wb, `${fileName}.xlsx`);
+	}
+
+	// Componunt intialization
 	onMount(()=>{
 		if(browser){
 			let oldLocation = localStorage.getItem('oldLocation');
@@ -183,18 +590,8 @@
 			}
 		}
 		pagination(0);
+		applicationPage(0);
 	})
-
-
-function selectedCompItem(arg0: string) {
-	if(browser){
-		if (arg0 == "users") {
-			slider("users");
-		} else {
-			slider("comp");
-		}
-	}
-}
 </script>
 
 <svelte:head>
@@ -208,7 +605,7 @@ function selectedCompItem(arg0: string) {
 	<img class="d1" src={dotsSrc} alt="" />
 	<div class="d2" />
 
-	<nav class="navbar navbar-expand-lg navbar-light mb-5 sticky-top shadow-sm">
+	<nav class="navbar navbar-expand-lg navbar-light mb-5 sticky-top shadow-sm" bind:this={navBar}>
 		<div class="container-fluid p-0 d-flex justify-content-lg-around">
 			<div class="navbar-brand">
 				<img {src} alt="Logo" />
@@ -226,11 +623,11 @@ function selectedCompItem(arg0: string) {
 			</button>
 			<div class="collapse navbar-collapse flex-grow-0" id="participant-menu">
 				<ul class="navbar-nav me-auto mb-20 mb-lg-0 col-12 justify-content-around">
-					<li class="nav-item">
-						<span class="nav-link active" id="ongoing" on:click={()=>slider("users")}> Users control </span>
+					<li class="nav-item" >
+						<span class="nav-link active" id="Users" on:click={()=>slider("Users")}> Users control </span>
 					</li>
 					<li class="nav-item" >
-						<span class="nav-link" id="registered" on:click={()=>slider("competitions")}> Competitions control </span>
+						<span class="nav-link" id="Competitions" on:click={()=>slider("Competitions")}> Competitions control </span>
 					</li>
 					<li class="nav-item dropdown">
 						<div
@@ -350,36 +747,36 @@ function selectedCompItem(arg0: string) {
 				</div>
 			</div>
 		</div>
-		<div class="slide compHolder">
+		<div class="slide">
 			<div class="card menu" bind:this={filterCont}>
 				<li class="fa fa-filter" on:click={filterSlider}></li>
-				<input type="text" class="form-control"  placeholder="Search by competition title ..." id="compName">
-				<select class="form-select form-select-sm" aria-label="Default select example" id="compType">
+				<input type="text" class="form-control" placeholder="Search by competition title ..." id="compName" bind:value={compName}>
+				<select class="form-select form-select-sm" aria-label="Default select example" id="compType" bind:value={compStatus}>
 					<option selected>Choose competition status ...</option>
-					<option>ongoing</option>
-					<option>upcoming</option>
-					<option>past</option>
+					<option>Ongoing</option>
+					<option>Upcoming</option>
+					<option>Finished</option>
 				</select>
-				<button class="btn btn-light rounded-0"> Filter </button>
+				<button class="btn btn-light rounded-0" on:click={filter}> Filter </button>
 			</div>
 			<div class="container-fluid mt-5">
-				<div class="row justify-content-center">
+				<div class="row justify-content-center align-items-start">
 					<div class="card col-md-6 comps compt-holder p-0 col-sm-6 shadow me-5 mt-0" style="max-width: max-content; min-width:min-content">
 						<h4 class="card-header" style:padding-right="100px">
 							<span class="fa fa-book" />
 							Competitions
 						</h4>
 						<div class="card-body p-0 pt-1 shadow">
-							{#each comps as comp, i}
+							{#each filtered as comp, i}
 							{#if i%2 == 0}
 								<div bind:this={compsBinds[i]} class="comp even hide d-flex flex-row align-items-stretch justify-content-between">
-									<span class="d-inline">{comp.title}</span>
-									<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc"></i>
+									<span class="d-inline">{comp.name}</span>
+									<i class="fa fa-edit m-1" id={comp.id+''} style="cursor:pointer; color:#3490dc" on:click={()=>editComp(comp.id)}></i>
 								</div>
 							{:else}
 								<div bind:this={compsBinds[i]} class="comp hide d-flex flex-row align-items-stretch justify-content-between">
-									<span class="d-inline">{comp.title}</span>
-									<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc"></i>
+									<span class="d-inline">{comp.name}</span>
+									<i class="fa fa-edit m-1" id={comp.id+''} style="cursor:pointer; color:#3490dc" on:click={()=>editComp(comp.id)}></i>
 								</div>
 							{/if}
 							{/each}
@@ -400,7 +797,7 @@ function selectedCompItem(arg0: string) {
 						</div>
 					</div>
 					{#if selectedComp === "" }
-					<div class="card p-0 col-md-6">
+					<div class="card p-0 col-md-5">
 						<div class="card-body p-0 pt-1 shadow">
 							<div class="noComp">
 								<img src={lottieSelect} alt="" class="gif">
@@ -409,27 +806,108 @@ function selectedCompItem(arg0: string) {
 						</div>
 					</div>
 					{:else}
-					<div class="card col-md-6 p-0">
-						<div class="card-header">
+					<div class="card col-md-5 p-0">
+						<div class="card-header" data-bs-toggle="collapse" href="#info" role="button" aria-expanded="false" aria-controls="info">
 							<span class="fa fa-info-circle" />
 							Information
 						</div>
-						<div class="card-body">
-
+						<div class="collapse card-body pt-0 pb-0" id="info">
+							<div class="row">
+								<table class="table table-striped table-sm">
+									<tbody>
+									  <tr>
+										<th scope="row">ID</th>
+										<td>0</td>
+									</tr>
+									<tr>
+										<th>Title</th>
+										<td>Contest Title</td>
+									</tr>
+									<tr>
+										<th>Registration time</th>
+										<td>Aug, 2: Aug, 10</td>
+									</tr>
+									<tr>
+										<th>Start</th>
+										<td>Sept, 5: Sept, 30</td>
+									</tr>
+									<tr>
+										<th>Registration link</th>
+										<td><a href={base}> Link </a></td>
+									</tr>
+									</tbody>
+								  </table>
+							</div>
 						</div>
-						<div class="card-header">
+						<div class="card-header" data-bs-toggle="collapse" href="#form" role="button" aria-expanded="false" aria-controls="form">
 							<span class="fa-solid fa-tasks" />
 							Form
 						</div>
-						<div class="card-body">
+						<div class="card-body collapse" id="form">
 							
 						</div>
-						<div class="card-header">
-							<span class="fa fa-users" />
-							Applications
+						<div class="card-header d-flex justify-content-between align-items-center" style:margin-bottom="38px" data-bs-toggle="collapse" href="#applications" role="button" aria-expanded="false" aria-controls="applications">
+							<div>
+								<span class="fa fa-users" />
+								Applications
+							</div>
+							<div>
+								<span class="badge badge-light text-primary">{appLength} available</span>
+							</div>
 						</div>
-						<div class="card-body">
-							
+						<div class="card-body collapse show" style:position="relative" id="applications">
+							<div class="table">
+								<table class="table table-striped table-sm" style:margin-top="-38px" style:margin-bottom="100px">
+									<thead>
+										<tr class="table-light">
+											<th scope="col" class="ms-1 text-center"> # </th>
+											<th scope="col" class="ms-1 text-center"> Id </th>
+											<th scope="col" class="text-center"> Status </th>
+											<th scope="col" class="text-center"> № of participants </th>
+											<th scope="col" class="text-center"> Action </th>
+										</tr>
+									</thead>
+									<tbody>
+										{#each req as applicant, i}
+											<tr bind:this={applicationBinds[i]} id={applicant.id} class="text-center">
+												<td><li on:click={()=>selectApp(i)} class="fa fa-square-o"></li></td>
+												<td>{applicant.id}</td>
+												<td>{applicant.status}</td>
+												<td class="text-center">{applicant.participants.length}</td>
+												<td>
+													<div class="btn-group">
+														<button class="btn btn-success btn-sm" on:click={() => accept(applicant.id)}><i class="fa fa-check-square"></i></button>
+														<button class="btn btn-danger btn-sm" on:click={() => decline(applicant.id)}><i class="fa fa-ban"></i></button>
+														<button class="btn btn-primary btn-sm" on:click={() => decline(applicant.id)}><i class="fa fa-eye"></i></button>
+													</div>
+												</td>
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</div>
+							<div class="manage">
+								<i on:click={downloadasExcel}> >> Print selected as xlsx</i> 
+								<i on:click={selectAll} bind:this={selectAllBtn}> >> Select all </i>
+							</div>
+							<div class="container-fluid p-0 pt-3 d-flex justify-content-center">
+								<div class="row col-md-6 bg-light stickyBottom paginationNav apppag justify-content-center align-items-center">
+									<ul class="pagination m-0 p-3">
+										{#each Array(Math.ceil(req.length / appsPerPage) === 0 ? 1 : Math.ceil(req.length / appsPerPage)) as _, i}
+											<li class="page-item page-link" on:click={() => applicationPage(i)}>{i + 1}</li>
+										{/each}
+									</ul>
+									<select class="form-select" bind:value={appsPerPage} on:change={() => applicationPage(0)}>
+										{#each [5, 10, 15, 20, 25, 50] as i}
+											<option class="dropdown-item">{i}</option>
+										{/each}
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="btn-group stickyBottom">
+							<button class="btn btn-primary rounded-0" style="background-color:#3490dc; border: none" > <i class="fa fa-edit"></i> Edit</button>
+							<button class="btn btn-danger rounded-0"> <i class="fa fa-trash"></i> Delete</button>
 						</div>
 					</div>
 					{/if}
@@ -566,6 +1044,7 @@ function selectedCompItem(arg0: string) {
 	}
 	.alertCont{
 		position: fixed;
+		z-index: 20;
 		bottom: 30px;
 		left: 30px;
 	}
@@ -578,7 +1057,7 @@ function selectedCompItem(arg0: string) {
 		display: none !important;
 	}
 	.menu{
-		position: sticky;
+		position: fixed !important;
 		top: 0;
 		z-index: 5;
 		display: flex !important;
@@ -604,7 +1083,6 @@ function selectedCompItem(arg0: string) {
 		button{
 			width: fit-content;
 		}
-
 	}
 	.noComp{
 		font-family: 'Light', sans-serif;
@@ -648,6 +1126,52 @@ function selectedCompItem(arg0: string) {
 			flex-flow: column nowrap;
 			
 		}
+	}
+	table{
+		font-family: "light", sans-serif;
+		th{
+			text-align: left;
+			padding: 10px;
+			border-bottom: 1px solid #ddd;
+			font-family: 'medium', sans-serif;
+		}
+	}
+	.manage{
+		font-family: "light", sans-serif;
+		display: flex;
+		flex-flow: row wrap;
+		gap: 20px;
+		font-size: 13px;
+		opacity: 0.8;
+		color: black;
+		position: absolute;
+		z-index: 5;
+		bottom: 110px;
+		i{
+			cursor: pointer;
+			&:hover{
+				opacity: 1;
+				color: $primary-color;
+			}
+		}
+	}
+	.apppag{
+		padding: 20px 0px;
+		margin-bottom: 35px;
+		.form-select, .page-link{
+			background-color: white !important;
+			color: black !important;
+			font-family: 'light', sans-serif;			
+			font-size: 14px;
+		}
+		.form-select{
+			border-radius: 0px 50px 50px 0px;
+		}
+	}
+	.stickyBottom{
+		position: absolute;
+		bottom: 0px;
+		width: 100%;
 	}
 	@media screen and (min-width: 1000px) {
 		.navbar-nav {
@@ -738,6 +1262,7 @@ function selectedCompItem(arg0: string) {
 	}
 	@media screen and (min-width: 800px){
 		.menu{
+			position: relative !important;
 			.fa{
 				display: none !important;
 			}

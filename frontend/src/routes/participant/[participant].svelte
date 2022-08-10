@@ -85,7 +85,6 @@
 	// Sections slider
 	let sectionHolders = "" as unknown as HTMLElement;
 	let navBar = "" as unknown as HTMLElement;
-
 	function toSec(name: string): void{
 		controlActive(name);
 		if(name == "ongoing"){
@@ -101,10 +100,16 @@
 
 	function controlActive(activeEle : string): void{
 		let navs = navBar.querySelectorAll(".nav-link");
-		for(let i = 0; i < navs.length; i++){
-			navs[i].classList.remove("active");
+		for(let ele in navs){
+			if(navs[ele].nodeName == "SPAN" && navs[ele].id === activeEle && navs[ele].classList.contains("active")){
+				return;
+			}
 		}
-		(navBar.querySelector(`#${activeEle}`) as HTMLElement).classList.add("active");
+		for(let i = 0; i < navs.length; i++){		
+			if(navs[i].nodeName == "SPAN"){
+				navs[i].classList.toggle("active");
+			}
+		}
 	}
 
 	function signout(): void{
