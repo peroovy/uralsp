@@ -20,6 +20,7 @@ openpyxl = "~=3.0.10"
 django-debug-toolbar = "*"
 django-cors-headers = "~=3.13.0"
 pydantic = {extras = ["email"], version = "*"}
+requests = "~=2.28.1"
 
 [dev-packages]
 
