@@ -3,7 +3,6 @@ from typing import Iterable, Optional, Set
 
 from django.db.models import Q, QuerySet
 from django.db.models.functions import Concat
-from phonenumbers import PhoneNumber, PhoneNumberFormat, format_number
 
 from api.internal.db.models import User
 from api.internal.db.models.user import Institution, Permissions
@@ -11,26 +10,6 @@ from api.internal.utils import get_strip_filters
 
 
 class IUserRepository(ABC):
-    @abstractmethod
-    def create(
-        self,
-        name: str,
-        surname: str,
-        patronymic: str = None,
-        permission: Permissions = Permissions.DEFAULT,
-        email: str = None,
-        phone: PhoneNumber = None,
-        region: str = None,
-        institution_type: Institution = None,
-        institution_name: str = None,
-        institution_faculty: str = None,
-        institution_course: str = None,
-        vkontakte_id: int = None,
-        google_id: int = None,
-        telegram_id: int = None,
-    ) -> User:
-        ...
-
     @abstractmethod
     def try_get(self, user_id: int) -> Optional[User]:
         ...
@@ -79,39 +58,6 @@ class IUserRepository(ABC):
 
 
 class UserRepository(IUserRepository):
-    def create(
-        self,
-        name: str,
-        surname: str,
-        patronymic: str = None,
-        permission: Permissions = Permissions.DEFAULT,
-        email: str = None,
-        phone: PhoneNumber = None,
-        region: str = None,
-        institution_type: Institution = None,
-        institution_name: str = None,
-        institution_faculty: str = None,
-        institution_course: str = None,
-        vkontakte_id: int = None,
-        google_id: int = None,
-        telegram_id: int = None,
-    ):
-        return User.objects.create(
-            name=name,
-            surname=surname,
-            patronymic=patronymic,
-            permission=permission,
-            email=email,
-            phone=format_number(phone, PhoneNumberFormat.E164) if phone is not None else None,
-            institution_type=institution_type,
-            institution_name=institution_name,
-            institution_faculty=institution_faculty,
-            institution_course=institution_course,
-            vkontakte_id=vkontakte_id,
-            google_id=google_id,
-            telegram_id=telegram_id,
-        )
-
     def try_get(self, user_id: int) -> Optional[User]:
         return User.objects.filter(id=user_id).first()
 
@@ -135,7 +81,7 @@ class UserRepository(IUserRepository):
         )
 
         if fcs is not None:
-            filters["full_name__istartswith"] = fcs.replace(" ", "")
+            filters["full_name__icontains"] = fcs.replace(" ", "")
 
         if permission is not None:
             filters["permission"] = permission
@@ -170,4 +116,4 @@ class UserRepository(IUserRepository):
         return len(set(permissions)) == 1
 
     def exists_email(self, owner_id: int, email: str) -> bool:
-        return not User.objects.filter(~Q(id=owner_id) & Q(email=email)).exists()
+        return User.objects.filter(~Q(id=owner_id) & Q(email=email)).exists()

@@ -1,28 +1,33 @@
 from io import BytesIO
-from typing import Iterable, List, Optional, Set
+from typing import Iterable, List, Optional, Set, Union
 
 from django.db.transaction import atomic
 from django.forms import model_to_dict
 
 from api.internal.db.models import FormValue, User
 from api.internal.db.models.user import Institution, Permissions
-from api.internal.db.repositories import form_value_repo, participation_repo, request_repo, user_repo
+from api.internal.db.repositories import competition_repo, form_value_repo, participation_repo, request_repo, user_repo
+from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.form_value import IFormValueRepository
 from api.internal.db.repositories.participation import IParticipationRepository
 from api.internal.db.repositories.request import IRequestRepository
 from api.internal.db.repositories.user import IUserRepository
-from api.internal.users.domain.entities import Filters, MergingIn, ProfileIn
+from api.internal.users.domain.entities import CurrentProfileIn, Filters, MergingIn, ProfileIn
 from api.internal.utils import serialize_to_csv, serialize_to_xlsx
 
 
 class UserService:
+    SORTED_PERMISSIONS = (Permissions.DEFAULT, Permissions.TEACHER, Permissions.ADMIN, Permissions.SUPER_ADMIN)
+
     def __init__(
         self,
         user_repo: IUserRepository,
         form_value_repo: IFormValueRepository,
+        competition_repo: ICompetitionRepository,
     ):
         self._user_repo = user_repo
         self._form_value_repo = form_value_repo
+        self._competition_repo = competition_repo
 
     def get_filtered(self, filters: Filters) -> List[User]:
         return list(
@@ -42,14 +47,20 @@ class UserService:
         return self._user_repo.try_get(user_id)
 
     @atomic
-    def update(self, user: User, data: ProfileIn) -> bool:
+    def update(self, user: User, data: Union[ProfileIn, CurrentProfileIn]) -> bool:
         return self._user_repo.update(user.id, **data.dict())
 
-    def has_access(self, user: User, permission_to_update: Permissions) -> bool:
-        return user.permission == Permissions.SUPER_ADMIN or permission_to_update not in [
-            Permissions.ADMIN,
-            Permissions.SUPER_ADMIN,
-        ]
+    def can_update_permission(self, user: User, target: User, permission: Permissions) -> bool:
+        if target.permission == permission:
+            return True
+
+        if self.SORTED_PERMISSIONS.index(user.permission) < self.SORTED_PERMISSIONS.index(permission):
+            return False
+
+        if target.permission == Permissions.ADMIN:
+            return not self._competition_repo.exists_in_admin(target.id)
+
+        return True
 
     def get_last_form_values(self, user_id: int, field_ids: Set[str]) -> List[FormValue]:
         return list(self._form_value_repo.get_lasts_for(user_id, field_ids))
@@ -61,7 +72,7 @@ class UserService:
         if email is None:
             return True
 
-        return self._user_repo.exists_email(owner.id, email)
+        return not self._user_repo.exists_email(owner.id, email)
 
 
 class MergingService:
@@ -146,6 +157,6 @@ class UserSerializer:
         ]
 
 
-user_service = UserService(user_repo, form_value_repo)
+user_service = UserService(user_repo, form_value_repo, competition_repo)
 merging_service = MergingService(user_repo, request_repo, participation_repo)
 user_serializer = UserSerializer()

@@ -7,6 +7,8 @@ from pydantic import EmailStr, Field
 from api.internal.db.models import User
 from api.internal.db.models.user import Institution, Permissions
 
+PHONE_REGEX = r"^\+[0-9]{1}[1-9]{10}$"
+
 
 class ProfileOut(ModelSchema):
     class Config:
@@ -22,7 +24,8 @@ class FullProfileOut(ModelSchema):
 
 class ProfileIn(ModelSchema):
     permission: Permissions
-    phone: Optional[str] = Field(regex=r"^\+[1-9][0-9]{10}")
+    institution_type: Institution
+    phone: Optional[str] = Field(regex=PHONE_REGEX)
     email: Optional[EmailStr]
 
     class Config:
@@ -31,7 +34,8 @@ class ProfileIn(ModelSchema):
 
 
 class CurrentProfileIn(ModelSchema):
-    phone: Optional[str] = Field(regex=r"^\+[1-9][0-9]{10}")
+    institution_type: Institution
+    phone: Optional[str] = Field(regex=PHONE_REGEX)
     email: Optional[EmailStr]
 
     class Config:

@@ -68,6 +68,10 @@ class ICompetitionRepository(ABC):
     ) -> Optional[Competition]:
         ...
 
+    @abstractmethod
+    def exists_in_admin(self, user_id: int) -> bool:
+        ...
+
 
 class CompetitionRepository(ICompetitionRepository):
     def try_get(self, competition_id: int) -> Optional[Competition]:
@@ -151,3 +155,6 @@ class CompetitionRepository(ICompetitionRepository):
         )
 
         return queryset.first()
+
+    def exists_in_admin(self, user_id: int) -> bool:
+        return Competition.objects.filter(admins__id=user_id).exists()
