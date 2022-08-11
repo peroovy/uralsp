@@ -16,11 +16,18 @@ from tests.integration.conftest import (
     assert_403,
     assert_404,
     assert_422,
+    assert_access,
     assert_validation_error,
     get,
     post,
     put,
 )
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+def test_access_getting_users(client: Client, user_token: str, admin_token: str, super_admin: str) -> None:
+    assert_access(lambda token: get(client, "/users", token), [user_token, admin_token, super_admin], [])
 
 
 @pytest.mark.integration
@@ -238,6 +245,14 @@ def test_getting_user(client: Client, user: User, super_admin_token: str) -> Non
 
 
 @pytest.mark.integration
+@pytest.mark.django_db
+def test_access_getting_user(
+    client: Client, user: User, user_token: str, admin_token: str, super_admin_token: str
+) -> None:
+    assert_access(lambda token: get(client, f"/users/{user.id}", token), [admin_token, super_admin_token], [user_token])
+
+
+@pytest.mark.integration
 @pytest.mark.django_db(transaction=True)
 def test_updating_user(
     client: Client,
@@ -254,6 +269,12 @@ def test_updating_user(
 
         assert_validation_error(put(client, f"/users/{user.id}", super_admin_token, body))
         assert_not_updating(user)
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+def test_access_updating_user(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
+    assert_access(lambda token: put(client, "/users/0", token), [admin_token, super_admin_token], [user_token])
 
 
 @pytest.mark.integration
@@ -538,6 +559,12 @@ def test_merging_super_admins(
     )
 
 
+@pytest.mark.integration
+@pytest.mark.django_db
+def test_access_merging(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
+    assert_access(lambda token: post(client, "/users/merge", token), [admin_token, super_admin_token], [user_token])
+
+
 def assert_merging_default_users(
     client: Client,
     token: str,
@@ -632,3 +659,14 @@ def test_merging__participation_intersect(
 
 def get_body_for_merging(from_id: int, to_id: int) -> dict:
     return {"from_id": from_id, "to_id": to_id}
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+def test_access_getting_users_in_files(
+    client: Client, user_token: str, admin_token: str, super_admin_token: str
+) -> None:
+    tokens_access, tokens_not_access = [admin_token, super_admin_token], [user_token]
+
+    assert_access(lambda token: get(client, "/users/xlsx", token), tokens_access, tokens_not_access)
+    assert_access(lambda token: get(client, "/users/csv", token), tokens_access, tokens_not_access)

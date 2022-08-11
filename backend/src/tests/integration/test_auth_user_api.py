@@ -18,6 +18,7 @@ from tests.integration.conftest import (
     assert_200,
     assert_401,
     assert_422,
+    assert_access,
     assert_validation_error,
     get,
     patch,
@@ -59,6 +60,14 @@ def test_getting_profile(
 
 
 @pytest.mark.integration
+@pytest.mark.django_db
+def test_access_getting_profile(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
+    assert_access(
+        lambda token: get(client, "/users/current/profile", token), [user_token, admin_token, super_admin_token], []
+    )
+
+
+@pytest.mark.integration
 @pytest.mark.django_db(transaction=True)
 def test_updating_profile(
     client: Client,
@@ -78,6 +87,14 @@ def test_updating_profile(
         response = put(client, PROFILE_URI, user_token, body)
         assert_validation_error(response)
         assert_not_updating(user)
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+def test_access_updating_profile(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
+    assert_access(
+        lambda token: put(client, "/users/current/profile", token), [user_token, admin_token, super_admin_token], []
+    )
 
 
 @pytest.mark.integration
@@ -237,6 +254,16 @@ def test_getting_last_form_values(
 
 @pytest.mark.integration
 @pytest.mark.django_db
+def test_access_getting_last_form_values(
+    client: Client, user_token: str, admin_token: str, super_admin_token: str
+) -> None:
+    assert_access(
+        lambda token: get(client, "/users/current/form-values", token), [user_token, admin_token, super_admin_token], []
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
 def test_linking_vkontakte(client: Client, user: User, user_token: str, admin_token: str) -> None:
     app_id = settings.VKONTAKTE_APP_ID = "1337"
     app_secret = settings.VKONTAKTE_APP_SECRET_KEY = "very_secret"
@@ -370,3 +397,15 @@ def assert_unlinking_social(client: Client, uri: str, social_field: str, user: U
         actual = User.objects.get(pk=user.pk)
         assert model_to_dict(actual, exclude=[social_field]) == model_to_dict(user, exclude=[social_field])
         assert model_to_dict(actual, fields=[social_field])[social_field] is None
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+def test_access_linking_and_unlinking_social(
+    client: Client, user_token: str, admin_token: str, super_admin_token: str
+) -> None:
+    token_access = [user_token, admin_token, super_admin_token]
+
+    for social in ["vkontakte", "google", "telegram"]:
+        assert_access(lambda token: patch(client, "/users/current/link-" + social, token), token_access, [])
+        assert_access(lambda token: patch(client, "/users/current/unlink-" + social, token), token_access, [])
