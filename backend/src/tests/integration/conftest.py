@@ -1,6 +1,6 @@
 from datetime import timedelta
 from enum import IntEnum, auto
-from typing import Optional
+from typing import Callable, Iterable, Optional
 
 import jwt
 import pytest
@@ -110,6 +110,17 @@ def assert_422(response, error: str, details: str) -> None:
 def assert_200(response) -> None:
     assert response.status_code == 200
     assert response.json() == {"details": "Success"}
+
+
+def assert_access(
+    method: Callable[[str], Response], tokens_access: Iterable[str], token_not_access: Iterable[str]
+) -> None:
+    for token in tokens_access:
+        response = method(token)
+        assert response.status_code != 403 and response.status_code != 404
+
+    for token in token_not_access:
+        assert_403(method(token))
 
 
 def get(client: Client, uri: str, token: str = None) -> Response:
