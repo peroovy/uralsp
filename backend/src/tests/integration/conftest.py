@@ -1,5 +1,6 @@
 from datetime import timedelta
 from enum import IntEnum, auto
+from typing import Callable, Iterable, Optional
 
 import jwt
 import pytest
@@ -16,6 +17,40 @@ class TokenOwner(IntEnum):
     DEFAULT = auto()
     ADMIN = auto()
     SUPER_ADMIN = auto()
+
+
+EMAIL__IS_CORRECT = [
+    [None, True],
+    ["", False],
+    ["asd", False],
+    ["asd@", False],
+    ["asd@asd", False],
+    ["asd@asd.", False],
+    ["asd@asd.a", True],
+]
+
+
+PHONE__IS_CORRECT = [
+    *[[f"+{dig}" + "1" * 10, True] for dig in range(10)],
+    *[[f"   +{dig}" + "1" * 10, False] for dig in range(1, 10)],
+    *[[f"+{dig}" + "1" * 10 + "  ", False] for dig in range(1, 10)],
+    *[[str(dig) + "1" * 10, False] for dig in range(10)],
+    ["+7" + "a" * 10, False],
+    ["+" + "a" * 11, False],
+    ["a" * 11, False],
+]
+
+
+INSTITUTION__IS_CORRECT = [
+    [None, False],
+    ["null", False],
+    ["", False],
+    ["  ", False],
+    ["unknown", False],
+    ["school", True],
+    ["college", True],
+    ["university", True],
+]
 
 
 @pytest.fixture(scope="function")
@@ -44,8 +79,13 @@ def get_token(user: User) -> str:
     return jwt.encode(payload, settings.SECRET_KEY)
 
 
-def get_headers(token: str) -> dict:
-    return {"HTTP_AUTHORIZATION": f"bearer {token}"}
+def get_headers(token: Optional[str]) -> dict:
+    return {"HTTP_AUTHORIZATION": f"bearer {token}"} if token is not None else {}
+
+
+def assert_401(response) -> None:
+    assert response.status_code == 401
+    assert response.json() == {"error": "bad token", "details": "Unauthorized"}
 
 
 def assert_403(response) -> None:
@@ -70,6 +110,17 @@ def assert_422(response, error: str, details: str) -> None:
 def assert_200(response) -> None:
     assert response.status_code == 200
     assert response.json() == {"details": "Success"}
+
+
+def assert_access(
+    method: Callable[[str], Response], tokens_access: Iterable[str], token_not_access: Iterable[str]
+) -> None:
+    for token in tokens_access:
+        response = method(token)
+        assert response.status_code != 403 and response.status_code != 404
+
+    for token in token_not_access:
+        assert_403(method(token))
 
 
 def get(client: Client, uri: str, token: str = None) -> Response:

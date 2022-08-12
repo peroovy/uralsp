@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
+from django.db.models import Q
+
 from api.internal.db.models import User
 
 
@@ -16,8 +18,8 @@ class SocialBaseRepository(ABC):
             **{self._social_field_name: social_id}, defaults={"surname": surname, "name": name}
         )[0]
 
-    def exists_social_id(self, social_id: int) -> bool:
-        return User.objects.filter(**{self._social_field_name: social_id}).exists()
+    def have_others_social_id(self, owner_id: int, social_id: int) -> bool:
+        return User.objects.filter(**{self._social_field_name: social_id}).filter(~Q(id=owner_id)).exists()
 
 
 class VKRepository(SocialBaseRepository):
