@@ -1,126 +1,128 @@
 <script context="module" lang="ts">
 	import { parsePayload } from '$lib/parse';
-	import { browser } from '$app/env'; 
+	import { browser } from '$app/env';
 	// @ts-ignore
 	export async function load({ params }) {
-		if(browser){
-			let id = params.participant;
-			// @ts-ignore
-			let token = localStorage.getItem("access_token");
-			if(token != null){
-				let payload = parsePayload(token);
-				let real_id = payload.user_id;
-				// if the user is not the same as the participant, redirect to the home page
-				if(real_id != id){
-					return {
-						redirect: '/'
-					}
-				}
-
-				let userData = await fetch(`http://localhost:8000/users/current/profile`, {
-					method: 'GET',
-					headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    }
-				});
-				let competitions = await fetch(`http://localhost:8000/competitions`, {
-					method: 'GET',
-					headers: {
-                        'Content-Type': 'application/json',
-                    }
-				});
-				let userInfo = await userData.json();
-				let competitionsInfo = await competitions.json();
-				return {
-					props: {
-						userInfo,
-						competitionsInfo
-					}
-				}
-			} else {
-				return {
-					redirect: '/'
-				}
-			}
+		if (!browser) return;
+		let id = params.participant;
+		// @ts-ignore
+		let token = localStorage.getItem('access_token');
+		if (token == null) {
+			return {
+				redirect: '/'
+			};
 		}
+		let payload = parsePayload(token);
+		let real_id = payload.user_id;
+
+		// if the user is not the same as the participant, redirect to the home page
+		if (real_id != id) {
+			return {
+				redirect: '/'
+			};
+		}
+
+		let userData = await fetch(`http://localhost:8000/users/current/profile`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: 'Bearer ' + token
+			}
+		});
+		let competitions = await fetch(`http://localhost:8000/competitions`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+		let userInfo = await userData.json();
+		let competitionsInfo = await competitions.json();
+		return {
+			props: {
+				userInfo,
+				competitionsInfo
+			}
+		};
 	}
 </script>
 
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { page } from '$app/stores';
-	import {contest}  from '$lib/stores';
+	import { contest } from '$lib/stores';
 	import src from '$lib/Assets/imgs/logo.png';
 	import tempPhoto from '$lib/Assets/imgs/temp-photo.png';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
-	import type { ContestType, UserData}  from '$lib/types'
+	import type { ContestType, UserData } from '$lib/types';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	export let userInfo : UserData;
+	export let userInfo: UserData;
 	export let competitionsInfo;
 
-	console.log(userInfo);
-	let userId :number;
-	onMount(()=>{
+	let userId: number;
+	onMount(() => {
 		userId = userInfo.id;
 	});
-	let paricipantName = 'Participant Name';
-    let contestObject : ContestType= [
+	let paricipantName = `${userInfo.name}  ${userInfo.surname}`;
+	let contestObject: ContestType = [
 		{
-			"id": 0,
-			"name": "string",
-			"registration_start": "2022-08-08T17:48:45.367Z",
-			"registration_end": "2022-08-08T17:48:45.367Z",
-			"started_at": "2022-08-08T17:48:45.367Z",
-			"persons_amount": 0,
-			"request_template": "string",
-			"link": "string"
+			id: 0,
+			name: 'string',
+			registration_start: '2022-08-08T17:48:45.367Z',
+			registration_end: '2022-08-08T17:48:45.367Z',
+			started_at: '2022-08-08T17:48:45.367Z',
+			persons_amount: 0,
+			request_template: 'string',
+			link: 'string'
 		}
-	]
-    let showContest = () => {
+	];
+	let showContest = () => {
 		contest.set(JSON.stringify(contestObject));
-    }
+	};
 
 	// Sections slider
-	let sectionHolders = "" as unknown as HTMLElement;
-	let navBar = "" as unknown as HTMLElement;
-	function toSec(name: string): void{
+	let sectionHolders = '' as unknown as HTMLElement;
+	let navBar = '' as unknown as HTMLElement;
+	function toSec(name: string): void {
 		controlActive(name);
-		if(name == "ongoing"){
-			sectionHolders.style.marginLeft = "0px";
-		} else if (name == "registered"){
-			sectionHolders.style.marginLeft = "-100vw";
-		} else if (name == "past"){
-			sectionHolders.style.marginLeft = "-300vw";
-		} else if (name == "pending"){
-			sectionHolders.style.marginLeft = "-200vw";
+		if (name == 'ongoing') {
+			sectionHolders.style.marginLeft = '0px';
+		} else if (name == 'registered') {
+			sectionHolders.style.marginLeft = '-100vw';
+		} else if (name == 'past') {
+			sectionHolders.style.marginLeft = '-300vw';
+		} else if (name == 'pending') {
+			sectionHolders.style.marginLeft = '-200vw';
 		}
 	}
 
-	function controlActive(activeEle : string): void{
-		let navs = navBar.querySelectorAll(".nav-link");
-		for(let ele in navs){
-			if(navs[ele].nodeName == "SPAN" && navs[ele].id === activeEle && navs[ele].classList.contains("active")){
+	function controlActive(activeEle: string): void {
+		let navs = navBar.querySelectorAll('.nav-link');
+		for (let ele in navs) {
+			if (
+				navs[ele].nodeName == 'SPAN' &&
+				navs[ele].id === activeEle &&
+				navs[ele].classList.contains('active')
+			) {
 				return;
 			}
 		}
-		for(let i = 0; i < navs.length; i++){		
-			if(navs[i].nodeName == "SPAN"){
-				navs[i].classList.toggle("active");
+		for (let i = 0; i < navs.length; i++) {
+			if (navs[i].nodeName == 'SPAN') {
+				navs[i].classList.toggle('active');
 			}
 		}
 	}
 
-	function signout(): void{
+	function signout(): void {
 		// clear local storage
 		localStorage.clear();
-		goto(base+"/");
+		goto(base + '/');
 	}
 </script>
 
 <svelte:head>
-	<title>App Name | participant Name</title>
+	<title>App Name | {paricipantName}</title>
 </svelte:head>
 
 <section class="participant-container">
@@ -144,17 +146,20 @@
 				<span class="navbar-toggler-icon" />
 			</button>
 			<div class="collapse navbar-collapse flex-grow-0" id="participant-menu">
-				<ul class="navbar-nav me-auto mb-20 mb-lg-0 col-12 justify-content-around" bind:this={navBar}>
-					<li class="nav-item" on:click={()=>toSec("ongoing")}>
+				<ul
+					class="navbar-nav me-auto mb-20 mb-lg-0 col-12 justify-content-around"
+					bind:this={navBar}
+				>
+					<li class="nav-item" on:click={() => toSec('ongoing')}>
 						<span class="nav-link active" id="ongoing"> Ongoing Contests </span>
 					</li>
-					<li class="nav-item" on:click={()=>toSec("registered")}>
+					<li class="nav-item" on:click={() => toSec('registered')}>
 						<span class="nav-link" id="registered"> Registered Contests </span>
 					</li>
-					<li class="nav-item" on:click={()=>toSec("pending")}> 
+					<li class="nav-item" on:click={() => toSec('pending')}>
 						<span class="nav-link" id="pending"> Pending Requests </span>
 					</li>
-					<li class="nav-item" on:click={()=>toSec("past")}>
+					<li class="nav-item" on:click={() => toSec('past')}>
 						<span class="nav-link" id="past"> Past Contests </span>
 					</li>
 					<li class="nav-item dropdown">
@@ -433,13 +438,13 @@
 		width: 100vw;
 		flex-direction: row nowrap;
 	}
-	.part_4{
+	.part_4 {
 		flex-shrink: 0;
 		padding: 0px !important;
 		margin: 0px !important;
 		width: 100% !important;
 	}
-	nav{
+	nav {
 		position: sticky !important;
 		z-index: 10 !important;
 		background-color: #f8f9fa !important;

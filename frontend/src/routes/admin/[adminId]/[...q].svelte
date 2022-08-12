@@ -16,61 +16,73 @@
 	import { base } from '$app/paths';
 	import lottieNotfound from '$lib/Assets/animations/lottie-notFound.json?url';
 	import { onMount, onDestroy } from 'svelte';
-    import * as XLSX from 'xlsx';
-	const { utils } = XLSX;
-    import { republics } from '$lib/Assets/republics.json';
-	import { searchparams }  from '$lib/stores';
+	import * as XLSX from 'xlsx';
+	import { republics } from '$lib/Assets/republics.json';
+	import { searchparams } from '$lib/stores';
 
 	export let searchQueries, adminId: string;
+
+	const { utils } = XLSX;
 	let userCont = '' as unknown as HTMLElement;
 	let toolbar = '' as unknown as HTMLElement;
 	let alertCont = '' as unknown as HTMLElement;
 	$: itemPerpage = 5;
 
-
 	// filter data
 	let InstituteYear = [
-        "1 (bachelor / specialty)",
-        "2 (bachelor / specialty)",
-        "3 (bachelor / specialty)",
-        "4 (bachelor / specialty)",
-        "5 (specialty)",
-        "6 (specialty)",
-        "1 (master)",
-        "2 (master)",
-    ]
+		'1 (bachelor / specialty)',
+		'2 (bachelor / specialty)',
+		'3 (bachelor / specialty)',
+		'4 (bachelor / specialty)',
+		'5 (specialty)',
+		'6 (specialty)',
+		'1 (master)',
+		'2 (master)'
+	];
 	let formCont = '' as unknown as HTMLElement;
-	let email: string, name: string, region: string | undefined, eduType: string | undefined, institute: string, year: string;
-	eduType = "Choose...";
-	interface searchParams {
-		email: string,
+	let email: string,
 		name: string,
 		region: string | undefined,
 		eduType: string | undefined,
 		institute: string,
-		year: string,
-	};
+		year: string;
+	eduType = 'Choose...';
+	interface searchParams {
+		email: string;
+		name: string;
+		region: string | undefined;
+		eduType: string | undefined;
+		institute: string;
+		year: string;
+	}
 	let searchParams: searchParams = {
 		email: '',
 		name: '',
 		region: '',
 		eduType: '',
 		institute: '',
-		year: '',
+		year: ''
 	};
-	function queryParams(){
+	function queryParams() {
 		searchParams.email = email;
 		searchParams.name = name;
-		searchParams.region = (region === "Choose...") ? undefined : region;
-		searchParams.eduType = (region === "Choose...") ? undefined : eduType;
+		searchParams.region = region === 'Choose...' ? undefined : region;
+		searchParams.eduType = region === 'Choose...' ? undefined : eduType;
 		searchParams.institute = institute;
 		searchParams.year = year;
-		
+
 		// form validation
-		let arrValues = [searchParams.email, searchParams.name, searchParams.region, searchParams.eduType, searchParams.institute, searchParams.year];
-		let check = arrValues.every(item => item === undefined);
-		if(check){
-			alertCont.innerHTML =  `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+		let arrValues = [
+			searchParams.email,
+			searchParams.name,
+			searchParams.region,
+			searchParams.eduType,
+			searchParams.institute,
+			searchParams.year
+		];
+		let check = arrValues.every((item) => item === undefined);
+		if (check) {
+			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
 										<strong>Error!</strong> Please fill at least one field.
 										<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 									</div>`;
@@ -157,7 +169,7 @@
 	];
 
 	let headers = '';
-	
+
 	onMount(() => {
 		// Hide all the items except the first 5
 		for (let i = 0; i < itemPerpage; i++) {
@@ -165,7 +177,7 @@
 			let e = userBinds[i].parentElement.parentElement.parentElement;
 			e!.classList.remove('hide');
 		}
-		Object.keys(users[0]).map((key) => headers+= `${key},`);
+		Object.keys(users[0]).map((key) => (headers += `${key},`));
 		// remove last comma
 		headers = headers.slice(0, -1);
 	});
@@ -234,9 +246,9 @@
 		alertCont.innerHTML = '';
 	}
 
-    // Download data
+	// Download data
 	let selectedUsersArray = new Set();
-	function updateSelected(){
+	function updateSelected() {
 		selectedUsersArray = new Set();
 		for (let i = 0; i < users.length; i++) {
 			if (selectedIds.has(users[i].id)) {
@@ -247,41 +259,41 @@
 	function downloadasCSV() {
 		updateSelected();
 		//check for empty set
-		if(selectedUsersArray.size === 0){
+		if (selectedUsersArray.size === 0) {
 			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
 										<strong>Error!</strong> Please sellect at least one user.
 										<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 									</div>`;
 			return;
 		}
-		alertCont.innerHTML= '';
+		alertCont.innerHTML = '';
 		let fileName = prompt('Enter file name:', 'users');
-		if(!fileName){
+		if (!fileName) {
 			return;
 		}
-		if(fileName == null) fileName = 'users';
+		if (fileName == null) fileName = 'users';
 		let jsondata = JSON.parse(JSON.stringify(Array.from(selectedUsersArray)));
 		let wb = XLSX.utils.book_new();
 		let ws = XLSX.utils.json_to_sheet(jsondata);
 		XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
 		XLSX.writeFile(wb, `${fileName}.csv`);
 	}
-	function downloadasExcel(){
+	function downloadasExcel() {
 		updateSelected();
-			//check for empty set
-			if(selectedUsersArray.size === 0){
+		//check for empty set
+		if (selectedUsersArray.size === 0) {
 			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
 										<strong>Error!</strong> Please sellect at least one user.
 										<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 									</div>`;
 			return;
 		}
-		alertCont.innerHTML= '';
+		alertCont.innerHTML = '';
 		let fileName = prompt('Enter file name:', 'users');
-		if(!fileName){
+		if (!fileName) {
 			return;
 		}
-		if(fileName == null) fileName = 'users';
+		if (fileName == null) fileName = 'users';
 		let jsondata = JSON.parse(JSON.stringify(Array.from(selectedUsersArray)));
 		let wb = XLSX.utils.book_new();
 		let ws = XLSX.utils.json_to_sheet(jsondata);
@@ -348,25 +360,46 @@
 						<div class="form p-4 m-0" bind:this={formCont}>
 							<div class="mb-3">
 								<label for="email" class="form-label">Email address</label>
-								<input type="email" class="form-control" id="email" aria-describedby="emailHelp" placeholder="Enter the user email" bind:value={email}>
+								<input
+									type="email"
+									class="form-control"
+									id="email"
+									aria-describedby="emailHelp"
+									placeholder="Enter the user email"
+									bind:value={email}
+								/>
 							</div>
 							<div class="mb-3">
 								<label for="fullName" class="form-label">Full Name</label>
-								<input type="text" class="form-control" id="fullName" placeholder="Enter the user full name" bind:value={name}>
+								<input
+									type="text"
+									class="form-control"
+									id="fullName"
+									placeholder="Enter the user full name"
+									bind:value={name}
+								/>
 							</div>
 							<div class="mb-3">
 								<label for="region">Region</label>
-								<select class="form-select form-select-sm" aria-label="Default select example" bind:value={region}>
+								<select
+									class="form-select form-select-sm"
+									aria-label="Default select example"
+									bind:value={region}
+								>
 									<option selected>Choose...</option>
 									{#each republics as republic}
-									<option>{republic}</option>
+										<option>{republic}</option>
 									{/each}
 								</select>
 							</div>
 							<div class="mb-3">
 								<div class="form-group">
 									<label for="education">Education type</label>
-									<select class="form-select form-select-sm" aria-label="Default select example" bind:value={eduType}>
+									<select
+										class="form-select form-select-sm"
+										aria-label="Default select example"
+										bind:value={eduType}
+									>
 										<option selected>Choose...</option>
 										<option>School</option>
 										<option>University</option>
@@ -377,36 +410,55 @@
 										<div class="row">
 											<div class="form-group col-md-8">
 												<label for="school">School Name</label>
-												<input type="text" class="form-control" id="school" placeholder="Enter your school name" bind:value={institute}>
+												<input
+													type="text"
+													class="form-control"
+													id="school"
+													placeholder="Enter your school name"
+													bind:value={institute}
+												/>
 											</div>
 											<!--School Year-->
 											<div class="form-group col-md-4">
 												<label for="schoolYear">School Year</label>
-												<select class="form-select form-select" aria-label="Default select example" bind:value={year}>
+												<select
+													class="form-select form-select"
+													aria-label="Default select example"
+													bind:value={year}
+												>
 													<option selected>Choose...</option>
 													{#each Array(11) as _, i}
-													<option>{i + 1}</option>
+														<option>{i + 1}</option>
 													{/each}
 												</select>
 											</div>
 										</div>
 									</div>
-	
 								{/if}
 								{#if eduType === 'University'}
 									<div class="d-flex justify-content-between p-0">
 										<div class="row">
 											<div class="form-group col-md-8">
 												<label for="Institute">Institute Name</label>
-												<input type="text" class="form-control" id="Institute" placeholder="Enter your Institute name" bind:value={institute}>
+												<input
+													type="text"
+													class="form-control"
+													id="Institute"
+													placeholder="Enter your Institute name"
+													bind:value={institute}
+												/>
 											</div>
 											<!--Institute  Year-->
 											<div class="form-group col-md-4">
 												<label for="Institute Year">Institute Year</label>
-												<select class="form-select form-select" aria-label="Default select example" bind:value={year}>
+												<select
+													class="form-select form-select"
+													aria-label="Default select example"
+													bind:value={year}
+												>
 													<option selected>Choose...</option>
 													{#each InstituteYear as grade}
-													<option>{grade}</option>
+														<option>{grade}</option>
 													{/each}
 												</select>
 											</div>
@@ -460,10 +512,14 @@
 								</button>
 								<ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
 									<li class="dropdown-item">
-										<span class="dropdown-item" style:cursor="pointer" on:click={downloadasCSV}> CSV </span>
+										<span class="dropdown-item" style:cursor="pointer" on:click={downloadasCSV}>
+											CSV
+										</span>
 									</li>
 									<li class="dropdown-item">
-										<span class="dropdown-item" style:cursor="pointer" on:click={downloadasExcel}> Excel (.xlsx)</span>
+										<span class="dropdown-item" style:cursor="pointer" on:click={downloadasExcel}>
+											Excel (.xlsx)</span
+										>
 									</li>
 								</ul>
 							</div>
@@ -474,43 +530,43 @@
 					<div class="card-body">
 						{#each users as user, i}
 							<div class="user hide d-flex flex-row align-items-stretch" bind:this={userCont}>
-								{#if i%2 == 0}
-								<div class="userInfo even d-flex flex-row align-items-stretch">
-									<div class="selectBox m-1 me-4">
-										<i
-											class="select fa fa-square-o"
-											id={user.id}
-											bind:this={userBinds[i]}
-											on:click|capture={() => handleSelect(i)}
-										/>
-									</div>
-									<div class="info">
-										<div class="d-flex justify-content-between">
-											<span class="d-inline">{user.name}</span>
-											<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc"></i>
+								{#if i % 2 == 0}
+									<div class="userInfo even d-flex flex-row align-items-stretch">
+										<div class="selectBox m-1 me-4">
+											<i
+												class="select fa fa-square-o"
+												id={user.id}
+												bind:this={userBinds[i]}
+												on:click|capture={() => handleSelect(i)}
+											/>
 										</div>
-										<!-- <small class="d-block">
+										<div class="info">
+											<div class="d-flex justify-content-between">
+												<span class="d-inline">{user.name}</span>
+												<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc" />
+											</div>
+											<!-- <small class="d-block">
 											<span class="role">{user.role}</span>
 										</small> -->
-									</div>
-								</div>
-								{:else}
-								<div class="userInfo d-flex flex-row align-items-stretch">
-									<div class="selectBox m-1 me-4">
-										<i
-											class="select fa fa-square-o"
-											id={user.id}
-											bind:this={userBinds[i]}
-											on:click|capture={() => handleSelect(i)}
-										/>
-									</div>
-									<div class="info">
-										<div class="d-flex justify-content-between">
-											<span class="d-inline">{user.name}</span>
-											<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc"></i>
 										</div>
 									</div>
-								</div>
+								{:else}
+									<div class="userInfo d-flex flex-row align-items-stretch">
+										<div class="selectBox m-1 me-4">
+											<i
+												class="select fa fa-square-o"
+												id={user.id}
+												bind:this={userBinds[i]}
+												on:click|capture={() => handleSelect(i)}
+											/>
+										</div>
+										<div class="info">
+											<div class="d-flex justify-content-between">
+												<span class="d-inline">{user.name}</span>
+												<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc" />
+											</div>
+										</div>
+									</div>
 								{/if}
 							</div>
 						{/each}
@@ -575,10 +631,14 @@
 					</button>
 					<ul class="dropdown-menu">
 						<li class="dropdown-item">
-							<span class="dropdown-item" style:cursor="pointer" on:click={downloadasCSV}> CSV </span>
+							<span class="dropdown-item" style:cursor="pointer" on:click={downloadasCSV}>
+								CSV
+							</span>
 						</li>
 						<li class="dropdown-item">
-							<span class="dropdown-item" style:cursor="pointer" on:click={downloadasExcel}> Excel (.xlsx)</span>
+							<span class="dropdown-item" style:cursor="pointer" on:click={downloadasExcel}>
+								Excel (.xlsx)</span
+							>
 						</li>
 					</ul>
 				</div>
@@ -613,28 +673,27 @@
 		font-family: 'Medium', sans-serif;
 		.card {
 			margin: 20px !important;
-			.form-select{
+			.form-select {
 				margin: 0px;
-				&:focus{
+				&:focus {
 					border-bottom: 0px !important;
 				}
 			}
 		}
-		.results{
+		.results {
 			min-width: max-content !important;
 			max-width: 400px;
 		}
-		.userInfo{
+		.userInfo {
 			width: 100%;
 		}
-		.even{
+		.even {
 			background-color: $bg-color;
 		}
-		.info{
+		.info {
 			width: 100%;
 			display: flex;
 			flex-flow: column nowrap;
-
 		}
 		nav {
 			background-color: white;
@@ -642,11 +701,12 @@
 		.form {
 			position: relative;
 			z-index: 1;
-			font-family: "Light", sans-serif;
+			font-family: 'Light', sans-serif;
 			display: flex;
 			flex-flow: column nowrap;
 			justify-content: center;
-			button, .card-body > button{
+			button,
+			.card-body > button {
 				background-color: $secondary-color;
 				color: white;
 				border: none;
@@ -656,19 +716,20 @@
 				font-weight: bold;
 				cursor: pointer;
 				transition: all 0.3s ease-in-out;
-				&:hover{
+				&:hover {
 					background-color: #343a40;
 				}
 			}
 		}
-		input, .form-select{
+		input,
+		.form-select {
 			border-radius: 0;
 			border: 0px;
 			border-bottom: 2px solid $secondary-color;
 			margin-bottom: 20px;
 			font-size: 15px;
-			
-			&:focus{
+
+			&:focus {
 				border-bottom: 2px solid $primary-color !important;
 				outline: none;
 				box-shadow: none;
@@ -699,7 +760,7 @@
 				padding-left: 20px;
 				font-size: 30px;
 				cursor: pointer;
-				color: white
+				color: white;
 			}
 			.toolbarBtn {
 				color: white;

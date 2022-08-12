@@ -10,16 +10,15 @@
     
     let google = '' as unknown as HTMLElement;
 
-    function redirct(per: number, user_id: string) {
-        if(per == 0 || per == 1){
-            goto(`${base}/participant/${user_id}`);
-        } else {
+    function redirct(per: string, user_id: string) {
+        if(per === "super_admin" || per === "admin") {
             goto(`${base}/admin/${user_id}`);
+        } else {
+            goto(`${base}/participant/${user_id}`);
         }
     }
     onMount(() => {
         if(browser){
-
             // Access token exists and not expired
             let token = localStorage.getItem('access_token');
             let exp = localStorage.getItem('expires_in');
@@ -126,7 +125,7 @@
             "hash": user.detail.hash
         };
         console.log(data);
-        fetch('http://localhost:8000/auth/signin-telegram', {
+        fetch('http://127.0.01:8000/auth/signin-telegram', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
