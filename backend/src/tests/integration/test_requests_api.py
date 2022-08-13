@@ -525,7 +525,7 @@ def test_processing(client: Client, user_request: Request, super_admin_token: st
 
     user_request.refresh_from_db()
     for status, description in product(
-        [None, "", " ", "123", "unknown", *map(lambda x: x + " ", statuses), *map(lambda x: " " + x, statuses)], []
+        [None, "", " ", "123", 123, "unknown", *map(lambda x: x + " ", statuses), *map(lambda x: " " + x, statuses)], []
     ):
         body = {"status": status, "description": description}
         assert_validation_error(patch(client, PROCESS.format(id=user_request.id), super_admin_token, body))

@@ -1,11 +1,9 @@
 import logging
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
 
 import pytest
-from google.oauth2 import id_token
 
-from api.internal.db.models import Competition, DefaultValue, Field, Participation, Request, User
+from api.internal.db.models import Competition, Field, Participation, Request, User
 from api.internal.db.models.user import Permissions
 
 

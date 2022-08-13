@@ -24,10 +24,17 @@ from tests.integration.conftest import (
 )
 
 
+USERS = "/users"
+USER = USERS + "/{id}"
+XLSX = USERS + "/xlsx"
+CSV = USERS + "/csv"
+MERGE = USERS + "/merge"
+
+
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_access_getting_users(client: Client, user_token: str, admin_token: str, super_admin: str) -> None:
-    assert_access(lambda token: get(client, "/users", token), [user_token, admin_token, super_admin], [])
+    assert_access(lambda token: get(client, USERS, token), [user_token, admin_token, super_admin], [])
 
 
 @pytest.mark.integration
@@ -185,7 +192,7 @@ def test_getting_users_by_institution_course(client: Client, user: User, another
 
 def assert_getting_users_by_filter(client: Client, filter: str, is_enum: bool, value_expected: dict) -> None:
     for value, expected in value_expected.items():
-        response = get(client, f"/users?{filter}={value}")
+        response = get(client, USERS + f"?{filter}={value}")
         assert response.status_code == 200
 
         body = response.json()
@@ -205,9 +212,9 @@ def assert_getting_users_by_filter(client: Client, filter: str, is_enum: bool, v
         assert body["items"][0] == expected_item
 
     if is_enum:
-        assert_validation_error(get(client, f"/users?{filter}=-1"))
+        assert_validation_error(get(client, USERS + f"?{filter}=-1"))
     else:
-        response = get(client, f"/users?{filter}=")
+        response = get(client, USERS + f"?{filter}=")
         assert response.status_code == 200
 
         body = response.json()
@@ -218,7 +225,7 @@ def assert_getting_users_by_filter(client: Client, filter: str, is_enum: bool, v
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_getting_user(client: Client, user: User, super_admin_token: str) -> None:
-    response = get(client, f"/users/{user.id}", super_admin_token)
+    response = get(client, USER.format(id=user.id), super_admin_token)
     assert response.status_code == 200
 
     expected = {
@@ -241,7 +248,7 @@ def test_getting_user(client: Client, user: User, super_admin_token: str) -> Non
     }
     assert response.json() == expected
 
-    assert_404(get(client, "/users/0", super_admin_token), what="user")
+    assert_404(get(client, USER.format(id=0), super_admin_token), what="user")
 
 
 @pytest.mark.integration
@@ -249,7 +256,7 @@ def test_getting_user(client: Client, user: User, super_admin_token: str) -> Non
 def test_access_getting_user(
     client: Client, user: User, user_token: str, admin_token: str, super_admin_token: str
 ) -> None:
-    assert_access(lambda token: get(client, f"/users/{user.id}", token), [admin_token, super_admin_token], [user_token])
+    assert_access(lambda token: get(client, USER.format(id=user.id), token), [admin_token, super_admin_token], [user_token])
 
 
 @pytest.mark.integration
@@ -261,20 +268,20 @@ def test_updating_user(
 ) -> None:
     body = get_body_for_updating()
 
-    assert_200(put(client, f"/users/{user.id}", super_admin_token, body))
+    assert_200(put(client, USER.format(id=user.id), super_admin_token, body))
     assert_updating(user, body)
 
     for key in list(body.keys()):
         del body[key]
 
-        assert_validation_error(put(client, f"/users/{user.id}", super_admin_token, body))
+        assert_validation_error(put(client, USER.format(id=user.id), super_admin_token, body))
         assert_not_updating(user)
 
 
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_access_updating_user(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
-    assert_access(lambda token: put(client, "/users/0", token), [admin_token, super_admin_token], [user_token])
+    assert_access(lambda token: put(client, USER.format(id=0), token), [admin_token, super_admin_token], [user_token])
 
 
 @pytest.mark.integration
@@ -285,7 +292,7 @@ def test_updating_unknown_user(
 ) -> None:
     body = get_body_for_updating()
 
-    assert_404(put(client, "/users/0", super_admin_token, body), what="user")
+    assert_404(put(client, USER.format(id=0), super_admin_token, body), what="user")
 
 
 @pytest.mark.integration
@@ -297,7 +304,7 @@ def test_updating_self(
 ) -> None:
     body = get_body_for_updating()
 
-    response = put(client, f"/users/{super_admin.id}", super_admin_token, body)
+    response = put(client, USER.format(id=super_admin.id), super_admin_token, body)
 
     assert_422(response, error="bad user", details="Updating self is not allowed")
     assert_not_updating(super_admin)
@@ -328,7 +335,7 @@ def test_updating_permission(
     user.save(update_fields=["permission"])
 
     body["permission"] = value
-    response = put(client, f"/users/{user.id}", super_admin_token, body)
+    response = put(client, USER.format(id=user.id), super_admin_token, body)
 
     if is_correct:
         assert_200(response)
@@ -351,7 +358,7 @@ def test_updating_permission__competition_has_the_admin(
     body["permission"] = value
 
     assert_422(
-        put(client, f"/users/{admin.id}", super_admin_token, body),
+        put(client, USER.format(id=admin.id), super_admin_token, body),
         error=error,
         details=details,
     )
@@ -370,7 +377,7 @@ def test_updating_institution_type(
     body = get_body_for_updating()
     body["institution_type"] = value
 
-    response = put(client, f"/users/{user.id}", super_admin_token, body)
+    response = put(client, USER.format(id=user.id), super_admin_token, body)
 
     if is_correct:
         assert_200(response)
@@ -392,7 +399,7 @@ def test_updating_email(
     body = get_body_for_updating()
     body["email"] = value
 
-    response = put(client, f"/users/{user.id}", super_admin_token, body)
+    response = put(client, USER.format(id=user.id), super_admin_token, body)
 
     if is_correct:
         assert_200(response)
@@ -411,13 +418,13 @@ def test_updating_email__already_exists(client: Client, user: User, another: Use
     another.save(update_fields=["email"])
 
     assert_422(
-        put(client, f"/users/{user.id}", super_admin_token, body),
+        put(client, USER.format(id=user.id), super_admin_token, body),
         error="bad email",
         details="The email already exists",
     )
     assert_not_updating(user)
 
-    assert_200(put(client, f"/users/{another.id}", super_admin_token, body))
+    assert_200(put(client, USER.format(id=another.id), super_admin_token, body))
     assert_updating(another, body)
 
 
@@ -433,7 +440,7 @@ def test_updating_phone(
     body = get_body_for_updating()
     body["phone"] = value
 
-    response = put(client, f"/users/{user.id}", super_admin_token, body)
+    response = put(client, USER.format(id=user.id), super_admin_token, body)
 
     if is_correct:
         assert_200(response)
@@ -562,7 +569,7 @@ def test_merging_super_admins(
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_access_merging(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
-    assert_access(lambda token: post(client, "/users/merge", token), [admin_token, super_admin_token], [user_token])
+    assert_access(lambda token: post(client, MERGE, token), [admin_token, super_admin_token], [user_token])
 
 
 def assert_merging_default_users(
@@ -582,7 +589,7 @@ def assert_merging_default_users(
     competition.fields.add(field)
     user_form_value = FormValue.objects.create(participation=from_participation, field=field, value="123")
 
-    response = post(client, "/users/merge", token, get_body_for_merging(from_user.id, to_user.id))
+    response = post(client, MERGE, token, get_body_for_merging(from_user.id, to_user.id))
     assert_200(response)
 
     to_user.refresh_from_db()
@@ -607,7 +614,7 @@ def assert_merging_default_users(
 @pytest.mark.django_db
 def test_merging__bad_ids(client: Client, user: User, super_admin_token: str) -> None:
     for from_id, to_id in [[0, 0], [0, user.id], [user.id, 0]]:
-        assert_404(post(client, "/users/merge", super_admin_token, get_body_for_merging(from_id, to_id)), what="users")
+        assert_404(post(client, MERGE, super_admin_token, get_body_for_merging(from_id, to_id)), what="users")
 
     assert User.objects.get(pk=user.pk) == user
 
@@ -618,7 +625,7 @@ def test_merging__permissions_not_equal(
     client: Client, user: User, admin: User, super_admin: User, super_admin_token: str
 ) -> None:
     for from_id, to_id in permutations([user.id, admin.id, super_admin.id], r=2):
-        response = post(client, "/users/merge", super_admin_token, get_body_for_merging(from_id, to_id))
+        response = post(client, MERGE, super_admin_token, get_body_for_merging(from_id, to_id))
         assert_422(response, error="bad permissions", details="Permissions must be equal")
 
 
@@ -629,7 +636,7 @@ def test_merging__requests_intersect(
 ) -> None:
     request = Request.objects.create(owner=another, competition=user_request.competition)
 
-    response = post(client, "/users/merge", super_admin_token, get_body_for_merging(user.id, another.id))
+    response = post(client, MERGE, super_admin_token, get_body_for_merging(user.id, another.id))
     assert_422(response, error="requests", details="Request intersects")
 
     assert User.objects.get(pk=user.pk) == user
@@ -646,7 +653,7 @@ def test_merging__participation_intersect(
 ) -> None:
     participation_another = Participation.objects.create(request=participation.request, user=another)
 
-    response = post(client, "/users/merge", super_admin_token, get_body_for_merging(user.id, another.id))
+    response = post(client, MERGE, super_admin_token, get_body_for_merging(user.id, another.id))
     assert_422(response, error="participation", details="Participation intersects")
 
     assert User.objects.get(pk=user.pk) == user
@@ -668,5 +675,5 @@ def test_access_getting_users_in_files(
 ) -> None:
     tokens_access, tokens_not_access = [admin_token, super_admin_token], [user_token]
 
-    assert_access(lambda token: get(client, "/users/xlsx", token), tokens_access, tokens_not_access)
-    assert_access(lambda token: get(client, "/users/csv", token), tokens_access, tokens_not_access)
+    assert_access(lambda token: get(client, XLSX, token), tokens_access, tokens_not_access)
+    assert_access(lambda token: get(client, CSV, token), tokens_access, tokens_not_access)

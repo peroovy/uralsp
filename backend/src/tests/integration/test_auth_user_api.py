@@ -25,7 +25,12 @@ from tests.integration.conftest import (
     put,
 )
 
-PROFILE_URI = "/users/current/profile"
+
+CURRENT = "/users/current"
+PROFILE = CURRENT + "/profile"
+FORM_VALUES = CURRENT + "/form-values"
+LINK_SOCIAL = CURRENT + "/link-{social}"
+UNLINK_SOCIAL = CURRENT + "/unlink-{social}"
 
 
 @pytest.mark.integration
@@ -35,7 +40,7 @@ def test_getting_profile(
     user: User,
     user_token: str,
 ) -> None:
-    response = get(client, PROFILE_URI, user_token)
+    response = get(client, PROFILE, user_token)
 
     expected = {
         "id": user.id,
@@ -63,7 +68,7 @@ def test_getting_profile(
 @pytest.mark.django_db
 def test_access_getting_profile(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
     assert_access(
-        lambda token: get(client, "/users/current/profile", token), [user_token, admin_token, super_admin_token], []
+        lambda token: get(client, PROFILE, token), [user_token, admin_token, super_admin_token], []
     )
 
 
@@ -77,14 +82,14 @@ def test_updating_profile(
     body = get_body_for_updating()
     body["email"] = None
 
-    response = put(client, PROFILE_URI, user_token, body)
+    response = put(client, PROFILE, user_token, body)
     assert_200(response)
     assert_updating(user, body)
 
     for key in list(body.keys()):
         del body[key]
 
-        response = put(client, PROFILE_URI, user_token, body)
+        response = put(client, PROFILE, user_token, body)
         assert_validation_error(response)
         assert_not_updating(user)
 
@@ -93,7 +98,7 @@ def test_updating_profile(
 @pytest.mark.django_db
 def test_access_updating_profile(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
     assert_access(
-        lambda token: put(client, "/users/current/profile", token), [user_token, admin_token, super_admin_token], []
+        lambda token: put(client, PROFILE, token), [user_token, admin_token, super_admin_token], []
     )
 
 
@@ -104,7 +109,7 @@ def test_updating_email(client: Client, user: User, user_token: str, value: Opti
     body = get_body_for_updating()
     body["email"] = value
 
-    response = put(client, PROFILE_URI, user_token, body)
+    response = put(client, PROFILE, user_token, body)
 
     if is_correct:
         assert_200(response)
@@ -125,13 +130,13 @@ def test_updating_email__already_exists(
     admin.save(update_fields=["email"])
 
     assert_422(
-        put(client, PROFILE_URI, user_token, body),
+        put(client, PROFILE, user_token, body),
         error="bad email",
         details="The email already exists",
     )
     assert_not_updating(user)
 
-    assert_200(put(client, PROFILE_URI, admin_token, body))
+    assert_200(put(client, PROFILE, admin_token, body))
     assert_updating(admin, body)
 
 
@@ -145,7 +150,7 @@ def test_updating_phone(client: Client, user: User, user_token: str, value: Opti
     body = get_body_for_updating()
     body["phone"] = value
 
-    response = put(client, PROFILE_URI, user_token, body)
+    response = put(client, PROFILE, user_token, body)
 
     if is_correct:
         assert_200(response)
@@ -170,7 +175,7 @@ def test_updating_institution_type(
     body = get_body_for_updating()
     body["institution_type"] = value
 
-    response = put(client, PROFILE_URI, user_token, body)
+    response = put(client, PROFILE, user_token, body)
 
     if is_correct:
         assert_200(response)
@@ -234,7 +239,7 @@ def test_getting_last_form_values(
 
     response = get(
         client,
-        f"/users/current/form-values?field_id={field.id}&field_id={another_field.id}&field_id=unknown",
+        FORM_VALUES + f"?field_id={field.id}&field_id={another_field.id}&field_id=unknown",
         user_token,
     )
 
@@ -245,11 +250,11 @@ def test_getting_last_form_values(
 
     FormValue.objects.filter(field=field).delete()
     for field_id in ["", "unknown", field.id]:
-        response = get(client, f"/users/current/form-values?field_id={field_id}", user_token)
+        response = get(client, FORM_VALUES + f"?field_id={field_id}", user_token)
         assert response.status_code == 200
         assert response.json() == []
 
-    assert get(client, "/users/current/form-values", user_token).status_code == 422
+    assert get(client, FORM_VALUES, user_token).status_code == 422
 
 
 @pytest.mark.integration
@@ -258,7 +263,7 @@ def test_access_getting_last_form_values(
     client: Client, user_token: str, admin_token: str, super_admin_token: str
 ) -> None:
     assert_access(
-        lambda token: get(client, "/users/current/form-values", token), [user_token, admin_token, super_admin_token], []
+        lambda token: get(client, FORM_VALUES, token), [user_token, admin_token, super_admin_token], []
     )
 
 
@@ -275,7 +280,7 @@ def test_linking_vkontakte(client: Client, user: User, user_token: str, admin_to
         "last_name": "Ivanov",
         "hash": hashlib.md5((app_id + str(social_id) + app_secret).encode()).hexdigest(),
     }
-    uri = "/users/current/link-vkontakte"
+    uri = LINK_SOCIAL.format(social="vkontakte")
 
     assert_linking_social(client, uri, body, social_id, "vkontakte_id", user, user_token, admin_token)
 
@@ -293,7 +298,7 @@ def test_linking_google(client: Client, user: User, user_token: str, admin_token
     api = mock_patch("api.internal.socials.services.google_id_token").start()
     api.verify_oauth2_token = Mock(return_value=google_data)
 
-    body, uri = {"id_token": "value"}, "/users/current/link-google"
+    body, uri = {"id_token": "value"}, LINK_SOCIAL.format(social="google")
 
     assert_linking_social(client, uri, body, google_data["sub"], "google_id", user, user_token, admin_token)
 
@@ -304,7 +309,7 @@ def test_linking_google(client: Client, user: User, user_token: str, admin_token
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_linking_telegram(client: Client, user: User, user_token: str, admin_token: str) -> None:
-    uri = "/users/current/link-telegram"
+    uri = LINK_SOCIAL.format(social="telegram")
     hmac = mock_patch("api.internal.socials.services.hmac").start()
 
     body = {
@@ -363,19 +368,19 @@ def assert_linking_social(
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_unlinking_vkontakte(client: Client, user: User, user_token: str) -> None:
-    assert_unlinking_social(client, "/users/current/unlink-vkontakte", "vkontakte_id", user, user_token)
+    assert_unlinking_social(client, UNLINK_SOCIAL.format(social="vkontakte"), "vkontakte_id", user, user_token)
 
 
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_unlinking_google(client: Client, user: User, user_token: str) -> None:
-    assert_unlinking_social(client, "/users/current/unlink-google", "google_id", user, user_token)
+    assert_unlinking_social(client, UNLINK_SOCIAL.format(social="google"), "google_id", user, user_token)
 
 
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_unlinking_telegram(client: Client, user: User, user_token: str) -> None:
-    assert_unlinking_social(client, "/users/current/unlink-telegram", "telegram_id", user, user_token)
+    assert_unlinking_social(client, UNLINK_SOCIAL.format(social="telegram"), "telegram_id", user, user_token)
 
 
 def assert_unlinking_social(client: Client, uri: str, social_field: str, user: User, user_token: str) -> None:
@@ -407,5 +412,5 @@ def test_access_linking_and_unlinking_social(
     token_access = [user_token, admin_token, super_admin_token]
 
     for social in ["vkontakte", "google", "telegram"]:
-        assert_access(lambda token: patch(client, "/users/current/link-" + social, token), token_access, [])
-        assert_access(lambda token: patch(client, "/users/current/unlink-" + social, token), token_access, [])
+        assert_access(lambda token: patch(client, LINK_SOCIAL.format(social=social), token), token_access, [])
+        assert_access(lambda token: patch(client, UNLINK_SOCIAL.format(social=social), token), token_access, [])
