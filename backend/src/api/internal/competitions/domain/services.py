@@ -137,6 +137,15 @@ class CompetitionService:
 
         return len(unique) > 0 and len(unique) == len(ids) and self._field_repo.exist_all(unique)
 
+    def is_registration_over(self, competition: Competition) -> bool:
+        return now() >= competition.registration_end
+
+    def is_started(self, competition: Competition) -> bool:
+        return now() >= competition.started_at
+
+    def is_registration_started(self, competition: Competition) -> bool:
+        return now() >= competition.registration_start
+
 
 class CompetitionSerializer:
     REQUEST_HEADERS = ["id", "owner_id", "team_name", "status", "created_at"]

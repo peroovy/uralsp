@@ -30,16 +30,16 @@ sql:
 	pipenv run python src/manage.py debugsqlshell
 
 test:
-	cd src && pipenv run pytest --disable-warnings
+	cd src && pipenv run pytest
 
 unit:
-	cd src && pipenv run pytest -m unit --disable-warnings
+	cd src && pipenv run pytest -m unit
 
 smoke:
-	cd src && pipenv run pytest -m smoke --disable-warnings
+	cd src && pipenv run pytest -m smoke
 
 integration:
-	cd src && pipenv run pytest -m integration --disable-warnings
+	cd src && pipenv run pytest -m integration
 
 up:
 	docker-compose up --build

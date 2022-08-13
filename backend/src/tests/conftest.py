@@ -114,8 +114,8 @@ def another_super_admin() -> User:
 def competition() -> Competition:
     return Competition.objects.create(
         name="babies",
-        registration_start=datetime(1337, 3, 28),
-        registration_end=datetime(2022, 12, 12),
+        registration_start=datetime(1600, 3, 28),
+        registration_end=datetime(3021, 12, 12),
         started_at=datetime(3022, 2, 28),
         persons_amount=1,
     )
@@ -138,6 +138,11 @@ def user_request(user: User, competition: Competition) -> Request:
 
 
 @pytest.fixture(scope="function")
+def another_user_request(user: User, another_competition: Competition) -> Request:
+    return Request.objects.create(owner=user, competition=another_competition)
+
+
+@pytest.fixture(scope="function")
 def participation(user: User, user_request: Request) -> Participation:
     return Participation.objects.create(request=user_request, user=user)
 
@@ -150,6 +155,10 @@ def field() -> Field:
 @pytest.fixture(scope="function")
 def another_field() -> Field:
     return Field.objects.create(id="checkbox", name="Checkbox", type=1)
+
+
+def datetime_to_string(time: datetime) -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
 
 def get_bad_admin_ids(user: User, admin: User, super_admin: User) -> list:

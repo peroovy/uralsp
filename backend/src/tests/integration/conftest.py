@@ -84,18 +84,15 @@ def get_headers(token: Optional[str]) -> dict:
 
 
 def assert_401(response) -> None:
-    assert response.status_code == 401
-    assert response.json() == {"error": "bad token", "details": "Unauthorized"}
+    assert response.status_code == 401 and response.json() == {"error": "bad token", "details": "Unauthorized"}
 
 
 def assert_403(response) -> None:
-    assert response.status_code == 403
-    assert response.json() == {"error": "forbidden", "details": "Permission denied"}
+    assert response.status_code == 403 and response.json() == {"error": "forbidden", "details": "Permission denied"}
 
 
 def assert_404(response, what: str) -> None:
-    assert response.status_code == 404
-    assert response.json() == {"error": "not found", "details": f"Not found {what}"}
+    assert response.status_code == 404 and response.json() == {"error": "not found", "details": f"Not found {what}"}
 
 
 def assert_validation_error(response) -> None:
@@ -103,13 +100,11 @@ def assert_validation_error(response) -> None:
 
 
 def assert_422(response, error: str, details: str) -> None:
-    assert response.status_code == 422
-    assert response.json() == {"error": error, "details": details}
+    assert response.status_code == 422 and response.json() == {"error": error, "details": details}
 
 
 def assert_200(response) -> None:
-    assert response.status_code == 200
-    assert response.json() == {"details": "Success"}
+    assert response.status_code == 200 and response.json() == {"details": "Success"}
 
 
 def assert_access(
@@ -117,10 +112,11 @@ def assert_access(
 ) -> None:
     for token in tokens_access:
         response = method(token)
-        assert response.status_code != 403 and response.status_code != 404
+        assert response.status_code not in [403, 404]
 
     for token in token_not_access:
-        assert_403(method(token))
+        response = method(token)
+        assert_403(response)
 
 
 def get(client: Client, uri: str, token: str = None) -> Response:

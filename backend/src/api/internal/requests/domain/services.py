@@ -3,7 +3,7 @@ from typing import Iterable, List, Optional
 from django.db.transaction import atomic
 from django.utils.timezone import now
 
-from api.internal.db.models import Request, User
+from api.internal.db.models import Competition, Request, User
 from api.internal.db.models.request import RequestStatus
 from api.internal.db.models.user import Permissions
 from api.internal.db.repositories import competition_repo, form_value_repo, participation_repo, request_repo, user_repo
@@ -84,18 +84,11 @@ class RequestService:
             or self._competition_repo.is_admin(request.competition_id, user.id)
         )
 
-    def validate_competition_for_registration(self, owner: User, data: RequestIn) -> bool:
-        competition = self._competition_repo.try_get(data.competition)
-        if not competition or self._request_repo.exists_request_on_competition(owner.id, competition.id):
-            return False
+    def exists_request_on_competition(self, owner_id: int, competition_id: int) -> bool:
+        return self._request_repo.exists_request_on_competition(owner_id, competition_id)
 
-        return now() < competition.registration_before and len(data.team) == competition.persons_amount
-
-    def validate_competition_for_updating(self, request: Request, data: FormsIn) -> bool:
-        return now() < request.competition.end_at and len(data.team) == request.competition.persons_amount
-
-    def validate_users(self, data: FormsIn) -> bool:
-        if not data.team:
+    def validate_users(self, competition: Competition, data: FormsIn) -> bool:
+        if len(data.team) != competition.persons_amount:
             return False
 
         user_ids = [user.user_id for user in data.team]
@@ -125,9 +118,6 @@ class RequestService:
                 return False
 
         return True
-
-    def is_competition_started(self, request: Request) -> bool:
-        return now() >= request.competition.started_at
 
     def get_request_details(self, request: Request) -> RequestDetailsOut:
         participation_outs = []

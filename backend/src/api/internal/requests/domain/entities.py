@@ -37,7 +37,7 @@ class RequestDetailsOut(Schema):
     owner: int
     competition: int
     team_name: str
-    status: int
+    status: str
     description: Optional[str]
     created_at: datetime
     participants: List[ParticipationSchema]
