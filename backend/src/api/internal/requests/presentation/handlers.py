@@ -3,6 +3,7 @@ from typing import List
 from django.http import HttpRequest
 from ninja import Body
 
+from api.internal.competitions.domain.services import CompetitionService
 from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException
 from api.internal.requests.domain.entities import FormsIn, ProcessIn, RequestDetailsOut, RequestIn, RequestOut
 from api.internal.requests.domain.services import RequestService
@@ -10,18 +11,24 @@ from api.internal.responses import SuccessResponse
 
 
 class RequestHandlers:
-    INVALID_COMPETITION = "Validation competition error"
-    INVALID_TEAM = "Validation team error"
-    INVALID_FORMS = "Validation forms error"
-    COMPETITION_ALREADY_STARTED = "Competition already started"
+    REGISTRATION_IS_OVER = "Registration is over"
+    INVALID_TEAM = "Team validation error"
+    INVALID_FORMS = "Forms validation error"
+    COMPETITION_HAS_ALREADY_STARTED = "Competition has already started"
+    UNKNOWN_COMPETITION = "Unknown competition"
+    REQUEST_HAS_ALREADY_CREATED = "Request has already created"
+    REGISTRATION_HAS_NOT_STARTED_YET = "Registration has not started yet"
 
     REQUEST = "request"
-    BAD_COMPETITION = "bad competition"
+    COMPETITION = "competition"
     BAD_USERS = "bad users"
     BAD_FORMS = "bad forms"
+    REGISTRATION_END = "registration_end"
+    REGISTRATION_START = "registration_start"
 
-    def __init__(self, request_service: RequestService):
+    def __init__(self, request_service: RequestService, competition_service: CompetitionService):
         self._request_service = request_service
+        self._competition_service = competition_service
 
     def get_requests(self, request: HttpRequest) -> List[RequestOut]:
         requests = self._request_service.get_requests(request.user)
@@ -38,10 +45,19 @@ class RequestHandlers:
         return self._request_service.get_request_details(user_request)
 
     def create_request(self, request: HttpRequest, data: RequestIn = Body(...)) -> SuccessResponse:
-        if not self._request_service.validate_competition_for_registration(request.user, data):
-            raise UnprocessableEntityException(self.INVALID_COMPETITION, error=self.BAD_COMPETITION)
+        if not (competition := self._competition_service.get(data.competition)):
+            raise UnprocessableEntityException(self.UNKNOWN_COMPETITION, error=self.COMPETITION)
 
-        if not self._request_service.validate_users(data):
+        if self._request_service.exists_request_on_competition(request.user.id, data.competition):
+            raise UnprocessableEntityException(self.REQUEST_HAS_ALREADY_CREATED, error=self.REQUEST)
+
+        if not self._competition_service.is_registration_started(competition):
+            raise UnprocessableEntityException(self.REGISTRATION_HAS_NOT_STARTED_YET, error=self.REGISTRATION_START)
+
+        if self._competition_service.is_registration_over(competition):
+            raise UnprocessableEntityException(self.REGISTRATION_IS_OVER, error=self.REGISTRATION_END)
+
+        if not self._request_service.validate_users(competition, data):
             raise UnprocessableEntityException(self.INVALID_TEAM, error=self.BAD_USERS)
 
         if not self._request_service.validate_forms(data):
@@ -58,13 +74,13 @@ class RequestHandlers:
         if not self._request_service.has_access(request.user, user_request):
             raise ForbiddenException()
 
-        if not self._request_service.validate_competition_for_updating(user_request, data):
-            raise UnprocessableEntityException(self.INVALID_COMPETITION, error=self.BAD_COMPETITION)
+        if self._competition_service.is_registration_over(user_request.competition):
+            raise UnprocessableEntityException(self.REGISTRATION_IS_OVER, error=self.REGISTRATION_END)
 
-        if not self._request_service.validate_users(data):
+        if not self._request_service.validate_users(user_request.competition, data):
             raise UnprocessableEntityException(self.INVALID_TEAM, error=self.BAD_USERS)
 
-        request_in = RequestIn(competition_id=user_request.competition_id, team_name=data.team_name, team=data.team)
+        request_in = RequestIn(competition=user_request.competition_id, team_name=data.team_name, team=data.team)
         if not self._request_service.validate_forms(request_in):
             raise UnprocessableEntityException(self.INVALID_FORMS, error=self.BAD_FORMS)
 
@@ -79,8 +95,8 @@ class RequestHandlers:
         if not self._request_service.has_access(request.user, user_request):
             raise ForbiddenException()
 
-        if self._request_service.is_competition_started(user_request):
-            raise UnprocessableEntityException(self.COMPETITION_ALREADY_STARTED, error=self.BAD_COMPETITION)
+        if self._competition_service.is_started(user_request.competition):
+            raise UnprocessableEntityException(self.COMPETITION_HAS_ALREADY_STARTED, error=self.COMPETITION)
 
         self._request_service.cancel(user_request)
 
