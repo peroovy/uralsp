@@ -24,30 +24,6 @@ AFTER_NOW = [
 
 BEFORE_NOW = [-delta for delta in AFTER_NOW]
 
-BAD_CREATING_DATE_DELTAS = [
-    [timedelta(microseconds=2), timedelta(microseconds=2), timedelta(microseconds=3)],
-    [timedelta(microseconds=1), timedelta(microseconds=2), timedelta(microseconds=2)],
-    [timedelta(microseconds=2), timedelta(microseconds=2), timedelta(microseconds=2)],
-    [timedelta(microseconds=0), timedelta(microseconds=2), timedelta(microseconds=3)],
-    [timedelta(microseconds=0), timedelta(microseconds=0), timedelta(microseconds=3)],
-    [timedelta(microseconds=0), timedelta(microseconds=0), timedelta(microseconds=0)],
-    [timedelta(microseconds=10), timedelta(microseconds=0), timedelta(microseconds=0)],
-    [timedelta(microseconds=10), timedelta(microseconds=0), timedelta(microseconds=20)],
-    [timedelta(microseconds=10), timedelta(microseconds=0), timedelta(microseconds=5)],
-    [timedelta(microseconds=-10), timedelta(microseconds=1), timedelta(microseconds=2)],
-    [timedelta(microseconds=-10), timedelta(microseconds=-20), timedelta(microseconds=2)],
-    [timedelta(microseconds=-10), timedelta(microseconds=-20), timedelta(microseconds=-30)],
-    [timedelta(microseconds=-10), timedelta(microseconds=-5), timedelta(microseconds=-1)],
-    [timedelta(microseconds=-10), timedelta(microseconds=-5), timedelta(microseconds=-6)],
-    [timedelta(microseconds=-1), timedelta(microseconds=-1), timedelta(microseconds=-1)],
-]
-
-VALID_CREATING_DATE_DELTAS = [
-    [timedelta(microseconds=1), timedelta(microseconds=2), timedelta(microseconds=3)],
-    [timedelta(hours=1), timedelta(hours=2), timedelta(hours=3)],
-    [timedelta(days=1), timedelta(days=2), timedelta(days=3)],
-]
-
 
 @pytest.fixture(scope="function")
 def user() -> User:
@@ -156,49 +132,9 @@ def another_field() -> Field:
 
 
 def datetime_to_string(time: datetime) -> str:
-    return time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    string = time.strftime("%Y-%m-%dT%H:%M:%S")
 
+    if time.microsecond > 0:
+        string += f".{str(time.microsecond // 1000).zfill(3)}"
 
-def get_bad_admin_ids(user: User, admin: User, super_admin: User) -> list:
-    return [[], [-1], [user.id], [super_admin.id], [user.id, admin.id], [admin.id, admin.id], [user.id, user.id]]
-
-
-def get_bad_field_ids(field: Field) -> list:
-    return [[], ["unknown"], ["unknown", field.id], ["unknown", "unknwon"], [field.id, field.id]]
-
-
-def get_competition_filters_by_name(competition: Competition) -> list:
-    return get_filters_by_string(competition.name)
-
-
-def get_bad_competition_filters_by_name(competition: Competition) -> list:
-    return get_bad_filters_by_string(competition.name)
-
-
-def get_field_filters(field: Field) -> list:
-    return get_filters_by_string(field.id) + get_filters_by_string(field.name)
-
-
-def get_bad_field_filters(field: Field) -> list:
-    return get_bad_filters_by_string(field.id) + get_bad_filters_by_string(field.name)
-
-
-def get_filters_by_string(value: str) -> list:
-    return [
-        "",
-        " ",
-        value[0],
-        value[0].upper(),
-        value[:-1],
-        value,
-        value.lower(),
-        value.upper(),
-        value.swapcase(),
-        value + " " * 3,
-        " " * 3 + value,
-        " " * 3 + value + " " * 3,
-    ]
-
-
-def get_bad_filters_by_string(value: str) -> list:
-    return ["-1-1", value + "-1", "-1" + value, 2 * value, value[1:]]
+    return string

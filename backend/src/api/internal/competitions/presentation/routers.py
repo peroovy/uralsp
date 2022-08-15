@@ -38,7 +38,7 @@ def get_competitions_router(competition_handlers: CompetitionHandlers) -> Router
         methods=["PUT"],
         auth=[AnyAdmin()],
         view_func=competition_handlers.update_competition,
-        response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
+        response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse, 422: ErrorResponse},
     )
 
     router.add_api_operation(
@@ -62,7 +62,7 @@ def get_competitions_router(competition_handlers: CompetitionHandlers) -> Router
         methods=["PUT"],
         auth=[OnlySuperAdmin()],
         view_func=competition_handlers.update_admins,
-        response={200: SuccessResponse, 404: ErrorResponse},
+        response={200: SuccessResponse, 404: ErrorResponse, 422: ErrorResponse},
     )
 
     router.add_api_operation(
@@ -77,7 +77,7 @@ def get_competitions_router(competition_handlers: CompetitionHandlers) -> Router
         methods=["PUT"],
         auth=[AnyAdmin()],
         view_func=competition_handlers.update_form,
-        response={200: SuccessResponse, 404: ErrorResponse},
+        response={200: SuccessResponse, 404: ErrorResponse, 422: ErrorResponse},
     )
 
     router.add_api_operation(

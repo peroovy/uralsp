@@ -23,7 +23,6 @@ from tests.integration.conftest import (
     put,
 )
 
-
 USERS = "/users"
 USER = USERS + "/{id}"
 XLSX = USERS + "/xlsx"
@@ -256,7 +255,9 @@ def test_getting_user(client: Client, user: User, super_admin_token: str) -> Non
 def test_access_getting_user(
     client: Client, user: User, user_token: str, admin_token: str, super_admin_token: str
 ) -> None:
-    assert_access(lambda token: get(client, USER.format(id=user.id), token), [admin_token, super_admin_token], [user_token])
+    assert_access(
+        lambda token: get(client, USER.format(id=user.id), token), [admin_token, super_admin_token], [user_token]
+    )
 
 
 @pytest.mark.integration

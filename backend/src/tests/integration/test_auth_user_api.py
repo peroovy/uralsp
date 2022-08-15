@@ -25,7 +25,6 @@ from tests.integration.conftest import (
     put,
 )
 
-
 CURRENT = "/users/current"
 PROFILE = CURRENT + "/profile"
 FORM_VALUES = CURRENT + "/form-values"
@@ -67,9 +66,7 @@ def test_getting_profile(
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_access_getting_profile(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
-    assert_access(
-        lambda token: get(client, PROFILE, token), [user_token, admin_token, super_admin_token], []
-    )
+    assert_access(lambda token: get(client, PROFILE, token), [user_token, admin_token, super_admin_token], [])
 
 
 @pytest.mark.integration
@@ -97,9 +94,7 @@ def test_updating_profile(
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_access_updating_profile(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
-    assert_access(
-        lambda token: put(client, PROFILE, token), [user_token, admin_token, super_admin_token], []
-    )
+    assert_access(lambda token: put(client, PROFILE, token), [user_token, admin_token, super_admin_token], [])
 
 
 @pytest.mark.integration
@@ -262,9 +257,7 @@ def test_getting_last_form_values(
 def test_access_getting_last_form_values(
     client: Client, user_token: str, admin_token: str, super_admin_token: str
 ) -> None:
-    assert_access(
-        lambda token: get(client, FORM_VALUES, token), [user_token, admin_token, super_admin_token], []
-    )
+    assert_access(lambda token: get(client, FORM_VALUES, token), [user_token, admin_token, super_admin_token], [])
 
 
 @pytest.mark.integration
@@ -310,7 +303,7 @@ def test_linking_google(client: Client, user: User, user_token: str, admin_token
 @pytest.mark.django_db
 def test_linking_telegram(client: Client, user: User, user_token: str, admin_token: str) -> None:
     uri = LINK_SOCIAL.format(social="telegram")
-    hmac = mock_patch("api.internal.socials.services.hmac").start()
+    hmac_ = mock_patch("api.internal.socials.services.hmac").start()
 
     body = {
         "id": 1337228,
@@ -323,7 +316,7 @@ def test_linking_telegram(client: Client, user: User, user_token: str, admin_tok
     }
     instance = Mock()
     instance.hexdigest.return_value = body["hash"]
-    hmac.new.return_value = instance
+    hmac_.new.return_value = instance
 
     assert_linking_social(client, uri, body, body["id"], "telegram_id", user, user_token, admin_token)
 

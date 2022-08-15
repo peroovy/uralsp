@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Optional, Set
 
-from django.db.models import Prefetch, QuerySet
+from django.db.models import Prefetch, Q, QuerySet
 from django.utils.timezone import now
 
 from api.internal.db.models import Competition, Field, FormValue
@@ -81,7 +81,9 @@ class CompetitionRepository(ICompetitionRepository):
         return Competition.objects.select_for_update().get(id=competition_id)
 
     def try_get_with_requests(self, competition_id: int) -> Optional[Competition]:
-        return Competition.objects.filter(id=competition_id).prefetch_related("requests", "requests__participants")
+        return (
+            Competition.objects.filter(id=competition_id).prefetch_related("requests", "requests__participants").first()
+        )
 
     def exists(self, competition_id: int) -> bool:
         return Competition.objects.filter(id=competition_id).exists()
@@ -95,14 +97,16 @@ class CompetitionRepository(ICompetitionRepository):
         if admin_id is not None:
             filters["admins__id"] = admin_id
 
-        if is_opened:
-            filters["registration_start__lte"] = now_
-            filters["registration_end__gt"] = now_
-
         if is_started is not None:
             filters[f"started_at__{'lte' if is_started else 'gt'}"] = now_
 
-        return Competition.objects.filter(**filters)
+        queryset = Competition.objects.filter(**filters)
+
+        if is_opened is not None:
+            opened = Q(registration_start__lte=now_) & Q(registration_end__gt=now_)
+            queryset = queryset.filter(opened if is_opened else ~opened)
+
+        return queryset
 
     def create(
         self,

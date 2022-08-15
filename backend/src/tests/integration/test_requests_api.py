@@ -85,35 +85,6 @@ def test_access_creating(client: Client, user_token: str, admin_token: str, supe
 
 @pytest.mark.integration
 @pytest.mark.django_db
-def test_creating(
-    client: Client, competition: Competition, user: User, user_token: str, field: Field, another_field: Field
-) -> None:
-    competition.fields.add(field, another_field)
-
-    field.is_required = True
-    field.save(update_fields=["is_required"])
-    another_field.is_required = False
-    another_field.save(update_fields=["is_required"])
-
-    body = {"competition": 0, "team_name": "SUPER-PUPER TEAM", "team": []}
-    assert_422(post(client, REQUESTS, user_token, body), error="bad competition", details="Unknown competition")
-    assert not Request.objects.exists()
-
-    body["competition"] = competition.id
-    assert_422(post(client, REQUESTS, user_token, body), error="bad users", details="Team validation error")
-
-    competition.persons_amount = 1
-    competition.save(update_fields=["persons_amount"])
-    body["team"] = [{"user_id": 0, "form": []}]
-    assert_422(post(client, REQUESTS, user_token, body), error="bad users", details="Team validation error")
-
-    competition.persons_amount = 3
-    competition.save(update_fields=["persons_amount"])
-    assert_422(post(client, REQUESTS, user_token, body), error="bad users", details="Team validation error")
-
-
-@pytest.mark.integration
-@pytest.mark.django_db
 def test_creating__unknown_competition(client: Client, user_token: str) -> None:
     body = {"competition": 0, "team_name": "SUPER-PUPER TEAM", "team": []}
     assert_422(post(client, REQUESTS, user_token, body), error="competition", details="Unknown competition")

@@ -130,7 +130,7 @@ class CompetitionService:
     def validate_admins(self, ids: List[int]) -> bool:
         unique = set(ids)
 
-        return len(unique) > 0 and len(unique) == len(ids) and self._user_repo.exist_all_admins(unique)
+        return len(unique) == len(ids) and self._user_repo.exist_all_admins(unique)
 
     def validate_fields(self, ids: List[str]) -> bool:
         unique = set(ids)
@@ -173,9 +173,9 @@ class CompetitionSerializer:
             ]
 
             for participation in request.participation.all():
-                form_fields = dict((form_value.field_id, form_value.value) for form_value in participation.form.all())
+                user_fields = dict((form_value.field_id, form_value.value) for form_value in participation.form.all())
 
-                row += [participation.user_id, *(form_fields.get(expected) or "-" for expected in fields)]
+                row += [participation.user_id, *[user_fields.get(expected) or "-" for expected in fields]]
 
             rows.append(row + ["-"] * (len(headers) - len(row)))
 

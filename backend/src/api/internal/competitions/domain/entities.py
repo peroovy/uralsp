@@ -21,7 +21,6 @@ class CompetitionOut(ModelSchema):
 
 
 class CompetitionIn(ModelSchema):
-    persons_amount: int = F(ge=settings.MIN_PARTICIPANTS_AMOUNT)
     fields: List[str]
     admins: List[int]
 

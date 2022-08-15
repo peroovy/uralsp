@@ -1,6 +1,7 @@
 from io import BytesIO
 from typing import Callable, List
 
+from django.conf import settings
 from django.http import FileResponse, HttpRequest
 from django.utils.timezone import now
 from ninja import Body, Query
@@ -27,10 +28,10 @@ from api.internal.users.domain.services import UserService
 
 
 class CompetitionHandlers:
-    INVALID_DATES = "Invalid dates"
-    INVALID_PERSONS_AMOUNT = "Invalid persons_amount"
-    INVALID_FIELDS = "Invalid field ids"
-    INVALID_ADMINS = "Invalid admin ids"
+    VALIDATION_DATES_ERROR = "Values must be next: now < registration_start < registration_end < started_at"
+    VALIDATION_PERSONS_AMOUNT_ERROR = f"persons_amount must be >= {settings.MIN_PARTICIPANTS_AMOUNT}"
+    VALIDATION_FIELDS_ERROR = "Validation fields error"
+    VALIDATION_ADMINS_ERROR = "Validation admins error"
 
     COMPETITION = "competition"
     BAD_FIELDS = "bad fields"
@@ -130,7 +131,7 @@ class CompetitionHandlers:
             raise ForbiddenException()
 
         if not self._competition_service.validate_fields(data.fields):
-            raise UnprocessableEntityException(self.INVALID_FIELDS, error=self.BAD_FIELDS)
+            raise UnprocessableEntityException(self.VALIDATION_FIELDS_ERROR, error=self.BAD_FIELDS)
 
         self._competition_service.update_form(competition_id, data)
 
@@ -141,7 +142,7 @@ class CompetitionHandlers:
             raise NotFoundException(self.COMPETITION)
 
         if not self._competition_service.validate_admins(data.admins):
-            raise UnprocessableEntityException(self.INVALID_ADMINS, error=self.BAD_ADMINS)
+            raise UnprocessableEntityException(self.VALIDATION_ADMINS_ERROR, error=self.BAD_ADMINS)
 
         self._competition_service.update_admins(competition_id, data)
 
@@ -186,13 +187,13 @@ class CompetitionHandlers:
 
     def _assert_data_in(self, data: CompetitionIn) -> None:
         if not self._competition_service.validate_persons_amount(data):
-            raise UnprocessableEntityException(self.INVALID_PERSONS_AMOUNT, error=self.BAD_PERSONS_AMOUNT)
+            raise UnprocessableEntityException(self.VALIDATION_PERSONS_AMOUNT_ERROR, error=self.BAD_PERSONS_AMOUNT)
 
         if not self._competition_service.validate_dates(data):
-            raise UnprocessableEntityException(self.INVALID_DATES, error=self.BAD_DATES)
+            raise UnprocessableEntityException(self.VALIDATION_DATES_ERROR, error=self.BAD_DATES)
 
         if not self._competition_service.validate_admins(data.admins):
-            raise UnprocessableEntityException(self.INVALID_ADMINS, error=self.BAD_ADMINS)
+            raise UnprocessableEntityException(self.VALIDATION_ADMINS_ERROR, error=self.BAD_ADMINS)
 
         if not self._competition_service.validate_fields(data.fields):
-            raise UnprocessableEntityException(self.INVALID_FIELDS, error=self.BAD_FIELDS)
+            raise UnprocessableEntityException(self.VALIDATION_FIELDS_ERROR, error=self.BAD_FIELDS)

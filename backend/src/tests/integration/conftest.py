@@ -103,6 +103,10 @@ def assert_422(response, error: str, details: str) -> None:
     assert response.status_code == 422 and response.json() == {"error": error, "details": details}
 
 
+def assert_not_422_body(response, error: str, details: str) -> None:
+    assert response.json() != {"error": error, "details": details}
+
+
 def assert_200(response) -> None:
     assert response.status_code == 200 and response.json() == {"details": "Success"}
 
@@ -133,3 +137,7 @@ def put(client: Client, uri: str, token: str = None, body: dict = None) -> Respo
 
 def patch(client: Client, uri: str, token: str = None, body: dict = None) -> Response:
     return client.patch(uri, body, content_type="application/json", **get_headers(token))
+
+
+def delete(client: Client, uri: str, token: str = None) -> Response:
+    return client.delete(uri, content_type="application/json", **get_headers(token))
