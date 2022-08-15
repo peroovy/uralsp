@@ -10,12 +10,14 @@ from api.internal.responses import SuccessResponse
 
 
 class FieldHandlers:
-    FIELD_ALREADY_EXISTS = "Field already exists"
+    FIELD_ALREADY_EXISTS = "Field id already exists"
     FORM_VALUE_EXISTS = "Field value exists"
+    FIELD_EXISTS_IN_FORM = "The field exists in form"
 
     FIELD = "field"
-    FORM_VALUE = "form value"
-    BAD_FIELD_ID = "bad field id"
+    FIELD_VALUE = "field value"
+    UNIQUE_ID = "unique id"
+    FORM = "form"
 
     def __init__(self, field_service: FieldService):
         self._field_service = field_service
@@ -33,7 +35,7 @@ class FieldHandlers:
 
     def create_field(self, request: HttpRequest, data: FieldSchema = Body(...)) -> SuccessResponse:
         if self._field_service.exists(data.id):
-            raise UnprocessableEntityException(self.FIELD_ALREADY_EXISTS, error=self.BAD_FIELD_ID)
+            raise UnprocessableEntityException(self.FIELD_ALREADY_EXISTS, error=self.UNIQUE_ID)
 
         self._field_service.create(data)
 
@@ -48,8 +50,11 @@ class FieldHandlers:
         return SuccessResponse()
 
     def delete_field(self, request: HttpRequest, field_id: str) -> SuccessResponse:
+        if self._field_service.exists_in_form(field_id):
+            raise UnprocessableEntityException(self.FIELD_EXISTS_IN_FORM, error=self.FORM)
+
         if self._field_service.exists_value(field_id):
-            raise UnprocessableEntityException(self.FORM_VALUE_EXISTS, error=self.FORM_VALUE)
+            raise UnprocessableEntityException(self.FORM_VALUE_EXISTS, error=self.FIELD_VALUE)
 
         if not self._field_service.delete(field_id):
             raise NotFoundException(self.FIELD)

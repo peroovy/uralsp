@@ -72,6 +72,10 @@ class ICompetitionRepository(ABC):
     def exists_in_admin(self, user_id: int) -> bool:
         ...
 
+    @abstractmethod
+    def exists_field_in_form(self, field_id: str) -> bool:
+        ...
+
 
 class CompetitionRepository(ICompetitionRepository):
     def try_get(self, competition_id: int) -> Optional[Competition]:
@@ -162,3 +166,6 @@ class CompetitionRepository(ICompetitionRepository):
 
     def exists_in_admin(self, user_id: int) -> bool:
         return Competition.objects.filter(admins__id=user_id).exists()
+
+    def exists_field_in_form(self, field_id: str) -> bool:
+        return Competition.objects.filter(fields__id=field_id).exists()

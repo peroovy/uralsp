@@ -10,7 +10,7 @@ class Competition(models.Model):
     persons_amount = models.IntegerField(validators=[MinValueValidator(1)])
     request_template = models.TextField(null=True)
     link = models.URLField(null=True)
-    fields = models.ManyToManyField("Field")
+    fields = models.ManyToManyField("Field", related_name="competitions")
     admins = models.ManyToManyField("User", related_name="administered_competitions")
 
     class Meta:

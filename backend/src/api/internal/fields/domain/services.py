@@ -5,7 +5,8 @@ from django.db.transaction import atomic
 from django.forms import model_to_dict
 
 from api.internal.db.models import Field
-from api.internal.db.repositories import default_repo, field_repo, form_value_repo
+from api.internal.db.repositories import competition_repo, default_repo, field_repo, form_value_repo
+from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.default import IDefaultRepository
 from api.internal.db.repositories.field import IFieldRepository
 from api.internal.db.repositories.form_value import IFormValueRepository
@@ -14,11 +15,16 @@ from api.internal.fields.domain.entities import FieldSchema, FieldUpdatingIn, Fi
 
 class FieldService:
     def __init__(
-        self, field_repo: IFieldRepository, default_repo: IDefaultRepository, form_value_repo: IFormValueRepository
+        self,
+        field_repo: IFieldRepository,
+        default_repo: IDefaultRepository,
+        form_value_repo: IFormValueRepository,
+        competition_repo: ICompetitionRepository,
     ):
         self._field_repo = field_repo
         self._default_repo = default_repo
         self._form_value_repo = form_value_repo
+        self._competition_repo = competition_repo
 
     def get(self, field_id) -> Optional[Field]:
         return self._field_repo.try_get(field_id)
@@ -58,5 +64,8 @@ class FieldService:
             **model_to_dict(field), default_values=list(field.default_values.values_list("value", flat=True))
         )
 
+    def exists_in_form(self, field_id: str) -> bool:
+        return self._competition_repo.exists_field_in_form(field_id)
 
-field_service = FieldService(field_repo, default_repo, form_value_repo)
+
+field_service = FieldService(field_repo, default_repo, form_value_repo, competition_repo)
