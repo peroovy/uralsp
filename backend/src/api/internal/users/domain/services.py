@@ -5,7 +5,7 @@ from django.db.transaction import atomic
 from django.forms import model_to_dict
 
 from api.internal.db.models import FormValue, User
-from api.internal.db.models.user import Institution, Permissions
+from api.internal.db.models.user import Permissions
 from api.internal.db.repositories import competition_repo, form_value_repo, participation_repo, request_repo, user_repo
 from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.form_value import IFormValueRepository

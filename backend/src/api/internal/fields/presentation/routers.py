@@ -2,9 +2,9 @@ from typing import List
 
 from ninja import Router
 
+from api.internal.auth.presentation.authentications import OnlySuperAdmin
 from api.internal.fields.domain.entities import FieldSchema
 from api.internal.fields.presentation.handlers import FieldHandlers
-from api.internal.middlewares import OnlySuperAdmin
 from api.internal.responses import ErrorResponse, SuccessResponse
 
 

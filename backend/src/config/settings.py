@@ -9,10 +9,15 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
+import logging
+import os.path
 from datetime import timedelta
 from pathlib import Path
 
+import loguru
 from environ import Env
+from loguru import logger
+from notifiers.logging import NotificationHandler
 
 env = Env(DEBUG=(bool, False))
 env.read_env()
@@ -57,6 +62,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
+    "api.middleware.ProcessInternalErrorMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -135,6 +141,46 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# Logging
+
+
+LOGS_PATH = os.path.join(BASE_DIR, "..", "logs", "file.log")
+LOG_FORMAT = "[{time:YYYY-MM-DD HH:mm:ss}][{name}:{function}:{line}][{level}] {message}"
+LOG_ROTATION = "00:00"
+LOG_COMPRESSION = "zip"
+
+LOGGING_TELEGRAM_BOT_TOKEN = env("LOGGING_TELEGRAM_BOT_TOKEN")
+LOGGING_TELEGRAM_CHAT_ID = env("LOGGING_TELEGRAM_CHAT_ID")
+
+if DEBUG:
+    loguru.logger.disable("")
+
+logger.add(
+    LOGS_PATH,
+    level="INFO",
+    filter=lambda record: "telegram" not in record["extra"],
+    format=LOG_FORMAT,
+    rotation=LOG_ROTATION,
+    compression=LOG_COMPRESSION,
+    backtrace=True,
+    diagnose=True,
+    enqueue=True,
+)
+
+logger.add(
+    NotificationHandler(
+        "telegram",
+        defaults={"token": LOGGING_TELEGRAM_BOT_TOKEN, "chat_id": LOGGING_TELEGRAM_CHAT_ID},
+    ),
+    level="ERROR",
+    filter=lambda record: "telegram" in record["extra"],
+    format=LOG_FORMAT,
+    backtrace=False,
+    diagnose=False,
+    enqueue=True,
+)
 
 
 # Social Authentication

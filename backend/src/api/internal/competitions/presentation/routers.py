@@ -2,9 +2,9 @@ from typing import List
 
 from ninja import Router
 
+from api.internal.auth.presentation.authentications import AnyAdmin, OnlySuperAdmin
 from api.internal.competitions.domain.entities import CompetitionDetailsOut, CompetitionOut, FieldDetailsOut, RequestOut
 from api.internal.competitions.presentation.handlers import CompetitionHandlers
-from api.internal.middlewares import AnyAdmin, OnlySuperAdmin
 from api.internal.responses import ErrorResponse, SuccessResponse
 
 

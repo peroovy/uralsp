@@ -2,7 +2,7 @@ from typing import List
 
 from ninja import Router
 
-from api.internal.middlewares import AnyAdmin, AnyUser
+from api.internal.auth.presentation.authentications import AnyAdmin, AnyUser
 from api.internal.responses import ErrorResponse, SuccessResponse
 from api.internal.users.domain.entities import FormValueOut, FullProfileOut, ProfileOut
 from api.internal.users.presentation.handlers import CurrentUserHandlers, UserHandlers

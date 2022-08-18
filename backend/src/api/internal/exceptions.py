@@ -51,12 +51,13 @@ class ServerException(APIException):
 
 
 class UnauthorizedException(APIException):
-    def __init__(self, message: str = "Unauthorized"):
+    def __init__(self, error: str, message: str = "Unauthorized"):
         self.message = message
+        self.error = error
 
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(ErrorResponse(error="bad token", details=exc.message), status=401)
+        return Response(ErrorResponse(error=exc.error, details=exc.message), status=401)
 
 
 class ForbiddenException(APIException):

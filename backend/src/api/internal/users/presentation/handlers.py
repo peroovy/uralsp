@@ -8,12 +8,7 @@ from ninja.pagination import LimitOffsetPagination, paginate
 
 from api.internal.db.models import User
 from api.internal.db.repositories import google_repo, telegram_repo, vk_repo
-from api.internal.exceptions import (
-    NotFoundException,
-    ServerException,
-    UnauthorizedException,
-    UnprocessableEntityException,
-)
+from api.internal.exceptions import NotFoundException, ServerException, UnprocessableEntityException
 from api.internal.responses import SuccessResponse
 from api.internal.socials.entities import GoogleCredentialsIn, TelegramCredentialsIn, VKCredentialsIn
 from api.internal.socials.services import GoogleAuth, SocialAuthStatus, SocialBase, TelegramAuth, VKAuth
@@ -56,8 +51,8 @@ class UserHandlers:
         self._user_serializer = document_service
 
     @paginate(LimitOffsetPagination)
-    def get_users(self, request: HttpRequest, filers: Filters = Query(...)) -> List[ProfileOut]:
-        return [ProfileOut.from_orm(user) for user in self._user_service.get_filtered(filers)]
+    def get_users(self, request: HttpRequest, filters: Filters = Query(...)) -> List[ProfileOut]:
+        return [ProfileOut.from_orm(user) for user in self._user_service.get_filtered(filters)]
 
     def get_user(self, request: HttpRequest, user_id: int) -> FullProfileOut:
         if not (user := self._user_service.get_user(user_id)):

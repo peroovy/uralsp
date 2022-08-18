@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime, timedelta
 
+import loguru
 import pytest
 
 from api.internal.db.models import Competition, Field, Participation, Request, User
@@ -8,7 +9,7 @@ from api.internal.db.models.user import Permissions
 
 
 def pytest_configure(config):
-    logging.disable()
+    loguru.logger.disable("")
 
 
 AFTER_NOW = [
