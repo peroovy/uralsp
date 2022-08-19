@@ -19,7 +19,7 @@ from environ import Env
 from loguru import logger
 from notifiers.logging import NotificationHandler
 
-env = Env(DEBUG=(bool, False))
+env = Env()
 env.read_env()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -33,7 +33,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env("DEBUG")
+DEBUG = env("DEBUG", bool, False)
 
 ALLOWED_HOSTS = ["*"]
 
@@ -92,11 +92,11 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": env("POSTGRES_DB"),
-        "USER": env("POSTGRES_USER"),
-        "PASSWORD": env("POSTGRES_PASSWORD"),
-        "HOST": env("POSTGRES_HOST"),
-        "PORT": env("POSTGRES_PORT"),
+        "NAME": env("POSTGRES_DB", str),
+        "USER": env("POSTGRES_USER", str),
+        "PASSWORD": env("POSTGRES_PASSWORD", str),
+        "HOST": env("POSTGRES_HOST", str),
+        "PORT": env("POSTGRES_PORT", int),
     }
 }
 
@@ -151,8 +151,9 @@ LOG_FORMAT = "[{time:YYYY-MM-DD HH:mm:ss}][{name}:{function}:{line}][{level}] {m
 LOG_ROTATION = "00:00"
 LOG_COMPRESSION = "zip"
 
-LOGGING_TELEGRAM_BOT_TOKEN = env("LOGGING_TELEGRAM_BOT_TOKEN")
-LOGGING_TELEGRAM_CHAT_ID = env("LOGGING_TELEGRAM_CHAT_ID")
+LOGGING_TELEGRAM_BOT_TOKEN = env("LOGGING_TELEGRAM_BOT_TOKEN", str)
+LOGGING_TELEGRAM_CHAT_ID = env("LOGGING_TELEGRAM_CHAT_ID", str)
+TELEGRAM_CHARACTERS_LIMIT = 4096
 
 if DEBUG:
     loguru.logger.disable("")
@@ -190,11 +191,11 @@ REFRESH_TOKEN_COOKIE = "sp_rt"
 ACCESS_TOKEN_TTL = timedelta(minutes=30)
 REFRESH_TOKEN_TTL = timedelta(days=10)
 
-TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN")
+TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", str)
 TELEGRAM_DATA_LIFETIME = timedelta(minutes=30)
 
-VKONTAKTE_APP_ID = env("VKONTAKTE_APP_ID")
-VKONTAKTE_APP_SECRET_KEY = env("VKONTAKTE_APP_SECRET_KEY")
+VKONTAKTE_APP_ID = env("VKONTAKTE_APP_ID", str)
+VKONTAKTE_APP_SECRET_KEY = env("VKONTAKTE_APP_SECRET_KEY", str)
 
 
 # CORS

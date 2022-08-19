@@ -53,7 +53,7 @@ class IUserRepository(ABC):
         ...
 
     @abstractmethod
-    def exists_email(self, owner_id: int, email: str) -> bool:
+    def exists_email_from_others(self, owner_id: int, email: str) -> bool:
         ...
 
 
@@ -115,5 +115,5 @@ class UserRepository(IUserRepository):
 
         return len(set(permissions)) == 1
 
-    def exists_email(self, owner_id: int, email: str) -> bool:
+    def exists_email_from_others(self, owner_id: int, email: str) -> bool:
         return User.objects.filter(~Q(id=owner_id) & Q(email=email)).exists()

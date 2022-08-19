@@ -1,9 +1,12 @@
+import inspect
+import traceback
 from typing import Callable
 
 from django.conf import settings
 from django.http import Http404, HttpRequest, HttpResponse
 from loguru import logger
 from ninja.responses import Response
+
 from api.internal.responses import ErrorResponse
 
 
@@ -33,6 +36,8 @@ class ProcessInternalErrorMiddleware:
         return Response(ErrorResponse(details=self.NOT_FOUND_RESOURCE, error=self.BAD_URI), status=404)
 
     def handle_500(self, request: HttpRequest, exception: Exception) -> Response:
-        logger.bind(telegram=True).error(exception)
+        logger.bind(telegram=True).error(
+            "\n".join([str(exception), traceback.format_exc()[: settings.TELEGRAM_CHARACTERS_LIMIT]])
+        )
 
         return Response(ErrorResponse(details=self.UNHANDLED_SERVER_EXCEPTION, error=self.INTERNAL), status=500)

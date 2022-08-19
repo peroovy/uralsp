@@ -638,7 +638,7 @@ def test_merging__requests_intersect(
     request = Request.objects.create(owner=another, competition=user_request.competition)
 
     response = post(client, MERGE, super_admin_token, get_body_for_merging(user.id, another.id))
-    assert_422(response, error="requests", details="Request intersects")
+    assert_422(response, error="requests", details="Exists intersection of requests")
 
     assert User.objects.get(pk=user.pk) == user
     assert User.objects.get(pk=another.pk) == another
@@ -655,7 +655,7 @@ def test_merging__participation_intersect(
     participation_another = Participation.objects.create(request=participation.request, user=another)
 
     response = post(client, MERGE, super_admin_token, get_body_for_merging(user.id, another.id))
-    assert_422(response, error="participation", details="Participation intersects")
+    assert_422(response, error="participation", details="Exists intersection of participation")
 
     assert User.objects.get(pk=user.pk) == user
     assert User.objects.get(pk=another.pk) == another

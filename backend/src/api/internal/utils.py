@@ -1,6 +1,7 @@
 import csv
 from io import BytesIO, StringIO
 from typing import Dict, Iterable, Optional
+from uuid import UUID
 
 from openpyxl.workbook import Workbook
 
@@ -34,3 +35,7 @@ def serialize_to_csv(rows: Iterable[Iterable[str]], delimiter: str = ";") -> Byt
 
     buffer.seek(0)
     return BytesIO(buffer.read().encode("utf-8"))
+
+
+def log(handler_name: str, operation_id: UUID, message: str, **kwargs) -> str:
+    return f"{handler_name.upper()} {operation_id}: {message.capitalize()} {' '.join(f'{key}={value}' for key, value in kwargs.items())}"

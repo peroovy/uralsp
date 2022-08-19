@@ -4,12 +4,6 @@ dev:
 run:
 	cd src && pipenv run gunicorn -c config/gunicorn.conf.py config.wsgi:application
 
-super:
-	pipenv run python src/manage.py makesuper ${id}
-
-admin:
-	pipenv run python src/manage.py makeadmin ${id}
-
 migration:
 	pipenv run python src/manage.py makemigrations -n ${n}
 
@@ -46,3 +40,15 @@ up:
 
 down:
 	docker-compose down
+
+
+# Managements
+
+super:
+	pipenv run python src/manage.py makesuper ${id}
+
+admin:
+	pipenv run python src/manage.py makeadmin ${id}
+
+token:
+	pipenv run python src/manage.py token ${id}

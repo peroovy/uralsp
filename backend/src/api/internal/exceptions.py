@@ -51,7 +51,7 @@ class ServerException(APIException):
 
 
 class UnauthorizedException(APIException):
-    def __init__(self, error: str, message: str = "Unauthorized"):
+    def __init__(self, error: str = "bad token", message: str = "Unauthorized"):
         self.message = message
         self.error = error
 
