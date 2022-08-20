@@ -19,7 +19,7 @@ class BadRequestException(APIException):
 
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(ErrorResponse(details=exc.message), status=400)
+        return Response(ErrorResponse(error="bad request", details=exc.message), status=400)
 
 
 class NotFoundException(APIException):

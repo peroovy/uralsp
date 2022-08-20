@@ -13,6 +13,7 @@ from tests.integration.conftest import (
     PHONE__IS_CORRECT,
     TokenOwner,
     assert_200,
+    assert_400,
     assert_403,
     assert_404,
     assert_422,
@@ -614,8 +615,12 @@ def assert_merging_default_users(
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_merging__bad_ids(client: Client, user: User, super_admin_token: str) -> None:
-    for from_id, to_id in [[0, 0], [0, user.id], [user.id, 0]]:
-        assert_404(post(client, MERGE, super_admin_token, get_body_for_merging(from_id, to_id)), what="users")
+    for from_id, to_id in [[0, 0], [0, user.id], [user.id, 0], [user.id, user.id]]:
+        response = post(client, MERGE, super_admin_token, get_body_for_merging(from_id, to_id))
+
+        assert_400(response, "Merging self is not allowed") if from_id == to_id else assert_404(
+            response, what="any users"
+        )
 
     assert User.objects.get(pk=user.pk) == user
 

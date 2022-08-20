@@ -91,6 +91,10 @@ def assert_403(response) -> None:
     assert response.status_code == 403 and response.json() == {"error": "forbidden", "details": "Permission denied"}
 
 
+def assert_400(response, message: str = "Check entered values") -> None:
+    assert response.status_code == 400 and response.json() == {"error": "bad request", "details": message}
+
+
 def assert_404(response, what: str) -> None:
     assert response.status_code == 404 and response.json() == {"error": "not found", "details": f"Not found {what}"}
 

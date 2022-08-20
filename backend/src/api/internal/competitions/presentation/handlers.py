@@ -1,9 +1,11 @@
+import uuid
 from io import BytesIO
 from typing import Callable, List
 
 from django.conf import settings
 from django.http import FileResponse, HttpRequest
 from django.utils.timezone import now
+from loguru import logger
 from ninja import Body, Query
 
 from api.internal.competitions.domain.entities import (
@@ -22,9 +24,24 @@ from api.internal.competitions.domain.services import CompetitionSerializer, Com
 from api.internal.db.models import Competition
 from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException
 from api.internal.fields.domain.services import FieldService
+from api.internal.logging import catch, log
 from api.internal.requests.domain.services import RequestService
 from api.internal.responses import SuccessResponse
 from api.internal.users.domain.services import UserService
+
+CREATING_COMPETITION = "creating competition"
+UPDATING_COMPETITION = "updating competition"
+UPDATING_FORM = "updating form"
+UPDATING_ADMINS = "updating admins"
+
+STARTING = "Starting"
+OPERATION_IS_OVER = "Operation is over"
+
+OPERATION_IS_NOT_OVER__PERMISSION = "Operation is not over (permission denied)"
+OPERATION_IS_NOT_OVER__FIELDS = "Operation is not over (invalid fields)"
+OPERATION_IS_NOT_OVER__ADMINS = "Operation is not over (invalid admins)"
+OPERATION_IS_NOT_OVER__PERSONS_AMOUNT = "Operation is not over (invalid amount of persons)"
+OPERATION_IS_NOT_OVER__DATES = "Operation is not over (invalid dates)"
 
 
 class CompetitionHandlers:
@@ -73,10 +90,17 @@ class CompetitionHandlers:
         return self._competition_service.get_form_details(competition_id)
 
     def create_competition(self, request: HttpRequest, data: CompetitionIn = Body(...)) -> SuccessResponse:
-        self._assert_data_in(data)
+        operation_id = uuid.uuid4()
+        log_kwargs = {"creator_id": request.user.id, "permission": request.user.permission} | data.dict()
 
-        self._competition_service.create(data)
+        logger.info(log(CREATING_COMPETITION, operation_id, STARTING, **log_kwargs))
 
+        self._assert_competition_in(data, CREATING_COMPETITION, operation_id)
+
+        with catch(CREATING_COMPETITION, operation_id, **log_kwargs):
+            self._competition_service.create(data)
+
+        logger.success(log(CREATING_COMPETITION, operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
 
     def update_competition(
@@ -85,13 +109,25 @@ class CompetitionHandlers:
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
+        operation_id, updater_kwargs = uuid.uuid4(), {
+            "competition_id": competition_id,
+            "updater_id": request.user.id,
+            "permission": request.user.permission,
+        }
+        log_kwargs = updater_kwargs | data.dict()
+
+        logger.info(log(UPDATING_COMPETITION, operation_id, STARTING, **log_kwargs))
+
         if not self._competition_service.has_access(competition_id, request.user):
+            logger.success(log(UPDATING_COMPETITION, operation_id, OPERATION_IS_NOT_OVER__PERMISSION, **updater_kwargs))
             raise ForbiddenException()
 
-        self._assert_data_in(data)
+        self._assert_competition_in(data, UPDATING_COMPETITION, operation_id)
 
-        self._competition_service.update(competition_id, data)
+        with catch(UPDATING_COMPETITION, operation_id, **log_kwargs):
+            self._competition_service.update(competition_id, data)
 
+        logger.success(log(UPDATING_COMPETITION, operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
 
     def delete_competition(self, request: HttpRequest, competition_id: int) -> SuccessResponse:
@@ -127,25 +163,51 @@ class CompetitionHandlers:
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
+        operation_id, updater_kwargs = uuid.uuid4(), {
+            "competition_id": competition_id,
+            "updater_id": request.user.id,
+            "permission": request.user.permission,
+        }
+        log_kwargs = updater_kwargs | data.dict()
+        logger.info(log(UPDATING_FORM, operation_id, STARTING, **log_kwargs))
+
         if not self._competition_service.has_access(competition_id, request.user):
+            logger.success(log(UPDATING_FORM, operation_id, OPERATION_IS_NOT_OVER__PERMISSION, **updater_kwargs))
             raise ForbiddenException()
 
         if not self._competition_service.validate_fields(data.fields):
+            logger.success(log(UPDATING_FORM, operation_id, OPERATION_IS_NOT_OVER__FIELDS, field_ids=data.fields))
             raise UnprocessableEntityException(self.VALIDATION_FIELDS_ERROR, error=self.BAD_FIELDS)
 
-        self._competition_service.update_form(competition_id, data)
+        with catch(UPDATING_FORM, operation_id, **log_kwargs):
+            self._competition_service.update_form(competition_id, data)
 
+        logger.success(log(UPDATING_FORM, operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
 
     def update_admins(self, request: HttpRequest, competition_id: int, data: AdminsIn = Body(...)) -> SuccessResponse:
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
+        operation_id, log_kwargs = (
+            uuid.uuid4(),
+            {
+                "competition_id": competition_id,
+                "updater_id": request.user.id,
+                "permission": request.user.permission,
+            }
+            | data.dict(),
+        )
+        logger.info(log(UPDATING_ADMINS, operation_id, STARTING, **log_kwargs))
+
         if not self._competition_service.validate_admins(data.admins):
+            logger.success(log(UPDATING_ADMINS, operation_id, OPERATION_IS_NOT_OVER__ADMINS, admin_ids=data.admins))
             raise UnprocessableEntityException(self.VALIDATION_ADMINS_ERROR, error=self.BAD_ADMINS)
 
-        self._competition_service.update_admins(competition_id, data)
+        with catch(UPDATING_ADMINS, operation_id, **log_kwargs):
+            self._competition_service.update_admins(competition_id, data)
 
+        logger.success(log(UPDATING_ADMINS, operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
 
     def update_request_template(
@@ -185,15 +247,35 @@ class CompetitionHandlers:
             ),
         )
 
-    def _assert_data_in(self, data: CompetitionIn) -> None:
+    def _assert_competition_in(self, data: CompetitionIn, handler_name: str, operation_id: uuid.UUID) -> None:
         if not self._competition_service.validate_persons_amount(data):
+            logger.success(
+                log(
+                    handler_name,
+                    operation_id,
+                    OPERATION_IS_NOT_OVER__PERSONS_AMOUNT,
+                    persons_amount=data.persons_amount,
+                )
+            )
             raise UnprocessableEntityException(self.VALIDATION_PERSONS_AMOUNT_ERROR, error=self.BAD_PERSONS_AMOUNT)
 
         if not self._competition_service.validate_dates(data):
+            logger.success(
+                log(
+                    handler_name,
+                    operation_id,
+                    OPERATION_IS_NOT_OVER__DATES,
+                    registration_start=data.registration_start,
+                    registration_end=data.registration_end,
+                    started_at=data.started_at,
+                )
+            )
             raise UnprocessableEntityException(self.VALIDATION_DATES_ERROR, error=self.BAD_DATES)
 
         if not self._competition_service.validate_admins(data.admins):
+            logger.success(log(handler_name, operation_id, OPERATION_IS_NOT_OVER__ADMINS, admin_ids=data.admins))
             raise UnprocessableEntityException(self.VALIDATION_ADMINS_ERROR, error=self.BAD_ADMINS)
 
         if not self._competition_service.validate_fields(data.fields):
+            logger.success(log(handler_name, operation_id, OPERATION_IS_NOT_OVER__FIELDS, field_ids=data.fields))
             raise UnprocessableEntityException(self.VALIDATION_FIELDS_ERROR, error=self.BAD_FIELDS)

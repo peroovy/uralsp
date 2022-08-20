@@ -1,3 +1,4 @@
+from collections import namedtuple
 from io import BytesIO
 from typing import Iterable, List, Optional, Set, Union
 
@@ -14,6 +15,12 @@ from api.internal.db.repositories.request import IRequestRepository
 from api.internal.db.repositories.user import IUserRepository
 from api.internal.users.domain.entities import CurrentProfileIn, Filters, MergingIn, ProfileIn
 from api.internal.utils import serialize_to_csv, serialize_to_xlsx
+
+
+class MergedUsers:
+    def __init__(self, from_user: User, to_user: User):
+        self.from_user = from_user
+        self.to_user = to_user
 
 
 class UserService:
@@ -83,28 +90,28 @@ class MergingService:
         self._request_repo = request_repo
         self._participation_repo = participation_repo
 
-    def exist_users(self, users: MergingIn) -> bool:
-        return self._user_repo.exist_all(users.from_id, users.to_id)
+    def try_get(self, data: MergingIn) -> Optional[MergedUsers]:
+        users_ = dict((user.id, user) for user in self._user_repo.get_all({data.from_id, data.to_id}))
+        from_user, to_user = users_.get(data.from_id), users_.get(data.to_id)
 
-    def equal_permissions(self, users: MergingIn) -> bool:
-        return self._user_repo.equal_permissions(users.from_id, users.to_id)
+        return None if from_user is None or to_user is None else MergedUsers(from_user, to_user)
 
-    def exists_requests_intersection(self, users: MergingIn) -> bool:
-        return self._request_repo.exists_intersection(users.from_id, users.to_id)
+    def exists_requests_intersection(self, data: MergingIn) -> bool:
+        return self._request_repo.exists_intersection(data.from_id, data.to_id)
 
-    def exists_participation_intersection(self, users: MergingIn) -> bool:
-        return self._participation_repo.exists_intersection(users.from_id, users.to_id)
+    def exists_participation_intersection(self, data: MergingIn) -> bool:
+        return self._participation_repo.exists_intersection(data.from_id, data.to_id)
 
     @atomic
-    def merge(self, users: MergingIn) -> None:
-        self._participation_repo.migrate(users.from_id, users.to_id)
-        self._request_repo.migrate(users.from_id, users.to_id)
+    def merge(self, data: MergingIn) -> None:
+        self._participation_repo.migrate(data.from_id, data.to_id)
+        self._request_repo.migrate(data.from_id, data.to_id)
 
-        from_user = self._user_repo.try_get(users.from_id)
+        from_user = self._user_repo.try_get(data.from_id)
         migrated_data = model_to_dict(from_user, exclude=["id"])
         from_user.delete()
 
-        self._user_repo.update(users.to_id, **migrated_data)
+        self._user_repo.update(data.to_id, **migrated_data)
 
 
 class UserSerializer:

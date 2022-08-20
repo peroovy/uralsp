@@ -2,6 +2,7 @@ import uuid
 from io import BytesIO
 from typing import Callable, List
 
+from django.conf import settings
 from django.http import FileResponse, HttpRequest
 from django.utils.timezone import now
 from loguru import logger
@@ -10,7 +11,13 @@ from ninja.pagination import LimitOffsetPagination, paginate
 
 from api.internal.db.models import User
 from api.internal.db.repositories import google_repo, telegram_repo, vk_repo
-from api.internal.exceptions import NotFoundException, ServerException, UnprocessableEntityException
+from api.internal.exceptions import (
+    BadRequestException,
+    NotFoundException,
+    ServerException,
+    UnprocessableEntityException,
+)
+from api.internal.logging import catch, log
 from api.internal.responses import SuccessResponse
 from api.internal.socials.entities import GoogleCredentialsIn, TelegramCredentialsIn, VKCredentialsIn
 from api.internal.socials.services import GoogleAuth, SocialAuthStatus, SocialBase, TelegramAuth, VKAuth
@@ -24,12 +31,21 @@ from api.internal.users.domain.entities import (
     ProfileOut,
 )
 from api.internal.users.domain.services import MergingService, UserSerializer, UserService
-from api.internal.utils import log
 
 MERGING_USERS = "merging users"
 UPDATING_USER = "updating user"
 UPDATING_AUTH_USER = "updating auth user"
-INTERNAL_ERROR = "Internal error"
+
+STARTING = "Starting"
+OPERATION_IS_OVER = "Operation is over"
+
+UPDATING_IS_NOT_OVER__SELF = "Updating is not over (updating self)"
+UPDATING_IS_NOT_OVER__PERMISSION = "Updating is not over (validation permission)"
+UPDATING_IS_NOT_OVER__EMAIL = "Updating is not over (bad email)"
+
+MERGING_IS_NOT_OVER__PERMISSION = "Merging is not over (not equal permissions)"
+MERGING_IS_NOT_OVER__REQUESTS = "Merging is not over (exists intersection of requests)"
+MERGING_IS_NOT_OVER__PARTICIPATION = "Merging is not over (exists intersection of participation)"
 
 
 class UserHandlers:
@@ -39,8 +55,11 @@ class UserHandlers:
     EMAIL_ALREADY_EXISTS = "The email already exists"
     UPDATING_SELF_IS_NOT_ALLOWED = "Updating self is not allowed"
     PERMISSION_CANNOT_BE_UPDATED = "The permission cannot be updated"
+    MERGING_SELF_IS_NOT_ALLOWED = "Merging self is not allowed"
 
     BAD_USER = "bad user"
+    BAD_USERS = "bad users"
+    ANY_USERS = "any users"
     BAD_PERMISSIONS = "bad permissions"
     BAD_PERMISSION = "bad permission"
     BAD_EMAIL = "bad email"
@@ -72,34 +91,48 @@ class UserHandlers:
         if not (user := self._user_service.get_user(user_id)):
             raise NotFoundException(self.USER)
 
-        operation_id, log_args = uuid.uuid4(), {
+        operation_id, users_kwargs = uuid.uuid4(), {
             "updater_id": request.user.id,
             "updater_permission": request.user.permission,
             "target_id": user.id,
             "target_permission": user.permission,
         }
-        logger.info(log(UPDATING_USER, operation_id, "Starting update", **log_args))
+        log_kwargs = users_kwargs | data.dict()
+        logger.info(log(UPDATING_USER, operation_id, STARTING, **log_kwargs))
 
-        if request.user.id == user.id:
-            logger.success(log(UPDATING_USER, operation_id, "Updating is not over (updating self)", **log_args))
+        if request.user.pk == user.pk:
+            logger.success(log(UPDATING_USER, operation_id, UPDATING_IS_NOT_OVER__SELF, **users_kwargs))
             raise UnprocessableEntityException(self.UPDATING_SELF_IS_NOT_ALLOWED, error=self.BAD_USER)
 
         if not self._user_service.can_update_permission(request.user, user, data.permission):
-            logger.success(log(UPDATING_USER, operation_id, "Updating is not over (validation permission)", **log_args))
+            logger.success(
+                log(
+                    UPDATING_USER,
+                    operation_id,
+                    UPDATING_IS_NOT_OVER__PERMISSION,
+                    **users_kwargs,
+                    permission=data.permission,
+                )
+            )
             raise UnprocessableEntityException(self.PERMISSION_CANNOT_BE_UPDATED, error=self.BAD_PERMISSION)
 
         if self._user_service.exists_email_from_others(user, data.email):
             logger.success(
-                log(UPDATING_USER, operation_id, "Updating is not over (bad email)", **log_args, email=data.email)
+                log(
+                    UPDATING_USER,
+                    operation_id,
+                    UPDATING_IS_NOT_OVER__EMAIL,
+                    target_id=user.id,
+                    target_email=user.email,
+                    email=data.email,
+                )
             )
             raise UnprocessableEntityException(self.EMAIL_ALREADY_EXISTS, error=self.BAD_EMAIL)
 
-        with logger.catch(
-            reraise=True, message=log(UPDATING_USER, operation_id, INTERNAL_ERROR, **log_args, **data.dict())
-        ):
+        with catch(UPDATING_USER, operation_id, **log_kwargs):
             self._user_service.update(user, data)
 
-        logger.success(log(UPDATING_USER, operation_id, "Updating is over", **log_args))
+        logger.success(log(UPDATING_USER, operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
 
     def get_users_xlsx(self, request: HttpRequest, filters: Filters = Query(...)) -> FileResponse:
@@ -108,38 +141,48 @@ class UserHandlers:
     def get_users_csv(self, request: HttpRequest, filters: Filters = Query(...)) -> FileResponse:
         return self._get_users_in_file(filters, self._user_serializer.to_csv, extension="csv")
 
-    def merge_users(self, request: HttpRequest, users: MergingIn = Body(...)) -> SuccessResponse:
-        if not self._merging_service.exist_users(users):
-            raise NotFoundException(self.USERS)
+    def merge_users(self, request: HttpRequest, data: MergingIn = Body(...)) -> SuccessResponse:
+        if data.from_id == data.to_id:
+            raise BadRequestException(self.MERGING_SELF_IS_NOT_ALLOWED)
 
-        operation_id, log_args = uuid.uuid4(), {"from_id": users.from_id, "to_id": users.to_id}
-        logger.info(log(MERGING_USERS, operation_id, "Starting", **log_args))
+        if not (users := self._merging_service.try_get(data)):
+            raise NotFoundException(what=self.ANY_USERS)
 
-        if not self._merging_service.equal_permissions(users):
-            logger.success(log(MERGING_USERS, operation_id, "Merging is not over (not equal permissions)", **log_args))
-            raise UnprocessableEntityException(self.NOT_EQUAL_PERMISSIONS, error=self.BAD_PERMISSIONS)
+        operation_id, ids_log_kwargs = uuid.uuid4(), {"from_id": data.from_id, "to_id": data.to_id}
+        logger.info(log(MERGING_USERS, operation_id, STARTING, **ids_log_kwargs))
 
-        if self._merging_service.exists_requests_intersection(users):
-            logger.success(
-                log(MERGING_USERS, operation_id, "Merging is not over (exists intersection of requests)", **log_args)
-            )
-            raise UnprocessableEntityException(self.INTERSECTION_REQUESTS, error=self.REQUESTS)
-
-        if self._merging_service.exists_participation_intersection(users):
+        if users.from_user.permission != users.to_user.permission:
             logger.success(
                 log(
                     MERGING_USERS,
                     operation_id,
-                    "Merging is not over (exists intersection of participation)",
-                    **log_args,
+                    MERGING_IS_NOT_OVER__PERMISSION,
+                    **ids_log_kwargs,
+                    permission_from=users.from_user.permission,
+                    permission_to=users.to_user.permission,
+                )
+            )
+            raise UnprocessableEntityException(self.NOT_EQUAL_PERMISSIONS, error=self.BAD_PERMISSIONS)
+
+        if self._merging_service.exists_requests_intersection(data):
+            logger.success(log(MERGING_USERS, operation_id, MERGING_IS_NOT_OVER__REQUESTS, **ids_log_kwargs))
+            raise UnprocessableEntityException(self.INTERSECTION_REQUESTS, error=self.REQUESTS)
+
+        if self._merging_service.exists_participation_intersection(data):
+            logger.success(
+                log(
+                    MERGING_USERS,
+                    operation_id,
+                    MERGING_IS_NOT_OVER__PARTICIPATION,
+                    **ids_log_kwargs,
                 )
             )
             raise UnprocessableEntityException(self.INTERSECTION_PARTICIPATION, error=self.PARTICIPATION)
 
-        with logger.catch(reraise=True, message=log(MERGING_USERS, operation_id, INTERNAL_ERROR, **log_args)):
-            self._merging_service.merge(users)
+        with catch(MERGING_USERS, operation_id, **ids_log_kwargs):
+            self._merging_service.merge(data)
 
-        logger.success(log(MERGING_USERS, operation_id, "Merging is over", **log_args))
+        logger.success(log(MERGING_USERS, operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
 
     def _get_users_in_file(
@@ -156,14 +199,12 @@ class UserHandlers:
 
 
 class CurrentUserHandlers:
-    MIN_SOCIALS_AMOUNT = 1
-
     EMAIL_ALREADY_EXISTS = "The email already exists"
     INVALID_CREDENTIALS = "Invalid credentials"
     BAD_EMAIL = "bad email"
 
     SOCIAL_CONNECTING = "Failed to get user information"
-    MIN_AMOUNT_SOCIALS = f"Min amount of socials is {MIN_SOCIALS_AMOUNT}"
+    MIN_AMOUNT_SOCIALS = f"Min amount of socials is {settings.MIN_SOCIALS_AMOUNT}"
     NOT_FOUND_ANY_FIELD_IDS = "Any field ids were not found"
     SOCIAL_ID_ALREADY_EXISTS = "Social id already exists"
 
@@ -178,20 +219,25 @@ class CurrentUserHandlers:
         return FullProfileOut.from_orm(request.user)
 
     def update_profile(self, request: HttpRequest, data: CurrentProfileIn = Body(...)) -> SuccessResponse:
-        operation_id, log_args = uuid.uuid4(), {"id": request.user.id}
+        operation_id, user = uuid.uuid4(), request.user
 
-        if self._user_service.exists_email_from_others(request.user, data.email):
+        if self._user_service.exists_email_from_others(user, data.email):
             logger.success(
-                log(UPDATING_AUTH_USER, operation_id, "Updating is not over (bad email)", **log_args, email=data.email)
+                log(
+                    UPDATING_AUTH_USER,
+                    operation_id,
+                    UPDATING_IS_NOT_OVER__EMAIL,
+                    id=user.id,
+                    email=user.email,
+                    new_email=data.email,
+                )
             )
             raise UnprocessableEntityException(self.EMAIL_ALREADY_EXISTS, error=self.BAD_EMAIL)
 
-        with logger.catch(
-            reraise=True, message=log(UPDATING_AUTH_USER, operation_id, INTERNAL_ERROR, **log_args, **data.dict())
-        ):
+        with catch(UPDATING_AUTH_USER, operation_id, id=user.id, **data.dict()):
             self._user_service.update(request.user, data)
 
-        logger.success(log(UPDATING_AUTH_USER, operation_id, "Updating is over", **log_args))
+        logger.success(log(UPDATING_AUTH_USER, operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
 
     def get_form_values(self, request: HttpRequest, field_id: List[str] = Query(...)) -> List[FormValueOut]:
@@ -233,7 +279,7 @@ class CurrentUserHandlers:
         raise ServerException()
 
     def _unlink_social(self, request: HttpRequest, social: SocialBase) -> SuccessResponse:
-        if self._user_service.get_socials_amount(request.user.id) <= self.MIN_SOCIALS_AMOUNT:
+        if self._user_service.get_socials_amount(request.user.id) <= settings.MIN_SOCIALS_AMOUNT:
             raise UnprocessableEntityException(self.MIN_AMOUNT_SOCIALS, error=self.SOCIALS_AMOUNT)
 
         social.unlink(request.user.id)

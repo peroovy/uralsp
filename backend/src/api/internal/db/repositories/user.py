@@ -49,11 +49,11 @@ class IUserRepository(ABC):
         ...
 
     @abstractmethod
-    def equal_permissions(self, user_id_1: int, user_id_2: int) -> bool:
+    def exists_email_from_others(self, owner_id: int, email: str) -> bool:
         ...
 
     @abstractmethod
-    def exists_email_from_others(self, owner_id: int, email: str) -> bool:
+    def get_all(self, ids: Set[int]) -> QuerySet[User]:
         ...
 
 
@@ -110,10 +110,8 @@ class UserRepository(IUserRepository):
 
         return len(ids) > 0 and len(ids) == User.objects.filter(id__in=ids).count()
 
-    def equal_permissions(self, user_id_1: int, user_id_2: int) -> bool:
-        permissions = User.objects.filter(id__in=[user_id_1, user_id_2]).values_list("permission", flat=True)
-
-        return len(set(permissions)) == 1
-
     def exists_email_from_others(self, owner_id: int, email: str) -> bool:
         return User.objects.filter(~Q(id=owner_id) & Q(email=email)).exists()
+
+    def get_all(self, ids: Set[int]) -> QuerySet[User]:
+        return User.objects.filter(id__in=ids)
