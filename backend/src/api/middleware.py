@@ -1,4 +1,3 @@
-import inspect
 import traceback
 from typing import Callable
 
@@ -14,7 +13,7 @@ class ProcessInternalErrorMiddleware:
     INTERNAL = "internal"
     BAD_URI = "bad uri"
 
-    UNHANDLED_SERVER_EXCEPTION = "Unhandled server exception"
+    INTERNAL_SERVER_ERROR = "Internal server error"
     NOT_FOUND_RESOURCE = "Not found resource"
 
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
@@ -36,9 +35,7 @@ class ProcessInternalErrorMiddleware:
         return Response(ErrorResponse(details=self.NOT_FOUND_RESOURCE, error=self.BAD_URI), status=404)
 
     def handle_500(self, request: HttpRequest, exception: Exception) -> Response:
-        exc = traceback.format_exc()
+        logger.bind(telegram=True).error(str(exception)[: settings.TELEGRAM_CHARACTERS_LIMIT])
+        logger.error(traceback.format_exc())
 
-        logger.bind(telegram=True).error("\n".join([str(exception), exc[: settings.TELEGRAM_CHARACTERS_LIMIT]]))
-        logger.error(exc)
-
-        return Response(ErrorResponse(details=self.UNHANDLED_SERVER_EXCEPTION, error=self.INTERNAL), status=500)
+        return Response(ErrorResponse(details=self.INTERNAL_SERVER_ERROR, error=self.INTERNAL), status=500)
