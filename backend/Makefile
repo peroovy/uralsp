@@ -23,23 +23,29 @@ check_lint:
 sql:
 	pipenv run python src/manage.py debugsqlshell
 
-test:
-	cd src && pipenv run pytest
 
-unit:
-	cd src && pipenv run pytest -m unit
-
-smoke:
-	cd src && pipenv run pytest -m smoke
-
-integration:
-	cd src && pipenv run pytest -m integration
+# Docker
 
 up:
 	docker-compose up --build
 
 down:
 	docker-compose down
+
+
+# Tests
+
+test:
+	cd src && pipenv run pytest --disable-warnings
+
+unit:
+	cd src && pipenv run pytest -m unit --disable-warnings
+
+smoke:
+	cd src && pipenv run pytest -m smoke --disable-warnings
+
+integration:
+	cd src && pipenv run pytest -m integration --disable-warnings
 
 
 # Managements

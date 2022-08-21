@@ -34,18 +34,17 @@ from api.internal.users.domain.services import MergingService, UserSerializer, U
 
 MERGING_USERS = "merging users"
 UPDATING_USER = "updating user"
-UPDATING_AUTH_USER = "updating auth user"
+UPDATING_PROFILE = "updating profile"
 
 STARTING = "Starting"
 OPERATION_IS_OVER = "Operation is over"
 
-UPDATING_IS_NOT_OVER__SELF = "Updating is not over (updating self)"
-UPDATING_IS_NOT_OVER__PERMISSION = "Updating is not over (validation permission)"
-UPDATING_IS_NOT_OVER__EMAIL = "Updating is not over (bad email)"
-
-MERGING_IS_NOT_OVER__PERMISSION = "Merging is not over (not equal permissions)"
-MERGING_IS_NOT_OVER__REQUESTS = "Merging is not over (exists intersection of requests)"
-MERGING_IS_NOT_OVER__PARTICIPATION = "Merging is not over (exists intersection of participation)"
+OPERATION_IS_OVER__UPDATING_SELF = f"{OPERATION_IS_OVER} (updating self)"
+OPERATION_IS_OVER__CANNOT_UPDATE_PERMISSION = f"{OPERATION_IS_OVER} (cannot update permission)"
+OPERATION_IS_OVER__CANNOT_UPDATE_EMAIL = f"{OPERATION_IS_OVER} (cannot update email)"
+OPERATION_IS_OVER__NOT_EQUAL_PERMISSIONS = f"{OPERATION_IS_OVER} (not equal permissions)"
+OPERATION_IS_OVER__EXISTS_INTERSECTION_OF_REQUESTS = f"{OPERATION_IS_OVER} (exists intersection of requests)"
+OPERATION_IS_OVER__EXISTS_INTERSECTION_OF_PARTICIPATION = f"{OPERATION_IS_OVER} (exists intersection of participation)"
 
 
 class UserHandlers:
@@ -70,8 +69,6 @@ class UserHandlers:
     REQUESTS = "requests"
     PARTICIPATION = "participation"
 
-    FILENAME = "{date}_users.{extension}"
-
     def __init__(self, user_service: UserService, merging_service: MergingService, document_service: UserSerializer):
         self._user_service = user_service
         self._merging_service = merging_service
@@ -88,49 +85,47 @@ class UserHandlers:
         return FullProfileOut.from_orm(user)
 
     def update_user(self, request: HttpRequest, user_id: int, data: ProfileIn = Body(...)) -> SuccessResponse:
-        if not (user := self._user_service.get_user(user_id)):
+        if not (target := self._user_service.get_user(user_id)):
             raise NotFoundException(self.USER)
 
-        operation_id, users_kwargs = uuid.uuid4(), {
-            "updater_id": request.user.id,
-            "updater_permission": request.user.permission,
-            "target_id": user.id,
-            "target_permission": user.permission,
-        }
-        log_kwargs = users_kwargs | data.dict()
+        operation_id, updater = uuid.uuid4(), request.user
+        log_kwargs = {
+            "updater_id": updater.id,
+            "updater_permission": updater.permission,
+            "target_id": target.id,
+            "target_permission": target.permission,
+        } | data.dict()
+
         logger.info(log(UPDATING_USER, operation_id, STARTING, **log_kwargs))
 
-        if request.user.pk == user.pk:
-            logger.success(log(UPDATING_USER, operation_id, UPDATING_IS_NOT_OVER__SELF, **users_kwargs))
+        if updater.pk == target.pk:
+            logger.success(log(UPDATING_USER, operation_id, OPERATION_IS_OVER__UPDATING_SELF))
             raise UnprocessableEntityException(self.UPDATING_SELF_IS_NOT_ALLOWED, error=self.BAD_USER)
 
-        if not self._user_service.can_update_permission(request.user, user, data.permission):
+        if not self._user_service.can_update_permission(updater, target, data.permission):
             logger.success(
                 log(
                     UPDATING_USER,
                     operation_id,
-                    UPDATING_IS_NOT_OVER__PERMISSION,
-                    **users_kwargs,
-                    permission=data.permission,
+                    OPERATION_IS_OVER__CANNOT_UPDATE_PERMISSION,
                 )
             )
             raise UnprocessableEntityException(self.PERMISSION_CANNOT_BE_UPDATED, error=self.BAD_PERMISSION)
 
-        if self._user_service.exists_email_from_others(user, data.email):
+        if self._user_service.have_others_email(target, data.email):
             logger.success(
                 log(
                     UPDATING_USER,
                     operation_id,
-                    UPDATING_IS_NOT_OVER__EMAIL,
-                    target_id=user.id,
-                    target_email=user.email,
-                    email=data.email,
+                    OPERATION_IS_OVER__CANNOT_UPDATE_EMAIL,
+                    email=target.email,
+                    new_email=data.email,
                 )
             )
             raise UnprocessableEntityException(self.EMAIL_ALREADY_EXISTS, error=self.BAD_EMAIL)
 
-        with catch(UPDATING_USER, operation_id, **log_kwargs):
-            self._user_service.update(user, data)
+        with catch(UPDATING_USER, operation_id):
+            self._user_service.update(target, data)
 
         logger.success(log(UPDATING_USER, operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
@@ -148,24 +143,28 @@ class UserHandlers:
         if not (users := self._merging_service.try_get(data)):
             raise NotFoundException(what=self.ANY_USERS)
 
-        operation_id, ids_log_kwargs = uuid.uuid4(), {"from_id": data.from_id, "to_id": data.to_id}
-        logger.info(log(MERGING_USERS, operation_id, STARTING, **ids_log_kwargs))
+        from_user, to_user = users.from_user, users.to_user
+        operation_id, log_kwargs = uuid.uuid4(), {
+            "from_id": from_user.id,
+            "from_permission": from_user.permission,
+            "to_id": to_user.id,
+            "to_permission": to_user.permission,
+        }
 
-        if users.from_user.permission != users.to_user.permission:
+        logger.info(log(MERGING_USERS, operation_id, STARTING, **log_kwargs))
+
+        if from_user.permission != to_user.permission:
             logger.success(
                 log(
                     MERGING_USERS,
                     operation_id,
-                    MERGING_IS_NOT_OVER__PERMISSION,
-                    **ids_log_kwargs,
-                    permission_from=users.from_user.permission,
-                    permission_to=users.to_user.permission,
+                    OPERATION_IS_OVER__NOT_EQUAL_PERMISSIONS,
                 )
             )
             raise UnprocessableEntityException(self.NOT_EQUAL_PERMISSIONS, error=self.BAD_PERMISSIONS)
 
         if self._merging_service.exists_requests_intersection(data):
-            logger.success(log(MERGING_USERS, operation_id, MERGING_IS_NOT_OVER__REQUESTS, **ids_log_kwargs))
+            logger.success(log(MERGING_USERS, operation_id, OPERATION_IS_OVER__EXISTS_INTERSECTION_OF_REQUESTS))
             raise UnprocessableEntityException(self.INTERSECTION_REQUESTS, error=self.REQUESTS)
 
         if self._merging_service.exists_participation_intersection(data):
@@ -173,13 +172,12 @@ class UserHandlers:
                 log(
                     MERGING_USERS,
                     operation_id,
-                    MERGING_IS_NOT_OVER__PARTICIPATION,
-                    **ids_log_kwargs,
+                    OPERATION_IS_OVER__EXISTS_INTERSECTION_OF_PARTICIPATION,
                 )
             )
             raise UnprocessableEntityException(self.INTERSECTION_PARTICIPATION, error=self.PARTICIPATION)
 
-        with catch(MERGING_USERS, operation_id, **ids_log_kwargs):
+        with catch(MERGING_USERS, operation_id):
             self._merging_service.merge(data)
 
         logger.success(log(MERGING_USERS, operation_id, OPERATION_IS_OVER))
@@ -194,7 +192,7 @@ class UserHandlers:
         return FileResponse(
             buffer,
             as_attachment=True,
-            filename=self.FILENAME.format(date=now().strftime("%Y-%m-%d %H-%M-%S"), extension=extension),
+            filename=f"{now().strftime(settings.DATETIME_FORMAT)}_users.{extension}",
         )
 
 
@@ -220,24 +218,26 @@ class CurrentUserHandlers:
 
     def update_profile(self, request: HttpRequest, data: CurrentProfileIn = Body(...)) -> SuccessResponse:
         operation_id, user = uuid.uuid4(), request.user
+        log_kwargs = {"user_id": user.id} | data.dict()
 
-        if self._user_service.exists_email_from_others(user, data.email):
+        logger.info(log(UPDATING_PROFILE, operation_id, STARTING, **log_kwargs))
+
+        if self._user_service.have_others_email(user, data.email):
             logger.success(
                 log(
-                    UPDATING_AUTH_USER,
+                    UPDATING_PROFILE,
                     operation_id,
-                    UPDATING_IS_NOT_OVER__EMAIL,
-                    id=user.id,
+                    OPERATION_IS_OVER__CANNOT_UPDATE_EMAIL,
                     email=user.email,
                     new_email=data.email,
                 )
             )
             raise UnprocessableEntityException(self.EMAIL_ALREADY_EXISTS, error=self.BAD_EMAIL)
 
-        with catch(UPDATING_AUTH_USER, operation_id, id=user.id, **data.dict()):
+        with catch(UPDATING_PROFILE, operation_id):
             self._user_service.update(request.user, data)
 
-        logger.success(log(UPDATING_AUTH_USER, operation_id, OPERATION_IS_OVER))
+        logger.success(log(UPDATING_PROFILE, operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
 
     def get_form_values(self, request: HttpRequest, field_id: List[str] = Query(...)) -> List[FormValueOut]:

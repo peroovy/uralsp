@@ -6,7 +6,7 @@ INTERNAL_ERROR = "Internal error"
 
 
 def log(handler_name: str, operation_id: UUID, message: str, **kwargs) -> str:
-    return f"{handler_name.upper()} {operation_id}: {message.capitalize()} {' '.join(f'{key}={value}' for key, value in kwargs.items())}"
+    return f"{handler_name.upper()} {operation_id}: {message.capitalize()} {' '.join(_get_key_value(key, value) for key, value in kwargs.items())}"
 
 
 def catch(handler: str, operation_id: UUID, **log_kwargs):
@@ -19,3 +19,7 @@ def catch(handler: str, operation_id: UUID, **log_kwargs):
 
 def _set_attributes(exception: Exception, operation_id: UUID) -> None:
     exception.operation_id = operation_id
+
+
+def _get_key_value(key, value) -> str:
+    return '{key}="{value}"'.format(key=key, value=value)

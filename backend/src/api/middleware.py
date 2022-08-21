@@ -36,8 +36,9 @@ class ProcessInternalErrorMiddleware:
         return Response(ErrorResponse(details=self.NOT_FOUND_RESOURCE, error=self.BAD_URI), status=404)
 
     def handle_500(self, request: HttpRequest, exception: Exception) -> Response:
-        logger.bind(telegram=True).error(
-            "\n".join([str(exception), traceback.format_exc()[: settings.TELEGRAM_CHARACTERS_LIMIT]])
-        )
+        exc = traceback.format_exc()
+
+        logger.bind(telegram=True).error("\n".join([str(exception), exc[: settings.TELEGRAM_CHARACTERS_LIMIT]]))
+        logger.error(exc)
 
         return Response(ErrorResponse(details=self.UNHANDLED_SERVER_EXCEPTION, error=self.INTERNAL), status=500)

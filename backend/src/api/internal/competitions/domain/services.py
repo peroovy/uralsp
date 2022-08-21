@@ -4,7 +4,7 @@ from typing import List, Optional
 from django.conf import settings
 from django.db.transaction import atomic
 from django.forms import model_to_dict
-from django.utils.timezone import now
+from django.utils.timezone import is_naive, localtime, make_aware, now
 
 from api.internal.competitions.domain.entities import (
     AdminsIn,
@@ -22,7 +22,7 @@ from api.internal.db.repositories import competition_repo, field_repo, user_repo
 from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.field import IFieldRepository
 from api.internal.db.repositories.user import IUserRepository
-from api.internal.utils import serialize_to_csv, serialize_to_xlsx
+from api.internal.utils import serialize_to_csv, serialize_to_xlsx, to_current_timezone
 
 
 class CompetitionService:
@@ -125,7 +125,12 @@ class CompetitionService:
         return data.persons_amount >= settings.MIN_PARTICIPANTS_AMOUNT
 
     def validate_dates(self, data: CompetitionIn) -> bool:
-        return now() < data.registration_start < data.registration_end < data.started_at
+        return (
+            now()
+            < to_current_timezone(data.registration_start)
+            < to_current_timezone(data.registration_end)
+            < to_current_timezone(data.started_at)
+        )
 
     def validate_admins(self, ids: List[int]) -> bool:
         unique = set(ids)

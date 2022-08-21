@@ -1,7 +1,9 @@
 import csv
+from datetime import datetime
 from io import BytesIO, StringIO
 from typing import Dict, Iterable, Optional
 
+from django.utils.timezone import is_aware, localtime, make_aware
 from openpyxl.workbook import Workbook
 
 
@@ -34,3 +36,7 @@ def serialize_to_csv(rows: Iterable[Iterable[str]], delimiter: str = ";") -> Byt
 
     buffer.seek(0)
     return BytesIO(buffer.read().encode("utf-8"))
+
+
+def to_current_timezone(value: datetime) -> datetime:
+    return localtime(value) if is_aware(value) else make_aware(value)
