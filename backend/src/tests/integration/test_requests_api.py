@@ -453,7 +453,7 @@ def test_canceling__competition_has_already_started(
     assert_422(
         patch(client, CANCEL.format(id=user_request.id), user_token),
         error="competition",
-        details="Competition has already started",
+        details="Competition started",
     )
     assert Request.objects.get(pk=user_request.pk).status == user_request.status
 

@@ -243,7 +243,7 @@ class CompetitionHandlers:
             buffer,
             as_attachment=True,
             filename=self.FILENAME.format(
-                date=now().strftime("%Y-%m-%d %H-%M-%S"), competition_id=competition_id, extension=extension
+                date=now().strftime(settings.DATETIME_FORMAT), competition_id=competition_id, extension=extension
             ),
         )
 
