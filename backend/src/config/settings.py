@@ -150,7 +150,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 LOGS_PATH = os.path.join(BASE_DIR, "..", "logs", "file.log")
-LOG_FORMAT = "[{time:YYYY-MM-DD HH:mm:ss}][{name}:{function}:{line}][{level}] {message}"
+LOG_FORMAT = "[{time:YYYY-MM-DD HH:mm:ss}][{name}:{function}][{level}] {message}"
 LOG_ROTATION = "00:00"
 LOG_COMPRESSION = "zip"
 

@@ -3,13 +3,14 @@ from typing import List
 from django.http import HttpRequest
 from ninja import Body, Query
 
+from api.internal.base_handlers import BaseHandlers
 from api.internal.exceptions import NotFoundException, UnprocessableEntityException
 from api.internal.fields.domain.entities import FieldSchema, FieldUpdatingIn, Filters
 from api.internal.fields.domain.services import FieldService
 from api.internal.responses import SuccessResponse
 
 
-class FieldHandlers:
+class FieldHandlers(BaseHandlers):
     FIELD_ALREADY_EXISTS = "Field id already exists"
     FORM_VALUE_EXISTS = "Field value exists"
     FIELD_EXISTS_IN_FORM = "The field exists in form"
