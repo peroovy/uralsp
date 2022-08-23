@@ -8,6 +8,8 @@ from django.conf import settings
 from loguru import logger
 from loguru._logger import Logger
 
+from api.internal.exceptions import EXPECTED_EXCEPTIONS
+
 INTERNAL_ERROR = "Internal error"
 NAME, FUNCTION, OPERATION_ID = "name", "function", "operation_id"
 
@@ -32,7 +34,10 @@ def catch(func: Callable) -> Callable:
         message = log(operation_id, INTERNAL_ERROR) + f"args={args} kwargs=({_get_kwargs(**kwargs)})"
 
         with patched.catch(
-            reraise=True, message=message, onerror=lambda exc: _set_attrs(exc, name, function, operation_id)
+            reraise=True,
+            message=message,
+            exclude=EXPECTED_EXCEPTIONS,
+            onerror=lambda exc: _set_attrs(exc, name, function, operation_id),
         ):
             if OPERATION_ID in kwargs:
                 kwargs[OPERATION_ID] = operation_id

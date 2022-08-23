@@ -6,16 +6,7 @@ from ninja.errors import AuthenticationError
 
 from api.internal.auth.api import register_auth_api
 from api.internal.competitions.api import register_competitions_api
-from api.internal.exceptions import (
-    APIException,
-    BadRequestException,
-    ExpiredTokenException,
-    ForbiddenException,
-    InvalidPayloadException,
-    NotFoundException,
-    UnauthorizedException,
-    UnprocessableEntityException,
-)
+from api.internal.exceptions import EXPECTED_EXCEPTIONS, APIException, UnauthorizedException
 from api.internal.fields.api import register_fields_api
 from api.internal.requests.api import register_requests_api
 from api.internal.users.api import register_users_api
@@ -38,17 +29,7 @@ def get_api() -> NinjaAPI:
 
 
 def subscribe_exception_handlers(api: NinjaAPI) -> None:
-    outer_exceptions = [
-        UnauthorizedException,
-        UnprocessableEntityException,
-        InvalidPayloadException,
-        ExpiredTokenException,
-        BadRequestException,
-        NotFoundException,
-        ForbiddenException,
-    ]
-
-    for exception in outer_exceptions:
+    for exception in EXPECTED_EXCEPTIONS:
         api.add_exception_handler(exception, get_exception_handler(exception))
 
     api.add_exception_handler(

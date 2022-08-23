@@ -74,3 +74,14 @@ class InvalidPayloadException(UnprocessableEntityException):
 class ExpiredTokenException(UnprocessableEntityException):
     def __init__(self, token_type: TokenTypes):
         super().__init__(message=f"{token_type.value.title()} token is expired", error="expired token")
+
+
+EXPECTED_EXCEPTIONS = (
+    UnauthorizedException,
+    UnprocessableEntityException,
+    InvalidPayloadException,
+    ExpiredTokenException,
+    BadRequestException,
+    NotFoundException,
+    ForbiddenException,
+)
