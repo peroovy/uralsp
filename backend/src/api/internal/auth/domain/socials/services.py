@@ -9,9 +9,9 @@ from django.conf import settings
 from google.auth.transport import requests
 from google.oauth2 import id_token as google_id_token
 
+from api.internal.auth.domain.socials.entities import GoogleCredentialsIn, TelegramCredentialsIn, VKCredentialsIn
 from api.internal.db.models import User
 from api.internal.db.repositories.social import SocialBaseRepository
-from api.internal.socials.entities import GoogleCredentialsIn, TelegramCredentialsIn, VKCredentialsIn
 
 SocialData = namedtuple("SocialData", ["id", "surname", "name"])
 
@@ -108,7 +108,7 @@ class TelegramAuth(SocialBase):
         del data[self.HASH]
 
         data_check_string = "\n".join(f"{key}={value}" for key, value in sorted(data.items(), key=lambda p: p[0]))
-        secret_key = hashlib.sha256(settings.TELEGRAM_BOT_TOKEN.encode()).digest()
+        secret_key = hashlib.sha256(settings.OAUTH_TELEGRAM_BOT_TOKEN.encode()).digest()
         hash_ = hmac.new(secret_key, msg=data_check_string.encode(), digestmod=hashlib.sha256).hexdigest()
 
         if hash_ != self._credentials.hash:

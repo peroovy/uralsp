@@ -1,6 +1,6 @@
 import hashlib
-import hmac
 from datetime import timedelta
+from hmac import HMAC
 from typing import Optional
 from unittest.mock import Mock, patch as mock_patch
 
@@ -9,6 +9,7 @@ from django.conf import settings
 from django.forms import model_to_dict
 from django.test import Client
 from django.utils.timezone import now
+from google.oauth2 import id_token
 
 from api.internal.db.models import Competition, Field, FormValue, Participation, Request, User
 from tests.integration.conftest import (
@@ -285,25 +286,23 @@ def test_linking_vkontakte(client: Client, user: User, user_token: str, admin_to
 
 @pytest.mark.integration
 @pytest.mark.django_db
-def test_linking_google(client: Client, user: User, user_token: str, admin_token: str) -> None:
+def test_linking_google(client: Client, user: User, user_token: str, admin_token: str, google_api: id_token) -> None:
     google_data = {"sub": 228, "given_name": "Top", "family_name": "Strelok"}
 
-    api = mock_patch("api.internal.socials.services.google_id_token").start()
-    api.verify_oauth2_token = Mock(return_value=google_data)
+    google_api.verify_oauth2_token = Mock(return_value=google_data)
 
     body, uri = {"id_token": "value"}, LINK_SOCIAL.format(social="google")
 
     assert_linking_social(client, uri, body, google_data["sub"], "google_id", user, user_token, admin_token)
 
-    api.verify_oauth2_token = Mock(side_effect=ValueError())
+    google_api.verify_oauth2_token = Mock(side_effect=ValueError())
     assert_422(patch(client, uri, user_token, body), error="bad credentials", details="Invalid credentials")
 
 
 @pytest.mark.integration
 @pytest.mark.django_db
-def test_linking_telegram(client: Client, user: User, user_token: str, admin_token: str) -> None:
+def test_linking_telegram(client: Client, user: User, user_token: str, admin_token: str, hmac: HMAC) -> None:
     uri = LINK_SOCIAL.format(social="telegram")
-    hmac_ = mock_patch("api.internal.socials.services.hmac").start()
 
     body = {
         "id": 1337228,
@@ -314,9 +313,7 @@ def test_linking_telegram(client: Client, user: User, user_token: str, admin_tok
         "auth_date": str(int((now() + timedelta(days=10)).timestamp())),
         "hash": "super_hash",
     }
-    instance = Mock()
-    instance.hexdigest.return_value = body["hash"]
-    hmac_.new.return_value = instance
+    hmac.hexdigest.return_value = body["hash"]
 
     assert_linking_social(client, uri, body, body["id"], "telegram_id", user, user_token, admin_token)
 
@@ -331,7 +328,7 @@ def test_linking_telegram(client: Client, user: User, user_token: str, admin_tok
         assert_validation_error(patch(client, uri, user_token, without_body))
         assert User.objects.get(pk=user.pk) == user
 
-    instance.hexdigest.return_value = body["hash"][::-1]
+    hmac.hexdigest.return_value = body["hash"][::-1]
     assert_422(patch(client, uri, user_token, body), error="bad credentials", details="Invalid credentials")
     assert User.objects.get(pk=user.pk) == user
 

@@ -1,4 +1,3 @@
-import uuid
 from io import BytesIO
 from typing import Callable, List
 from uuid import UUID
@@ -10,6 +9,8 @@ from loguru import logger
 from ninja import Body, Query
 from ninja.pagination import LimitOffsetPagination, paginate
 
+from api.internal.auth.domain.socials.entities import GoogleCredentialsIn, TelegramCredentialsIn, VKCredentialsIn
+from api.internal.auth.domain.socials.services import GoogleAuth, SocialAuthStatus, SocialBase, TelegramAuth, VKAuth
 from api.internal.base_handlers import BaseHandlers
 from api.internal.db.models import User
 from api.internal.db.repositories import google_repo, telegram_repo, vk_repo
@@ -21,8 +22,6 @@ from api.internal.exceptions import (
 )
 from api.internal.logging import log
 from api.internal.responses import SuccessResponse
-from api.internal.socials.entities import GoogleCredentialsIn, TelegramCredentialsIn, VKCredentialsIn
-from api.internal.socials.services import GoogleAuth, SocialAuthStatus, SocialBase, TelegramAuth, VKAuth
 from api.internal.users.domain.entities import (
     CurrentProfileIn,
     Filters,

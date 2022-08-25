@@ -5,11 +5,11 @@ from ninja.responses import Response
 
 from api.internal.auth.domain.entities import TokenDetailsOut
 from api.internal.auth.domain.services import JWTService, TokenTypes
+from api.internal.auth.domain.socials.entities import GoogleCredentialsIn, TelegramCredentialsIn, VKCredentialsIn
+from api.internal.auth.domain.socials.services import GoogleAuth, SocialBase, TelegramAuth, VKAuth
 from api.internal.base_handlers import BaseHandlers
 from api.internal.db.repositories import google_repo, telegram_repo, vk_repo
 from api.internal.exceptions import UnauthorizedException, UnprocessableEntityException
-from api.internal.socials.entities import GoogleCredentialsIn, TelegramCredentialsIn, VKCredentialsIn
-from api.internal.socials.services import GoogleAuth, SocialBase, TelegramAuth, VKAuth
 
 
 class AuthHandlers(BaseHandlers):

@@ -74,13 +74,13 @@ def super_admin_token(super_admin: User) -> str:
 
 @pytest.fixture(scope="function")
 def google_api() -> id_token:
-    return unittest.mock.patch("api.internal.socials.services.google_id_token").start()
+    return unittest.mock.patch("api.internal.auth.domain.socials.services.google_id_token").start()
 
 
 @pytest.fixture(scope="function")
 def hmac() -> HMAC:
     hmac_instance = Mock()
-    unittest.mock.patch("api.internal.socials.services.hmac").start().new.return_value = hmac_instance
+    unittest.mock.patch("api.internal.auth.domain.socials.services.hmac").start().new.return_value = hmac_instance
 
     return hmac_instance
 
