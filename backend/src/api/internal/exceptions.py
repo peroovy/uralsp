@@ -66,7 +66,7 @@ class ForbiddenException(APIException):
         return Response(ErrorResponse(error="forbidden", details="Permission denied"), status=403)
 
 
-EXPECTED_EXCEPTIONS = (
+API_EXCEPTIONS = (
     UnauthorizedException,
     UnprocessableEntityException,
     BadRequestException,
