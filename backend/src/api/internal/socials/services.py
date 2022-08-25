@@ -65,7 +65,7 @@ class VKAuth(SocialBase):
         if not self._credentials:
             return None
 
-        check_string: str = settings.VKONTAKTE_APP_ID + str(self._credentials.uid) + settings.VKONTAKTE_APP_SECRET_KEY
+        check_string: str = f"{settings.VKONTAKTE_APP_ID}{self._credentials.uid}{settings.VKONTAKTE_APP_SECRET_KEY}"
         if hashlib.md5(check_string.encode()).hexdigest() != self._credentials.hash:
             return None
 

@@ -66,21 +66,9 @@ class ForbiddenException(APIException):
         return Response(ErrorResponse(error="forbidden", details="Permission denied"), status=403)
 
 
-class InvalidPayloadException(UnprocessableEntityException):
-    def __init__(self, token_type: TokenTypes):
-        super().__init__(message=f"Invalid payload of {token_type.value} token", error="bad payload")
-
-
-class ExpiredTokenException(UnprocessableEntityException):
-    def __init__(self, token_type: TokenTypes):
-        super().__init__(message=f"{token_type.value.title()} token is expired", error="expired token")
-
-
 EXPECTED_EXCEPTIONS = (
     UnauthorizedException,
     UnprocessableEntityException,
-    InvalidPayloadException,
-    ExpiredTokenException,
     BadRequestException,
     NotFoundException,
     ForbiddenException,

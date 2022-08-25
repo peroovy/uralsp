@@ -7,6 +7,7 @@ from django.utils.timezone import now
 from jwt import PyJWTError, decode, encode
 
 from api.internal.db.models import RefreshToken, User
+from api.internal.db.models.user import Permissions
 from api.internal.db.repositories import refresh_repo, user_repo
 from api.internal.db.repositories.refresh_token import IRefreshTokenRepository
 from api.internal.db.repositories.user import IUserRepository
@@ -30,7 +31,7 @@ class Payload:
     EXPIRES_IN = "expires_in"
     PERMISSION = "permission"
 
-    def __init__(self, token_type: str, expires_in: float, user_id: int, permission: str):
+    def __init__(self, token_type: TokenTypes, expires_in: float, user_id: int, permission: Permissions):
         self._token_type = token_type
         self._user_id = user_id
         self._expires_in = int(expires_in)
@@ -38,7 +39,7 @@ class Payload:
 
     @property
     def token_type(self) -> str:
-        return self._token_type
+        return self._token_type.value
 
     @property
     def expires_in(self) -> int:
@@ -50,28 +51,33 @@ class Payload:
 
     @property
     def permission(self) -> str:
-        return self._permission
+        return self._permission.value
 
     def to_dictionary(self) -> dict:
         return {
-            self.TOKEN_TYPE: self._token_type,
-            self.USER_ID: self._user_id,
-            self.EXPIRES_IN: self._expires_in,
-            self.PERMISSION: self._permission,
+            self.TOKEN_TYPE: self.token_type,
+            self.USER_ID: self.user_id,
+            self.EXPIRES_IN: self.expires_in,
+            self.PERMISSION: self.permission,
         }
 
     @staticmethod
     def create(dictionary: dict) -> "Payload":
         return Payload(
-            token_type=dictionary[Payload.TOKEN_TYPE],
+            token_type=TokenTypes(dictionary[Payload.TOKEN_TYPE]),
             expires_in=dictionary[Payload.EXPIRES_IN],
             user_id=dictionary[Payload.USER_ID],
-            permission=dictionary[Payload.PERMISSION],
+            permission=Permissions(dictionary[Payload.PERMISSION]),
         )
 
 
 class JWTService:
     ALGORITHM = "HS256"
+
+    TTLs = {
+        TokenTypes.ACCESS: settings.ACCESS_TOKEN_TTL,
+        TokenTypes.REFRESH: settings.REFRESH_TOKEN_TTL,
+    }
 
     def __init__(self, user_repo: IUserRepository, refresh_repo: IRefreshTokenRepository):
         self._user_repo = user_repo
@@ -97,18 +103,16 @@ class JWTService:
 
         return self.create_access_and_refresh_tokens(refresh.user)
 
-    def generate_token(self, user: User, token_type: TokenTypes) -> Tuple[str, float]:
-        ttl = settings.REFRESH_TOKEN_TTL if token_type == TokenTypes.REFRESH else settings.ACCESS_TOKEN_TTL
-        expires_in = int((now() + ttl).timestamp())
-
-        payload = Payload(token_type.value, expires_in, user.id, user.permission)
+    def generate_token(self, user: User, token_type: TokenTypes) -> Tuple[str, int]:
+        expires_in = int((now() + self.TTLs[token_type]).timestamp())
+        payload = Payload(token_type, expires_in, user.id, Permissions(user.permission))
 
         return encode(payload.to_dictionary(), settings.SECRET_KEY, algorithm=self.ALGORITHM), expires_in
 
     def try_get_payload(self, token: str) -> Optional[Payload]:
         try:
             return Payload.create(decode(token, settings.SECRET_KEY, algorithms=[self.ALGORITHM]))
-        except (PyJWTError, KeyError):
+        except (PyJWTError, KeyError, ValueError):
             return None
 
     def is_token_type(self, payload: Payload, token_type: TokenTypes) -> bool:

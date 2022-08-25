@@ -313,7 +313,7 @@ def test_updating_self(
 
 
 @pytest.mark.integration
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ["value", "is_correct"],
     [
@@ -368,7 +368,7 @@ def test_updating_permission__competition_has_the_admin(
 
 
 @pytest.mark.integration
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ["value", "is_correct"],
     INSTITUTION__IS_CORRECT,
@@ -390,7 +390,7 @@ def test_updating_institution_type(
 
 
 @pytest.mark.integration
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ["value", "is_correct"],
     EMAIL__IS_CORRECT,
@@ -431,7 +431,7 @@ def test_updating_email__already_exists(client: Client, user: User, another: Use
 
 
 @pytest.mark.integration
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ["value", "is_correct"],
     PHONE__IS_CORRECT,
@@ -486,7 +486,7 @@ def get_body_for_updating() -> dict:
 
 
 @pytest.mark.integration
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 def test_merging_defaults(
     client: Client,
     super_admin_token: str,
@@ -505,7 +505,7 @@ def test_merging_defaults(
 
 
 @pytest.mark.integration
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 def test_merging_admins(
     client: Client,
     super_admin_token: str,
@@ -538,7 +538,7 @@ def test_merging_admins(
 
 
 @pytest.mark.unit
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 def test_merging_super_admins(
     client: Client,
     super_admin_token: str,

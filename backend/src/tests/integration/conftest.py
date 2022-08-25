@@ -1,12 +1,16 @@
+import unittest
 from datetime import timedelta
 from enum import IntEnum, auto
+from hmac import HMAC
 from typing import Callable, Iterable, Optional
+from unittest.mock import Mock
 
 import jwt
 import pytest
 from django.conf import settings
 from django.test import Client
 from django.utils.timezone import now
+from google.oauth2 import id_token
 from ninja.responses import Response
 
 from api.internal.db.models import User
@@ -68,6 +72,19 @@ def super_admin_token(super_admin: User) -> str:
     return get_token(super_admin)
 
 
+@pytest.fixture(scope="function")
+def google_api() -> id_token:
+    return unittest.mock.patch("api.internal.socials.services.google_id_token").start()
+
+
+@pytest.fixture(scope="function")
+def hmac() -> HMAC:
+    hmac_instance = Mock()
+    unittest.mock.patch("api.internal.socials.services.hmac").start().new.return_value = hmac_instance
+
+    return hmac_instance
+
+
 def get_token(user: User) -> str:
     payload = {
         "type": "access",
@@ -83,8 +100,8 @@ def get_headers(token: Optional[str]) -> dict:
     return {"HTTP_AUTHORIZATION": f"bearer {token}"} if token is not None else {}
 
 
-def assert_401(response) -> None:
-    assert response.status_code == 401 and response.json() == {"error": "bad token", "details": "Unauthorized"}
+def assert_401(response, error: str = "bad token") -> None:
+    assert response.status_code == 401 and response.json() == {"error": error, "details": "Unauthorized"}
 
 
 def assert_403(response) -> None:

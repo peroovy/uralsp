@@ -34,7 +34,7 @@ def subscribe_exception_handlers(api: NinjaAPI) -> None:
 
     api.add_exception_handler(
         AuthenticationError,
-        lambda r, exc: UnauthorizedException.get_response(UnauthorizedException(error=BAD_ACCESS_TOKEN)),
+        lambda r, exc: UnauthorizedException.get_response(UnauthorizedException()),
     )
 
 

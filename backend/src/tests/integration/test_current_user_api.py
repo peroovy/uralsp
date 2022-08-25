@@ -70,7 +70,7 @@ def test_access_getting_profile(client: Client, user_token: str, admin_token: st
 
 
 @pytest.mark.integration
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 def test_updating_profile(
     client: Client,
     user: User,
@@ -98,7 +98,7 @@ def test_access_updating_profile(client: Client, user_token: str, admin_token: s
 
 
 @pytest.mark.integration
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 @pytest.mark.parametrize(["value", "is_correct"], EMAIL__IS_CORRECT)
 def test_updating_email(client: Client, user: User, user_token: str, value: Optional[str], is_correct: bool) -> None:
     body = get_body_for_updating()
@@ -136,7 +136,7 @@ def test_updating_email__already_exists(
 
 
 @pytest.mark.integration
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ["value", "is_correct"],
     PHONE__IS_CORRECT,
@@ -159,7 +159,7 @@ def test_updating_phone(client: Client, user: User, user_token: str, value: Opti
 
 
 @pytest.mark.integration
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ["value", "is_correct"],
     INSTITUTION__IS_CORRECT,

@@ -7,25 +7,24 @@ from api.internal.auth.domain.entities import TokenDetailsOut
 from api.internal.auth.domain.services import JWTService, TokenTypes
 from api.internal.base_handlers import BaseHandlers
 from api.internal.db.repositories import google_repo, telegram_repo, vk_repo
-from api.internal.exceptions import (
-    ExpiredTokenException,
-    InvalidPayloadException,
-    UnauthorizedException,
-    UnprocessableEntityException,
-)
+from api.internal.exceptions import UnauthorizedException, UnprocessableEntityException
 from api.internal.socials.entities import GoogleCredentialsIn, TelegramCredentialsIn, VKCredentialsIn
 from api.internal.socials.services import GoogleAuth, SocialBase, TelegramAuth, VKAuth
 
 
 class AuthHandlers(BaseHandlers):
-    REFRESH_TOKEN_WAS_REVOKED = "Refresh token was revoked"
+    REFRESH_TOKEN_IS_REVOKED = "Refresh token is revoked"
+    REFRESH_TOKEN_IS_EXPIRED = "Refresh token is expired"
     NOT_FOUND_REFRESH_TOKEN_IN_COOKIES = "Not found refresh token in cookies"
-    NOT_FOUND_REFRESH_TOKEN_INFO = "Not found refresh token info"
+    NOT_FOUND_REFRESH_TOKEN_DETAILS = "Not found refresh token details in database"
+    INVALID_PAYLOAD = "Invalid payload"
 
-    UNKNOWN_REFRESH_TOKEN = "unknown refresh token"
+    UNKNOWN_TOKEN = "unknown token"
     REVOKED_TOKEN = "revoked token"
+    EXPIRED_TOKEN = "expired token"
     BAD_COOKIES = "bad cookies"
     BAD_SOCIAL_CREDENTIALS = "bad social credentials"
+    BAD_TOKEN = "bad token"
 
     def __init__(self, jwt_service: JWTService):
         self._jwt_service = jwt_service
@@ -51,22 +50,23 @@ class AuthHandlers(BaseHandlers):
         return response
 
     def refresh(self, request: HttpRequest) -> Response:
-        if not (refresh_token := request.COOKIES.get(settings.REFRESH_TOKEN_COOKIE)):
+        if settings.REFRESH_TOKEN_COOKIE not in request.COOKIES:
             raise UnprocessableEntityException(self.NOT_FOUND_REFRESH_TOKEN_IN_COOKIES, error=self.BAD_COOKIES)
 
-        payload = self._jwt_service.try_get_payload(refresh_token)
+        value = request.COOKIES[settings.REFRESH_TOKEN_COOKIE]
+        payload = self._jwt_service.try_get_payload(value)
 
         if not payload or not self._jwt_service.is_token_type(payload, TokenTypes.REFRESH):
-            raise InvalidPayloadException(TokenTypes.REFRESH)
+            raise UnprocessableEntityException(self.INVALID_PAYLOAD, error=self.BAD_TOKEN)
 
         if self._jwt_service.is_token_expired(payload):
-            raise ExpiredTokenException(TokenTypes.REFRESH)
+            raise UnprocessableEntityException(self.REFRESH_TOKEN_IS_EXPIRED, error=self.EXPIRED_TOKEN)
 
-        if not (token := self._jwt_service.get_refresh_token_details(refresh_token)):
-            raise UnprocessableEntityException(self.NOT_FOUND_REFRESH_TOKEN_INFO, error=self.UNKNOWN_REFRESH_TOKEN)
+        if not (token := self._jwt_service.get_refresh_token_details(value)):
+            raise UnprocessableEntityException(self.NOT_FOUND_REFRESH_TOKEN_DETAILS, error=self.UNKNOWN_TOKEN)
 
         if not (details := self._jwt_service.try_update_access_and_refresh_tokens(token)):
-            raise UnprocessableEntityException(self.REFRESH_TOKEN_WAS_REVOKED, error=self.REVOKED_TOKEN)
+            raise UnprocessableEntityException(self.REFRESH_TOKEN_IS_REVOKED, error=self.REVOKED_TOKEN)
 
         response = Response(data=TokenDetailsOut(access_token=details.access, expires_in=details.expires_in))
         response.set_cookie(settings.REFRESH_TOKEN_COOKIE, details.refresh, httponly=True)

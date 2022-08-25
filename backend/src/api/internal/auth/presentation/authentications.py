@@ -12,6 +12,9 @@ from api.internal.exceptions import ForbiddenException, UnauthorizedException
 
 
 class JWTAuthentication(HttpBearer):
+    EXPIRED_TOKEN = "expired token"
+    UNKNOWN_USER = "unknown user"
+
     _service = JWTService(user_repo, refresh_repo)
 
     def authenticate(self, request: HttpRequest, token: str) -> Optional[str]:
@@ -19,21 +22,20 @@ class JWTAuthentication(HttpBearer):
 
         payload = self._service.try_get_payload(token)
 
-        if (
-            payload
-            and self._service.is_token_type(payload, TokenTypes.ACCESS)
-            and not self._service.is_token_expired(payload)
-        ):
-            if not (user := self._service.get_user(payload)):
-                raise UnauthorizedException()
+        if not payload or not self._service.is_token_type(payload, TokenTypes.ACCESS):
+            raise UnauthorizedException()
 
-            if not self.authorize(user):
-                raise ForbiddenException()
+        if self._service.is_token_expired(payload):
+            raise UnauthorizedException(error=self.EXPIRED_TOKEN)
 
-            request.user = user
-            return token
+        if not (user := self._service.get_user(payload)):
+            raise UnauthorizedException(error=self.UNKNOWN_USER)
 
-        raise UnauthorizedException()
+        if not self.authorize(user):
+            raise ForbiddenException()
+
+        request.user = user
+        return token
 
     @abstractmethod
     def authorize(self, user: User) -> bool:

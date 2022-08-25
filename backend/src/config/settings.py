@@ -158,33 +158,31 @@ LOGGING_TELEGRAM_BOT_TOKEN = env("LOGGING_TELEGRAM_BOT_TOKEN", str)
 LOGGING_TELEGRAM_CHAT_ID = env("LOGGING_TELEGRAM_CHAT_ID", str)
 TELEGRAM_CHARACTERS_LIMIT = 4096
 
-if DEBUG:
-    loguru.logger.disable("")
+if not DEBUG:
+    logger.add(
+        LOGS_PATH,
+        level="INFO",
+        filter=lambda record: "telegram" not in record["extra"],
+        format=LOG_FORMAT,
+        rotation=LOG_ROTATION,
+        compression=LOG_COMPRESSION,
+        backtrace=True,
+        diagnose=True,
+        enqueue=True,
+    )
 
-logger.add(
-    LOGS_PATH,
-    level="INFO",
-    filter=lambda record: "telegram" not in record["extra"],
-    format=LOG_FORMAT,
-    rotation=LOG_ROTATION,
-    compression=LOG_COMPRESSION,
-    backtrace=True,
-    diagnose=True,
-    enqueue=True,
-)
-
-logger.add(
-    NotificationHandler(
-        "telegram",
-        defaults={"token": LOGGING_TELEGRAM_BOT_TOKEN, "chat_id": LOGGING_TELEGRAM_CHAT_ID},
-    ),
-    level="ERROR",
-    filter=lambda record: "telegram" in record["extra"],
-    format=LOG_FORMAT,
-    backtrace=False,
-    diagnose=False,
-    enqueue=True,
-)
+    logger.add(
+        NotificationHandler(
+            "telegram",
+            defaults={"token": LOGGING_TELEGRAM_BOT_TOKEN, "chat_id": LOGGING_TELEGRAM_CHAT_ID},
+        ),
+        level="ERROR",
+        filter=lambda record: "telegram" in record["extra"],
+        format=LOG_FORMAT,
+        backtrace=False,
+        diagnose=False,
+        enqueue=True,
+    )
 
 
 # Social Authentication
@@ -197,7 +195,7 @@ REFRESH_TOKEN_TTL = timedelta(days=10)
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", str)
 TELEGRAM_DATA_LIFETIME = timedelta(minutes=30)
 
-VKONTAKTE_APP_ID = env("VKONTAKTE_APP_ID", str)
+VKONTAKTE_APP_ID = env("VKONTAKTE_APP_ID", int)
 VKONTAKTE_APP_SECRET_KEY = env("VKONTAKTE_APP_SECRET_KEY", str)
 
 

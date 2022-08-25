@@ -13,8 +13,6 @@ def pytest_configure(config):
 
 
 AFTER_NOW = [
-    timedelta(microseconds=1),
-    timedelta(milliseconds=1),
     timedelta(seconds=1),
     timedelta(minutes=1),
     timedelta(hours=1),
