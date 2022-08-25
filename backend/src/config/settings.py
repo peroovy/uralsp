@@ -30,7 +30,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env("SECRET_KEY")
+SECRET_KEY = env("SECRET_KEY", str)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG", bool, False)
@@ -192,8 +192,7 @@ REFRESH_TOKEN_COOKIE = "sp_rt"
 ACCESS_TOKEN_TTL = timedelta(minutes=30)
 REFRESH_TOKEN_TTL = timedelta(days=10)
 
-TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", str)
-TELEGRAM_DATA_LIFETIME = timedelta(minutes=30)
+OAUTH_TELEGRAM_BOT_TOKEN = env("OAUTH_TELEGRAM_BOT_TOKEN", str)
 
 VKONTAKTE_APP_ID = env("VKONTAKTE_APP_ID", int)
 VKONTAKTE_APP_SECRET_KEY = env("VKONTAKTE_APP_SECRET_KEY", str)
