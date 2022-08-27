@@ -71,7 +71,7 @@
 	export let permission: string;
 	export let real_id: number;
 	import { sessionDuration } from '$lib/sessionDuration';
-	sessionDuration();
+	// sessionDuration();
 
 	// Dummy data
 	let adminName = '';
@@ -111,11 +111,7 @@
 	function controlActive(activeEle: string): void {
 		let navs = navBar.querySelectorAll('.nav-link');
 		for (let ele in navs) {
-			if (
-				navs[ele].nodeName == 'SPAN' &&
-				navs[ele].id === activeEle &&
-				navs[ele].classList.contains('active')
-			) {
+			if (navs[ele].nodeName == 'SPAN' && navs[ele].id === activeEle && navs[ele].classList.contains('active')) {
 				return;
 			}
 		}
@@ -127,12 +123,7 @@
 	}
 
 	// User controls
-	let email: string,
-		name: string,
-		region: string | undefined,
-		eduType: string | undefined,
-		institute: string,
-		year: string;
+	let email: string, name: string, region: string | undefined, eduType: string | undefined, institute: string, year: string;
 	eduType = 'Choose...';
 	interface searchParams {
 		email: string;
@@ -159,14 +150,7 @@
 		searchParams.year = year;
 
 		// form validation
-		let arrValues = [
-			searchParams.email,
-			searchParams.name,
-			searchParams.region,
-			searchParams.eduType,
-			searchParams.institute,
-			searchParams.year
-		];
+		let arrValues = [searchParams.email, searchParams.name, searchParams.region, searchParams.eduType, searchParams.institute, searchParams.year];
 		let check = arrValues.every((item) => item === undefined);
 		if (check) {
 			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -654,9 +638,7 @@
 </script>
 
 <svelte:head>
-	<script
-		defer
-		src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+	<script defer src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 	<title>App Name| {adminName}</title>
 </svelte:head>
 
@@ -685,14 +667,10 @@
 			<div class="collapse navbar-collapse flex-grow-0" id="participant-menu">
 				<ul class="navbar-nav me-auto mb-20 mb-lg-0 col-12 justify-content-around">
 					<li class="nav-item">
-						<span class="nav-link active" id="Users" on:click={() => slider('Users')}>
-							Users control
-						</span>
+						<span class="nav-link active" id="Users" on:click={() => slider('Users')}> Users control </span>
 					</li>
 					<li class="nav-item">
-						<span class="nav-link" id="Competitions" on:click={() => slider('Competitions')}>
-							Competitions control
-						</span>
+						<span class="nav-link" id="Competitions" on:click={() => slider('Competitions')}> Competitions control </span>
 					</li>
 					{#if per === 'super_admin'}
 						<li class="nav-item" on:click={() => goto('./contests/create-competition')}>
@@ -700,23 +678,13 @@
 						</li>
 					{/if}
 					<li class="nav-item dropdown">
-						<div
-							class="nav-link dropdown-toggle d-flex align-items-center"
-							role="button"
-							data-bs-toggle="dropdown"
-							aria-expanded="false"
-						>
+						<div class="nav-link dropdown-toggle d-flex align-items-center" role="button" data-bs-toggle="dropdown" aria-expanded="false">
 							<img src={tempPhoto} alt="Logo" class="part-photo" />
 							<span> {adminName} </span>
 						</div>
 						<ul class="dropdown-menu mt-2 ms-3 rounded-0">
 							<li class:active={$page.url.pathname === '/info'}>
-								<a
-									sveltekit:prefetch
-									href="{base}/info/{1}"
-									content="Home"
-									class="dropdown-item nav-link"
-								>
+								<a sveltekit:prefetch href="{base}/info/{1}" content="Home" class="dropdown-item nav-link">
 									<span class="fa fa-gears" />
 									Settings
 								</a>
@@ -754,21 +722,11 @@
 						</div>
 						<div class="mb-3">
 							<label for="fullName" class="form-label">Full Name</label>
-							<input
-								type="text"
-								class="form-control"
-								id="fullName"
-								placeholder="Enter the user full name"
-								bind:value={name}
-							/>
+							<input type="text" class="form-control" id="fullName" placeholder="Enter the user full name" bind:value={name} />
 						</div>
 						<div class="mb-3">
 							<label for="region">Region</label>
-							<select
-								class="form-select form-select-sm"
-								aria-label="Default select example"
-								bind:value={region}
-							>
+							<select class="form-select form-select-sm" aria-label="Default select example" bind:value={region}>
 								<option selected>Choose...</option>
 								{#each republics as republic}
 									<option>{republic}</option>
@@ -778,11 +736,7 @@
 						<div class="mb-3">
 							<div class="form-group">
 								<label for="education">Education type</label>
-								<select
-									class="form-select form-select-sm"
-									aria-label="Default select example"
-									bind:value={eduType}
-								>
+								<select class="form-select form-select-sm" aria-label="Default select example" bind:value={eduType}>
 									<option selected>Choose...</option>
 									<option>School</option>
 									<option>University</option>
@@ -793,22 +747,12 @@
 									<div class="row">
 										<div class="form-group col-md-8">
 											<label for="school">School Name</label>
-											<input
-												type="text"
-												class="form-control"
-												id="school"
-												placeholder="Enter your school name"
-												bind:value={institute}
-											/>
+											<input type="text" class="form-control" id="school" placeholder="Enter your school name" bind:value={institute} />
 										</div>
 										<!--School Year-->
 										<div class="form-group col-md-4">
 											<label for="schoolYear">School Year</label>
-											<select
-												class="form-select form-select"
-												aria-label="Default select example"
-												bind:value={year}
-											>
+											<select class="form-select form-select" aria-label="Default select example" bind:value={year}>
 												<option selected>Choose...</option>
 												{#each Array(11) as _, i}
 													<option>{i + 1}</option>
@@ -823,22 +767,12 @@
 									<div class="row">
 										<div class="form-group col-md-8">
 											<label for="Institute">Institute Name</label>
-											<input
-												type="text"
-												class="form-control"
-												id="Institute"
-												placeholder="Enter your Institute name"
-												bind:value={institute}
-											/>
+											<input type="text" class="form-control" id="Institute" placeholder="Enter your Institute name" bind:value={institute} />
 										</div>
 										<!--Institute  Year-->
 										<div class="form-group col-md-4">
 											<label for="Institute Year">Institute Year</label>
-											<select
-												class="form-select form-select"
-												aria-label="Default select example"
-												bind:value={year}
-											>
+											<select class="form-select form-select" aria-label="Default select example" bind:value={year}>
 												<option selected>Choose...</option>
 												{#each InstituteYear as grade}
 													<option>{grade}</option>
@@ -852,14 +786,7 @@
 						<button class="btn" on:click={queryParams}>Search</button>
 					</div>
 					<div class="lottie-container col-lg-6 p-0">
-						<lottie-player
-							class="lottie-animations"
-							src={lottie}
-							speed="1"
-							loop
-							nocontrols
-							autoplay
-						/>
+						<lottie-player class="lottie-animations" src={lottie} speed="1" loop nocontrols autoplay />
 					</div>
 				</div>
 			</div>
@@ -867,19 +794,8 @@
 		<div class="slide">
 			<div class="card menu" bind:this={filterCont}>
 				<li class="fa fa-filter" on:click={filterSlider} />
-				<input
-					type="text"
-					class="form-control"
-					placeholder="Search by competition title ..."
-					id="compName"
-					bind:value={compName}
-				/>
-				<select
-					class="form-select form-select-sm"
-					aria-label="Default select example"
-					id="compType"
-					bind:value={compStatus}
-				>
+				<input type="text" class="form-control" placeholder="Search by competition title ..." id="compName" bind:value={compName} />
+				<select class="form-select form-select-sm" aria-label="Default select example" id="compType" bind:value={compStatus}>
 					<option selected>Choose competition status ...</option>
 					<option>Ongoing</option>
 					<option>Upcoming</option>
@@ -889,10 +805,7 @@
 			</div>
 			<div class="container-fluid mt-5">
 				<div class="row justify-content-center align-items-start">
-					<div
-						class="card col-md-6 comps compt-holder p-0 col-sm-6 shadow me-5 mt-0"
-						style="max-width: max-content; min-width:min-content"
-					>
+					<div class="card col-md-6 comps compt-holder p-0 col-sm-6 shadow me-5 mt-0" style="max-width: max-content; min-width:min-content">
 						<h4 class="card-header" style:padding-right="100px">
 							<span class="fa fa-book" />
 							Competitions
@@ -900,30 +813,14 @@
 						<div class="card-body p-0 pt-1 shadow">
 							{#each filtered as comp, i}
 								{#if i % 2 == 0}
-									<div
-										bind:this={compsBinds[i]}
-										class="comp even hide d-flex flex-row align-items-stretch justify-content-between"
-									>
+									<div bind:this={compsBinds[i]} class="comp even hide d-flex flex-row align-items-stretch justify-content-between">
 										<span class="d-inline">{comp.name}</span>
-										<i
-											class="fa fa-edit m-1"
-											id={comp.id + ''}
-											style="cursor:pointer; color:#3490dc"
-											on:click={() => editComp(comp.id)}
-										/>
+										<i class="fa fa-edit m-1" id={comp.id + ''} style="cursor:pointer; color:#3490dc" on:click={() => editComp(comp.id)} />
 									</div>
 								{:else}
-									<div
-										bind:this={compsBinds[i]}
-										class="comp hide d-flex flex-row align-items-stretch justify-content-between"
-									>
+									<div bind:this={compsBinds[i]} class="comp hide d-flex flex-row align-items-stretch justify-content-between">
 										<span class="d-inline">{comp.name}</span>
-										<i
-											class="fa fa-edit m-1"
-											id={comp.id + ''}
-											style="cursor:pointer; color:#3490dc"
-											on:click={() => editComp(comp.id)}
-										/>
+										<i class="fa fa-edit m-1" id={comp.id + ''} style="cursor:pointer; color:#3490dc" on:click={() => editComp(comp.id)} />
 									</div>
 								{/if}
 							{/each}
@@ -935,11 +832,7 @@
 										<li class="page-item page-link" on:click={() => pagination(i)}>{i + 1}</li>
 									{/each}
 								</ul>
-								<select
-									class="form-select"
-									bind:value={itemPerpage}
-									on:change={() => pagination(0)}
-								>
+								<select class="form-select" bind:value={itemPerpage} on:change={() => pagination(0)}>
 									{#each [5, 10, 15, 20, 25, 50] as i}
 										<option class="dropdown-item">{i}</option>
 									{/each}
@@ -958,14 +851,7 @@
 						</div>
 					{:else}
 						<div class="card col-md-5 p-0">
-							<div
-								class="card-header"
-								data-bs-toggle="collapse"
-								href="#info"
-								role="button"
-								aria-expanded="false"
-								aria-controls="info"
-							>
+							<div class="card-header" data-bs-toggle="collapse" href="#info" role="button" aria-expanded="false" aria-controls="info">
 								<span class="fa fa-info-circle" />
 								Information
 							</div>
@@ -997,14 +883,7 @@
 									</table>
 								</div>
 							</div>
-							<div
-								class="card-header"
-								data-bs-toggle="collapse"
-								href="#form"
-								role="button"
-								aria-expanded="false"
-								aria-controls="form"
-							>
+							<div class="card-header" data-bs-toggle="collapse" href="#form" role="button" aria-expanded="false" aria-controls="form">
 								<span class="fa-solid fa-tasks" />
 								Form
 							</div>
@@ -1028,11 +907,7 @@
 							</div>
 							<div class="card-body collapse show" style:position="relative" id="applications">
 								<div class="table">
-									<table
-										class="table table-striped table-sm"
-										style:margin-top="-38px"
-										style:margin-bottom="100px"
-									>
+									<table class="table table-striped table-sm" style:margin-top="-38px" style:margin-bottom="100px">
 										<thead>
 											<tr class="table-light">
 												<th scope="col" class="ms-1 text-center"> # </th>
@@ -1051,21 +926,9 @@
 													<td class="text-center">{applicant.participants.length}</td>
 													<td>
 														<div class="btn-group">
-															<button
-																class="btn btn-success btn-sm"
-																on:click={() => accept(applicant.id)}
-																><i class="fa fa-check-square" /></button
-															>
-															<button
-																class="btn btn-danger btn-sm"
-																on:click={() => decline(applicant.id)}
-																><i class="fa fa-ban" /></button
-															>
-															<button
-																class="btn btn-primary btn-sm"
-																on:click={() => decline(applicant.id)}
-																><i class="fa fa-eye" /></button
-															>
+															<button class="btn btn-success btn-sm" on:click={() => accept(applicant.id)}><i class="fa fa-check-square" /></button>
+															<button class="btn btn-danger btn-sm" on:click={() => decline(applicant.id)}><i class="fa fa-ban" /></button>
+															<button class="btn btn-primary btn-sm" on:click={() => decline(applicant.id)}><i class="fa fa-eye" /></button>
 														</div>
 													</td>
 												</tr>
@@ -1078,9 +941,7 @@
 									<i on:click={selectAll} bind:this={selectAllBtn}> >> Select all </i>
 								</div>
 								<div class="container-fluid p-0 pt-3 d-flex justify-content-center">
-									<div
-										class="row col-md-6 bg-light stickyBottom paginationNav apppag justify-content-center align-items-center"
-									>
+									<div class="row col-md-6 bg-light stickyBottom paginationNav apppag justify-content-center align-items-center">
 										<ul class="pagination m-0 p-3">
 											{#each Array(Math.ceil(req.length / appsPerPage) === 0 ? 1 : Math.ceil(req.length / appsPerPage)) as _, i}
 												<li class="page-item page-link" on:click={() => applicationPage(i)}>
@@ -1088,11 +949,7 @@
 												</li>
 											{/each}
 										</ul>
-										<select
-											class="form-select"
-											bind:value={appsPerPage}
-											on:change={() => applicationPage(0)}
-										>
+										<select class="form-select" bind:value={appsPerPage} on:change={() => applicationPage(0)}>
 											{#each [5, 10, 15, 20, 25, 50] as i}
 												<option class="dropdown-item">{i}</option>
 											{/each}
@@ -1101,12 +958,7 @@
 								</div>
 							</div>
 							<div class="btn-group stickyBottom">
-								<button
-									class="btn btn-primary rounded-0"
-									style="background-color:#3490dc; border: none"
-								>
-									<i class="fa fa-edit" /> Edit</button
-								>
+								<button class="btn btn-primary rounded-0" style="background-color:#3490dc; border: none"> <i class="fa fa-edit" /> Edit</button>
 								<button class="btn btn-danger rounded-0"> <i class="fa fa-trash" /> Delete</button>
 							</div>
 						</div>
@@ -1136,7 +988,7 @@
 		min-height: 100vh;
 		background-image: linear-gradient(to bottom right, $primary-color, $secondary-color);
 		width: 100vw;
-		min-height: 100vh;
+		min-height: calc(100vh - 38px);
 		nav {
 			width: 100vw !important;
 			background-color: rgb(248, 248, 248);

@@ -44,20 +44,6 @@
 	}
 </script>
 
-<svelte:head>
-	<meta name="description" content="Some description!" />
-	<link
-		rel="stylesheet"
-		href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
-	/>
-	<script
-		src="http://userapi.com/js/api/openapi.js"
-		type="text/javascript"
-		charset="windows-1251"></script>
-	<title>App Name | {userInfo.name} {userInfo.surname}</title>
-    <script defer src="http://userapi.com/js/api/openapi.js" type="text/javascript" charset="windows-1251"></script>
-</svelte:head>
-
 <script lang="ts">
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
 	import russianFlag from '$lib/Assets/imgs/russian-flag.png';
@@ -137,12 +123,7 @@
 			});
 			// @ts-ignore
 			VK.Widgets.Auth('vk_auth', {
-				onAuth: async function (data: {
-					uid: string;
-					hash: string;
-					first_name: string;
-					last_name: string;
-				}) {
+				onAuth: async function (data: { uid: string; hash: string; first_name: string; last_name: string }) {
 					let uid = data.uid;
 					let hash = data.hash;
 					let fn = data.first_name;
@@ -409,6 +390,14 @@
 	}
 </script>
 
+<svelte:head>
+	<meta name="description" content="Some description!" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+	<script src="http://userapi.com/js/api/openapi.js" type="text/javascript" charset="windows-1251"></script>
+	<title>App Name | {userInfo.name} {userInfo.surname}</title>
+	<script defer src="http://userapi.com/js/api/openapi.js" type="text/javascript" charset="windows-1251"></script>
+</svelte:head>
+
 <section class="user-info">
 	<img class="d1" src={dotsSrc} alt="" />
 	<div class="d2" />
@@ -429,20 +418,8 @@
 					<!--Name-->
 					<label for="name">Full Name</label>
 					<div class="form-group d-flex gap-3 col-md-11">
-						<input
-							type="text"
-							class="form-control"
-							id="name"
-							placeholder="Enter first name"
-							bind:value={userInfo.name}
-						/>
-						<input
-							type="text"
-							class="form-control"
-							id="name"
-							placeholder="Enter last name"
-							bind:value={userInfo.surname}
-						/>
+						<input type="text" class="form-control" id="name" placeholder="Enter first name" bind:value={userInfo.name} />
+						<input type="text" class="form-control" id="name" placeholder="Enter last name" bind:value={userInfo.surname} />
 					</div>
 					<div class="form-group col-md-11">
 						<label for="Email Address">Email address</label>
@@ -454,9 +431,7 @@
 							placeholder="Enter email"
 							bind:value={userInfo.email}
 						/>
-						<small id="emailHelp" class="form-text text-muted"
-							>We'll never share your email with anyone else.</small
-						>
+						<small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small>
 					</div>
 					<div class="form-group col-md-11">
 						<label for="Email Address">User ID</label>
@@ -469,9 +444,7 @@
 							bind:value={id}
 							disabled
 						/>
-						<small id="emailHelp" class="form-text text-muted"
-							>You won't be able to change this Id!</small
-						>
+						<small id="emailHelp" class="form-text text-muted">You won't be able to change this Id!</small>
 					</div>
 					<!--Phone Number-->
 					<div class="form-group col-md-11">
@@ -482,13 +455,7 @@
 									><img src={russianFlag} alt="The Russian flag" class="flag" />
 								</span>
 							</div>
-							<input
-								type="text"
-								class="form-control"
-								id="phoneNumber"
-								placeholder="Enter phone number"
-								bind:value={userInfo.phone}
-							/>
+							<input type="text" class="form-control" id="phoneNumber" placeholder="Enter phone number" bind:value={userInfo.phone} />
 						</div>
 					</div>
 				</div>
@@ -499,11 +466,7 @@
 				<div class="card-body ms-4">
 					<div class="form-group col-md-11">
 						<label for="region">Region</label>
-						<select
-							class="form-select form-select-sm"
-							aria-label="Default select example"
-							bind:value={userInfo.region}
-						>
+						<select class="form-select form-select-sm" aria-label="Default select example" bind:value={userInfo.region}>
 							<option selected>Choose...</option>
 							{#each republics as republic}
 								<option>{republic}</option>
@@ -512,13 +475,7 @@
 					</div>
 					<div class="form-group col-md-11">
 						<label for="city">City</label>
-						<input
-							type="text"
-							class="form-control"
-							id="city"
-							placeholder="Enter city"
-							bind:value={userInfo.city}
-						/>
+						<input type="text" class="form-control" id="city" placeholder="Enter city" bind:value={userInfo.city} />
 					</div>
 				</div>
 				<h5 class="card-title m-4 mt-0">
@@ -528,11 +485,7 @@
 				<div class="card-body ms-4">
 					<div class="form-group col-md-11">
 						<label for="education">Education type</label>
-						<select
-							class="form-select form-select-sm"
-							aria-label="Default select example"
-							bind:value={educationType}
-						>
+						<select class="form-select form-select-sm" aria-label="Default select example" bind:value={educationType}>
 							<option selected>Choose...</option>
 							<option>School</option>
 							<option>University</option>
@@ -544,22 +497,12 @@
 								<div class="row col-md-11 m-0 justify-content-between">
 									<div class="form-group p-0 col-md-7">
 										<label for="school">School Name</label>
-										<input
-											bind:value={instName}
-											type="text"
-											class="form-control"
-											id="school"
-											placeholder="Enter your school name"
-										/>
+										<input bind:value={instName} type="text" class="form-control" id="school" placeholder="Enter your school name" />
 									</div>
 									<!--School Year-->
 									<div class="form-group p-0 col-md-4">
 										<label for="schoolYear">School Year</label>
-										<select
-											bind:value={instYear}
-											class="form-select form-select"
-											aria-label="Default select example"
-										>
+										<select bind:value={instYear} class="form-select form-select" aria-label="Default select example">
 											<option selected>Choose...</option>
 											{#each Array(11) as _, i}
 												<option>{i + 1}</option>
@@ -575,13 +518,7 @@
 							<div class="row">
 								<div class="form-group col-md-8">
 									<label for="Institute">Institute Name</label>
-									<input
-										bind:value={instName}
-										type="text"
-										class="form-control"
-										id="Institute"
-										placeholder="Enter your Institute name"
-									/>
+									<input bind:value={instName} type="text" class="form-control" id="Institute" placeholder="Enter your Institute name" />
 								</div>
 								<!--Institute  Year-->
 								<div class="form-group col-md-4">
@@ -713,14 +650,7 @@
 		position: relative;
 	}
 	.fa-google {
-		background: conic-gradient(
-				from -45deg,
-				#ea4335 110deg,
-				#4285f4 90deg 180deg,
-				#34a853 180deg 270deg,
-				#fbbc05 270deg
-			)
-			73% 55%/150% 150% no-repeat;
+		background: conic-gradient(from -45deg, #ea4335 110deg, #4285f4 90deg 180deg, #34a853 180deg 270deg, #fbbc05 270deg) 73% 55%/150% 150% no-repeat;
 		-webkit-background-clip: text;
 		background-clip: text;
 		color: transparent;
@@ -733,14 +663,7 @@
 		left: 30px;
 	}
 	.fa-vk {
-		background: conic-gradient(
-				from -45deg,
-				#45668e 110deg,
-				#4a76a8 90deg 180deg,
-				#4a76a8 180deg 270deg,
-				#4a76a8 270deg
-			)
-			73% 55%/150% 150% no-repeat;
+		background: conic-gradient(from -45deg, #45668e 110deg, #4a76a8 90deg 180deg, #4a76a8 180deg 270deg, #4a76a8 270deg) 73% 55%/150% 150% no-repeat;
 		-webkit-background-clip: text;
 		background-clip: text;
 		color: transparent;
@@ -748,14 +671,7 @@
 		font-size: 20px;
 	}
 	.fa-telegram {
-		background: conic-gradient(
-				from -45deg,
-				#0088cc 110deg,
-				#0088cc 90deg 180deg,
-				#0088cc 180deg 270deg,
-				#0088cc 270deg
-			)
-			73% 55%/150% 150% no-repeat;
+		background: conic-gradient(from -45deg, #0088cc 110deg, #0088cc 90deg 180deg, #0088cc 180deg 270deg, #0088cc 270deg) 73% 55%/150% 150% no-repeat;
 		-webkit-background-clip: text;
 		background-clip: text;
 		color: transparent;
