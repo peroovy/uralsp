@@ -565,7 +565,21 @@
 				'Authorization': `Bearer ${access_token}`
 			},
 			body: JSON.stringify(comp)
-		})
+		}).then(res => {
+			if (res.status === 200) {
+				showMessage('Success', 'Competition created successfully.');
+			} else {
+				// show the error message
+				showMessage('Error', 'Something went wrong.');
+				res.json().then(data => {
+					console.log(data)
+					showMessage(res.statusText, data.details);
+				});
+			}
+		}).catch(err => {
+			let error = '';
+			showMessage('Error', 'Something went wrong: '+err);
+		});
 	}
 
 	let slideContorls = `<div class="slideControls border-top">
