@@ -176,158 +176,7 @@
 	}
 
 	// Pagination competitions and applications
-	let comps = [
-		{
-			id: 0,
-			name: 'Contest 1',
-			registration_start: '2022-08-8T10:42:25.340Z',
-			registration_end: '2022-08-9T10:42:25.340Z',
-			started_at: '2022-08-11T10:42:25.340Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'string'
-		},
-		{
-			id: 1,
-			name: 'Contest 2',
-			registration_start: '2022-08-13T10:42:25.340Z',
-			registration_end: '2022-08-10T10:42:25.340Z',
-			started_at: '2022-08-9T10:42:25.340Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'string'
-		},
-		{
-			id: 2,
-			name: 'Contest 3',
-			registration_start: '2022-08-10T10:42:25.340Z',
-			registration_end: '2022-08-13T10:42:25.340Z',
-			started_at: '2022-08-10T10:42:25.340Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'string'
-		},
-		{
-			id: 3,
-			name: 'Contest 4',
-			registration_start: '2022-08-11T10:42:25.340Z',
-			registration_end: '2022-08-13T10:42:25.340Z',
-			started_at: '2022-08-10T10:42:25.340Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'string'
-		},
-		{
-			id: 4,
-			name: 'Contest 5',
-			registration_start: '2022-08-2T10:42:25.340Z',
-			registration_end: '2022-08-5T10:42:25.340Z',
-			started_at: '2022-08-10T10:42:25.340Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'string'
-		},
-		{
-			id: 5,
-			name: 'Contest 6',
-			registration_start: '2022-08-19T10:42:25.340Z',
-			registration_end: '2022-08-20T10:42:25.340Z',
-			started_at: '2022-08-10T10:42:25.340Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'string'
-		},
-		{
-			id: 6,
-			name: 'Contest 7',
-			registration_start: '2022-08-23T10:42:25.340Z',
-			registration_end: '2022-08-29T10:42:25.340Z',
-			started_at: '2022-08-10T10:42:25.340Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'string'
-		},
-		{
-			id: 7,
-			name: 'Contest 8',
-			registration_start: '2022-08-10T10:42:25.340Z',
-			registration_end: '2022-09-10T10:42:25.340Z',
-			started_at: '2022-08-10T10:42:25.340Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'string'
-		},
-		{
-			id: 8,
-			name: 'Contest 9',
-			registration_start: '2022-08-10T10:42:25.340Z',
-			registration_end: '2022-08-10T10:42:25.340Z',
-			started_at: '2022-08-10T10:42:25.340Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'string'
-		},
-		{
-			id: 9,
-			name: 'Contest 10',
-			registration_start: '2022-08-10T10:42:25.340Z',
-			registration_end: '2022-08-10T10:42:25.340Z',
-			started_at: '2022-08-10T10:42:25.340Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'string'
-		},
-		{
-			id: 10,
-			name: 'Contest 11',
-			registration_start: '2022-08-10T10:42:25.340Z',
-			registration_end: '2022-08-10T10:42:25.340Z',
-			started_at: '2022-08-10T10:42:25.340Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'string'
-		},
-		{
-			id: 11,
-			name: 'Contest 12',
-			registration_start: '2022-08-10T10:42:25.340Z',
-			registration_end: '2022-08-10T10:42:25.340Z',
-			started_at: '2022-08-10T10:42:25.340Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'string'
-		},
-		{
-			id: 12,
-			name: 'Contest 13',
-			registration_start: '2022-08-10T10:42:25.340Z',
-			registration_end: '2022-08-10T10:42:25.340Z',
-			started_at: '2022-08-10T10:42:25.340Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'string'
-		},
-		{
-			id: 13,
-			name: 'Contest 14',
-			registration_start: '2022-08-10T10:42:25.340Z',
-			registration_end: '2022-08-10T10:42:25.340Z',
-			started_at: '2022-08-10T10:42:25.340Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'string'
-		},
-		{
-			id: 14,
-			name: 'Contest 15',
-			registration_start: '2022-08-10T10:42:25.340Z',
-			registration_end: '2022-08-10T10:42:25.340Z',
-			started_at: '2022-08-10T10:42:25.340Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'string'
-		}
-	];
+	let comps = [];
 	$: itemPerpage = 20;
 	function pagination(page: number): void {
 		let start = page * itemPerpage;
@@ -425,19 +274,27 @@
 	$: selectedComp = '';
 	$: appLength = 0;
 	$: req = [];
+	$: selectedCompID = '';
+	$: selectedCompName = '';
+	$: selectedCompRegDate = '';
+	$: selectedCompStart = '';
+	$: selectedCompLink = '';
+	$: selectedCompContestantsPerTeam = 0;
+	$: request_template = '';
 	function editComp(id: number) {
 		// TODO: request to server
-		let comp = {
-			id: 0,
-			name: 'Bubble sort',
-			registration_start: '2022-08-09T17:14:42.938Z',
-			registration_end: '2022-08-09T17:14:42.938Z',
-			started_at: '2022-08-09T17:14:42.938Z',
-			persons_amount: 0,
-			request_template: 'string',
-			link: 'https://www.google.com'
-		};
-
+		let comp = competitionsInfo.find((item) => item.id === id);
+		console.log(comp);
+		let reg_s_date = comp.registration_start.replace("Z", '').trim().split('T');
+		let reg_e_date = comp.registration_end.replace("Z", '').trim().split('T');
+		let start_date = comp.started_at.replace("Z", '').trim().split('T');
+		selectedCompID = comp.id;
+		selectedCompName = comp.name;
+		selectedCompRegDate = reg_s_date[0]+ ", at: " + reg_s_date[1] + ' : ' +reg_e_date[0]+ ", at: " + reg_e_date[1];
+		selectedCompStart = start_date[0]+ ", at: " + start_date[1];
+		selectedCompLink = comp.link;
+		selectedCompContestantsPerTeam = comp.persons_amount;
+		request_template = comp.request_template;
 		let requests = [
 			{
 				id: 0,
@@ -610,6 +467,8 @@
 	// Componunt intialization
 	onMount(() => {
 		adminName = `${userInfo.name}  ${userInfo.surname}`;
+		comps = competitionsInfo;
+		filter();
 		if (browser) {
 			let oldLocation = localStorage.getItem('oldLocation');
 			if (oldLocation == null || oldLocation == undefined || oldLocation == '') {
@@ -861,23 +720,27 @@
 										<tbody>
 											<tr>
 												<th scope="row">ID</th>
-												<td>0</td>
+												<td>{selectedCompID}</td>
 											</tr>
 											<tr>
 												<th>Title</th>
-												<td>Contest Title</td>
+												<td>{selectedCompName}</td>
 											</tr>
 											<tr>
 												<th>Registration time</th>
-												<td>Aug, 2: Aug, 10</td>
+												<td>{selectedCompRegDate}</td>
 											</tr>
 											<tr>
 												<th>Start</th>
-												<td>Sept, 5: Sept, 30</td>
+												<td>{selectedCompStart}</td>
 											</tr>
 											<tr>
 												<th>Registration link</th>
-												<td><a href={base}> Link </a></td>
+												<td><a href={selectedCompLink}> Link </a></td>
+											</tr>
+											<tr>
+												<th>Number of contestants per team</th>
+												<td>{selectedCompContestantsPerTeam}</td>
 											</tr>
 										</tbody>
 									</table>
@@ -887,7 +750,9 @@
 								<span class="fa-solid fa-tasks" />
 								Form
 							</div>
-							<div class="card-body collapse" id="form" />
+							<div class="card-body collapse" id="form" >
+								{@html request_template}
+							</div>
 							<div
 								class="card-header d-flex justify-content-between align-items-center"
 								style:margin-bottom="38px"
