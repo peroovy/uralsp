@@ -158,19 +158,19 @@ LOGGING_TELEGRAM_BOT_TOKEN = env("LOGGING_TELEGRAM_BOT_TOKEN", str)
 LOGGING_TELEGRAM_CHAT_ID = env("LOGGING_TELEGRAM_CHAT_ID", str)
 TELEGRAM_CHARACTERS_LIMIT = 4096
 
-if not DEBUG:
-    logger.add(
-        LOGS_PATH,
-        level="INFO",
-        filter=lambda record: "telegram" not in record["extra"],
-        format=LOG_FORMAT,
-        rotation=LOG_ROTATION,
-        compression=LOG_COMPRESSION,
-        backtrace=True,
-        diagnose=True,
-        enqueue=True,
-    )
+logger.add(
+    LOGS_PATH,
+    level="INFO",
+    filter=lambda record: "telegram" not in record["extra"],
+    format=LOG_FORMAT,
+    rotation=LOG_ROTATION,
+    compression=LOG_COMPRESSION,
+    backtrace=True,
+    diagnose=True,
+    enqueue=True,
+)
 
+if not DEBUG:
     logger.add(
         NotificationHandler(
             "telegram",

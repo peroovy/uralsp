@@ -1,6 +1,6 @@
 from datetime import timedelta
 from itertools import combinations_with_replacement, product
-from typing import Callable
+from typing import Callable, List
 
 import freezegun
 import pytest
@@ -300,23 +300,24 @@ def test_access_getting(
 
 @pytest.mark.integration
 @pytest.mark.django_db
-def test_getting(client: Client, competition: Competition, field: Field, another_field: Field) -> None:
+def test_getting(client: Client, competition: Competition, field: Field, another_field: Field, admin: User) -> None:
     assert_404(get(client, COMPETITION.format(id=0)), what="competition")
 
     competition.fields.add(field)
+    competition.admins.add(admin)
 
     response = get(client, COMPETITION.format(id=competition.id))
     assert response.status_code == 200
-    assert response.json() == get_expected_for_getting(competition, field)
+    assert response.json() == get_expected_for_getting(competition, field, admin)
 
     competition.fields.clear()
     competition.fields.add(another_field)
     response = get(client, COMPETITION.format(id=competition.id))
     assert response.status_code == 200
-    assert response.json() == get_expected_for_getting(competition, another_field)
+    assert response.json() == get_expected_for_getting(competition, another_field, admin)
 
 
-def get_expected_for_getting(competition: Competition, field: Field) -> dict:
+def get_expected_for_getting(competition: Competition, field: Field, admin: User) -> dict:
     return {
         "id": competition.id,
         "name": competition.name,
@@ -335,6 +336,7 @@ def get_expected_for_getting(competition: Competition, field: Field) -> dict:
                 "is_visible": field.is_visible,
             }
         ],
+        "admins": [admin.id],
     }
 
 
