@@ -48,7 +48,7 @@ class CompetitionDetailsOut(ModelSchema):
 
     class Config:
         model = Competition
-        model_exclude = ["admins"]
+        model_fields = "__all__"
 
 
 class RequestOut(ModelSchema):
