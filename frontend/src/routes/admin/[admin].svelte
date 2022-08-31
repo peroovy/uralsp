@@ -45,7 +45,8 @@
 				userInfo,
 				competitionsInfo,
 				permission,
-				real_id
+				real_id,
+				access_token: token
 			}
 		};
 	}
@@ -67,7 +68,7 @@
 	import { republics } from '$lib/Assets/republics.json';
 	import { searchparams } from '$lib/stores';
 	const { utils } = XLSX;
-	export let userInfo, competitionsInfo;
+	export let userInfo, competitionsInfo, access_token: string;
 	export let permission: string;
 	export let real_id: number;
 	import { sessionDuration } from '$lib/sessionDuration';
@@ -281,10 +282,19 @@
 	$: selectedCompLink = '';
 	$: selectedCompContestantsPerTeam = 0;
 	$: request_template = '';
-	function editComp(id: number) {
-		// TODO: request to server
-		let comp = competitionsInfo.find((item) => item.id === id);
-		console.log(comp);
+	$: selectedCompMonitors = [];
+	async function editComp(id: number) {
+		let comp;
+	 	await fetch(`http://localhost:8000/competitions/${id}`,{
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${access_token}`
+			},
+		}).then((res) => res.json())
+		  .then((data) => {
+			comp = data;
+		  })
 		let reg_s_date = comp.registration_start.replace("Z", '').trim().split('T');
 		let reg_e_date = comp.registration_end.replace("Z", '').trim().split('T');
 		let start_date = comp.started_at.replace("Z", '').trim().split('T');
@@ -295,97 +305,26 @@
 		selectedCompLink = comp.link;
 		selectedCompContestantsPerTeam = comp.persons_amount;
 		request_template = comp.request_template;
-		let requests = [
-			{
-				id: 0,
-				owner: 0,
-				status: 'awaited',
-				description: 'string',
-				created_at: '2022-08-09T20:50:47.243Z',
-				participants: [0]
-			},
-			{
-				id: 1,
-				owner: 0,
-				status: 'awaited',
-				description: 'string',
-				created_at: '2022-08-09T20:50:47.243Z',
-				participants: [0]
-			},
-			{
-				id: 2,
-				owner: 0,
-				status: 'awaited',
-				description: 'string',
-				created_at: '2022-08-09T20:50:47.243Z',
-				participants: [0]
-			},
-			{
-				id: 3,
-				owner: 0,
-				status: 'awaited',
-				description: 'string',
-				created_at: '2022-08-09T20:50:47.243Z',
-				participants: [0]
-			},
-			{
-				id: 4,
-				owner: 0,
-				status: 'awaited',
-				description: 'string',
-				created_at: '2022-08-09T20:50:47.243Z',
-				participants: [0]
-			},
-			{
-				id: 5,
-				owner: 0,
-				status: 'awaited',
-				description: 'string',
-				created_at: '2022-08-09T20:50:47.243Z',
-				participants: [0]
-			},
-			{
-				id: 6,
-				owner: 0,
-				status: 'awaited',
-				description: 'string',
-				created_at: '2022-08-09T20:50:47.243Z',
-				participants: [0]
-			},
-			{
-				id: 7,
-				owner: 0,
-				status: 'awaited',
-				description: 'string',
-				created_at: '2022-08-09T20:50:47.243Z',
-				participants: [0]
-			},
-			{
-				id: 8,
-				owner: 0,
-				status: 'awaited',
-				description: 'string',
-				created_at: '2022-08-09T20:50:47.243Z',
-				participants: [0]
-			},
-			{
-				id: 9,
-				owner: 0,
-				status: 'awaited',
-				description: 'string',
-				created_at: '2022-08-09T20:50:47.243Z',
-				participants: [0]
-			},
-			{
-				id: 10,
-				owner: 0,
-				status: 'awaited',
-				description: 'string',
-				created_at: '2022-08-09T20:50:47.243Z',
-				participants: [0]
+		selectedCompMonitors = comp.admins;
+		let requests = [];
+		await fetch(`http://localhost:8000/competitions/${comp.id}/requests`,{
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': 'Bearer ' + access_token
 			}
-		];
-		req = requests;
+		}).then((res) => res.json())
+			.then((data) => {
+				req = data;
+				console.log(req);
+				appLength = data.length;
+			}).catch((err) => {
+				console.error(err);
+			}).finally(() => {
+				selectedComp = 'comp';
+				selectedCompItem(selectedComp);
+			}
+		);
 		appLength = requests.length;
 		selectedComp = comp.name;
 		setTimeout(() => {
@@ -501,7 +440,7 @@
 	<title>App Name| {adminName}</title>
 </svelte:head>
 
-<svelte:window on:keydown={onKeyDown} />
+<!-- <svelte:window on:keydown={onKeyDown} /> -->
 
 <section class="admin-container">
 	<img class="d1" src={dotsSrc} alt="" />
@@ -662,27 +601,34 @@
 				</select>
 				<button class="btn btn-light rounded-0" on:click={filter}> Filter </button>
 			</div>
-			<div class="container-fluid mt-5">
-				<div class="row justify-content-center align-items-start">
-					<div class="card col-md-6 comps compt-holder p-0 col-sm-6 shadow me-5 mt-0" style="max-width: max-content; min-width:min-content">
+			<div class="container col-12 p-0 d-flex align-items-center justify-content-center mt-5">
+				<div class="row p-0 m-0 col-md-8 gap-3 justify-content-between align-items-start">
+					<div class="card col-md comps compt-holder p-0 col-sm-6 shadow mt-0" style="max-width: max-content; min-width:min-content">
 						<h4 class="card-header" style:padding-right="100px">
 							<span class="fa fa-book" />
 							Competitions
 						</h4>
 						<div class="card-body p-0 pt-1 shadow">
-							{#each filtered as comp, i}
-								{#if i % 2 == 0}
-									<div bind:this={compsBinds[i]} class="comp even hide d-flex flex-row align-items-stretch justify-content-between">
-										<span class="d-inline">{comp.name}</span>
-										<i class="fa fa-edit m-1" id={comp.id + ''} style="cursor:pointer; color:#3490dc" on:click={() => editComp(comp.id)} />
-									</div>
-								{:else}
-									<div bind:this={compsBinds[i]} class="comp hide d-flex flex-row align-items-stretch justify-content-between">
-										<span class="d-inline">{comp.name}</span>
-										<i class="fa fa-edit m-1" id={comp.id + ''} style="cursor:pointer; color:#3490dc" on:click={() => editComp(comp.id)} />
-									</div>
-								{/if}
-							{/each}
+							{#if filtered.length > 0}
+								{#each filtered as comp, i}
+									{#if i % 2 == 0}
+										<div bind:this={compsBinds[i]} class="comp even hide d-flex flex-row align-items-stretch justify-content-between">
+											<span class="d-inline">{comp.name}</span>
+											<i class="fa fa-edit m-1" id={comp.id + ''} style="cursor:pointer; color:#3490dc" on:click={() => editComp(comp.id)} />
+										</div>
+									{:else}
+										<div bind:this={compsBinds[i]} class="comp hide d-flex flex-row align-items-stretch justify-content-between">
+											<span class="d-inline">{comp.name}</span>
+											<i class="fa fa-edit m-1" id={comp.id + ''} style="cursor:pointer; color:#3490dc" on:click={() => editComp(comp.id)} />
+										</div>
+									{/if}
+								{/each}
+							{:else}
+								<div class="alert alert-warning" role="alert">
+									<span class="fa fa-exclamation-triangle" />
+									No competitions found, If you think that this is an error, please refresh the page.
+								</div>
+							{/if}
 						</div>
 						<div class="container-fluid p-0 pt-3 bg-light d-flex justify-content-center">
 							<div class="row col-md-6 paginationNav justify-content-center align-items-center">
@@ -700,7 +646,7 @@
 						</div>
 					</div>
 					{#if selectedComp === ''}
-						<div class="card p-0 col-md-5">
+						<div class="card p-0 col-md">
 							<div class="card-body p-0 pt-1 shadow">
 								<div class="noComp">
 									<img src={lottieSelect} alt="" class="gif" />
@@ -709,7 +655,7 @@
 							</div>
 						</div>
 					{:else}
-						<div class="card col-md-5 p-0">
+						<div class="card col-md p-0">
 							<div class="card-header" data-bs-toggle="collapse" href="#info" role="button" aria-expanded="false" aria-controls="info">
 								<span class="fa fa-info-circle" />
 								Information
@@ -741,6 +687,18 @@
 											<tr>
 												<th>Number of contestants per team</th>
 												<td>{selectedCompContestantsPerTeam}</td>
+											</tr>
+											<tr>
+												<th>Competition' monitors</th>
+												{#if selectedCompMonitors.length == 0}
+													<td>No monitors</td>
+												{:else}
+													<td>
+														{#each selectedCompMonitors as monitor}
+															<span class="badge badge-primary">{monitor}</span>
+														{/each}
+													</td>
+												{/if}
 											</tr>
 										</tbody>
 									</table>

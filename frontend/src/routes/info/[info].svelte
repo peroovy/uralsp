@@ -58,6 +58,7 @@
 	$: educationType = 'Choose ...';
 	$: instName = '';
 	$: instYear = '';
+	$: instFacultyName = '';
 	let alertCont = '' as unknown as HTMLElement;
 
 	interface SocialIDs {
@@ -78,7 +79,7 @@
 		phone: '',
 		city: '',
 		region: '',
-		institution_type: 0,
+		institution_type: 'Choose ...',
 		institution_name: '',
 		institution_faculty: '',
 		institution_course: '',
@@ -95,20 +96,14 @@
 
 	onMount(() => {
 		if (browser) window.location.reload;
-		if (userInfo.institution_type == 0) {
-			educationType = 'School';
-			instName = userInfo.institution_name;
-			instYear = userInfo.institution_course;
-		} else if (userInfo.institution_type == 2) {
-			educationType = 'University';
-			instName = userInfo.institution_name;
-			instYear = userInfo.institution_course;
-		}
+		educationType = userInfo.institution_type.charAt(0).toUpperCase() + userInfo.institution_type.slice(1);
 		console.log(educationType);
 		ids.google = userInfo.google_id;
 		ids.tele = userInfo.telegram_id;
 		ids.vk = userInfo.vkontakte_id;
-
+		instName = userInfo.institution_name;
+		instYear = userInfo.institution_course;
+		instFacultyName = userInfo.institution_faculty;
 		if (browser) {
 			// @ts-ignore
 			window.google.accounts.id.initialize({
@@ -171,21 +166,31 @@
 			});
 		}
 	});
-	let InstituteYear = [
-		'1 (bachelor / specialty)',
-		'2 (bachelor / specialty)',
-		'3 (bachelor / specialty)',
-		'4 (bachelor / specialty)',
-		'5 (specialty)',
+
+	let instituteYear = [
+		'1st year undergraduate/specialist',
+		'2nd year undergraduate/specialist',
+		'3rd year undergraduate/specialist',
+		'4th year undergraduate/specialist',
+		'5 course specialist',
 		'6 (specialty)',
-		'1 (master)',
-		'2 (master)'
+		'1st Master\'s course',
+		'2nd year master\'s degree',
+		'Graduate student'
 	];
+	let collegeYear = [
+		'1 course',
+		'2 course',
+		'3 course',
+		'4 course',
+		'5 course'
+	]
 	async function updateUserInfo() {
-		userInfo.institution_type = educationType == 'School' ? 0 : 2;
+		userInfo.institution_type = educationType.charAt(0).toLowerCase() + educationType.slice(1);
 		userInfo.institution_name = instName;
 		userInfo.institution_course = instYear;
-
+		console.log(instFacultyName)
+		userInfo.institution_faculty = instFacultyName;
 		const phoneValidation = /^\+7[0-9]{10}/;
 		if (!phoneValidation.test(userInfo.phone)) {
 			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -204,7 +209,8 @@
 			region: userInfo.region,
 			institution_type: userInfo.institution_type,
 			institution_name: userInfo.institution_name,
-			institution_course: userInfo.institution_course
+			institution_course: userInfo.institution_course,
+			institution_faculty: userInfo.institution_faculty,
 		};
 		// TODO: make a server request to update user info
 		if (browser) {
@@ -489,6 +495,7 @@
 							<option selected>Choose...</option>
 							<option>School</option>
 							<option>University</option>
+							<option>College</option>
 						</select>
 					</div>
 					{#if educationType === 'School'}
@@ -520,12 +527,40 @@
 									<label for="Institute">Institute Name</label>
 									<input bind:value={instName} type="text" class="form-control" id="Institute" placeholder="Enter your Institute name" />
 								</div>
+								<div class="form-group col-md-8">
+									<label for="Institute">Faculty/Institute</label>
+									<input bind:value={instFacultyName} type="text" class="form-control" id="Institute" placeholder="Enter your Institute name" />
+								</div>
 								<!--Institute  Year-->
 								<div class="form-group col-md-4">
 									<label for="Institute Year">Institute Year</label>
 									<select bind:value={instYear} class="form-select" aria-label="select">
 										<option selected>Choose...</option>
-										{#each InstituteYear as grade}
+										{#each instituteYear as grade}
+											<option>{grade}</option>
+										{/each}
+									</select>
+								</div>
+							</div>
+						</div>
+					{/if}
+					{#if educationType == 'College'}
+						<div class=" d-flex col-md-11 justify-content-between p-0">
+							<div class="row">
+								<div class="form-group col-md-8">
+									<label for="Institute">College name</label>
+									<input bind:value={instName} type="text" class="form-control" id="Institute" placeholder="Enter your Institute name" />
+								</div>
+								<div class="form-group col-md-8">
+									<label for="Institute">Direction (specialty)</label>
+									<input bind:value={instFacultyName} type="text" class="form-control" id="Institute" placeholder="Enter your Institute name" />
+								</div>
+								<!--Institute  Year-->
+								<div class="form-group col-md-4">
+									<label for="Institute Year">College Year</label>
+									<select bind:value={instYear} class="form-select" aria-label="select">
+										<option selected>Choose...</option>
+										{#each collegeYear as grade}
 											<option>{grade}</option>
 										{/each}
 									</select>

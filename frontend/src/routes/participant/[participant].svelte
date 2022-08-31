@@ -9,6 +9,7 @@
 		let token = localStorage.getItem('access_token');
 		if (token == null) {
 			return {
+				status: 300,
 				redirect: '/'
 			};
 		}
@@ -29,18 +30,42 @@
 				Authorization: 'Bearer ' + token
 			}
 		});
-		let competitions = await fetch(`http://localhost:8000/competitions`, {
+		let UpComming_competitions = await fetch(`http://localhost:8000/competitions?opened=false`, {
 			method: 'GET',
 			headers: {
-				'Content-Type': 'application/json'
-			}
+				'Content-Type': 'application/json',
+			},
 		});
+		let Ongoing_competitions = await fetch(`http://localhost:8000/competitions?opened=true`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		});
+		let Started_competitions = await fetch(`http://localhost:8000/competitions?started=true`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		});
+		let requests = await fetch(`http://localhost:8000/requests`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: 'Bearer ' + token
+			}
+		}).then (res => res.json());
 		let userInfo = await userData.json();
-		let competitionsInfo = await competitions.json();
+		let upComming_competitions = await UpComming_competitions.json();
+		let started_competitions = await Started_competitions.json();
+		let ongoing_competition = await Ongoing_competitions.json();
 		return {
 			props: {
 				userInfo,
-				competitionsInfo
+				ongoing_competition,
+				upComming_competitions,
+				started_competitions,
+				requests
 			}
 		};
 	}
@@ -53,17 +78,21 @@
 	import src from '$lib/Assets/imgs/logo.png';
 	import tempPhoto from '$lib/Assets/imgs/temp-photo.png';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
-	import type { ContestType, UserData } from '$lib/types';
+	import type { Requests, Competitions, ContestType, UserData } from '$lib/types';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	export let userInfo: UserData;
-	export let competitionsInfo;
 
+	import lottieNotFoundSrc from '$lib/Assets/animations/lottie-notfound2.json?url';
+	export let userInfo: UserData;
+	export let ongoing_competition: Competitions = [], upComming_competitions : Competitions = [], started_competitions : Competitions = [];
+	export let requests : Requests = [];
 	let userId: number;
+	let paricipantName = '';
+	console.log(ongoing_competition);
 	onMount(() => {
 		userId = userInfo.id;
+		paricipantName = `${userInfo.name}  ${userInfo.surname}`;
 	});
-	let paricipantName = `${userInfo.name}  ${userInfo.surname}`;
 	let contestObject: ContestType = [
 		{
 			id: 0,
@@ -85,30 +114,33 @@
 	let navBar = '' as unknown as HTMLElement;
 	function toSec(name: string): void {
 		controlActive(name);
-		if (name == 'ongoing') {
+		if (name == 'upcomming') {
 			sectionHolders.style.marginLeft = '0px';
-		} else if (name == 'registered') {
+		} else if (name == 'ongoing') {
 			sectionHolders.style.marginLeft = '-100vw';
 		} else if (name == 'past') {
-			sectionHolders.style.marginLeft = '-300vw';
-		} else if (name == 'pending') {
 			sectionHolders.style.marginLeft = '-200vw';
+		} else if (name == 'requests') {
+			sectionHolders.style.marginLeft = '-300vw';
 		}
 	}
 
 	function controlActive(activeEle: string): void {
 		let navs = navBar.querySelectorAll('.nav-link');
 		for (let ele in navs) {
-			if (
-				navs[ele].nodeName == 'SPAN' &&
-				navs[ele].id === activeEle &&
-				navs[ele].classList.contains('active')
-			) {
+			if (navs[ele].nodeName == 'SPAN' && navs[ele].id === activeEle && navs[ele].classList.contains('active')) {
 				return;
 			}
 		}
+		// Deactivate all navs
+		for (let ele in navs) {
+			if (navs[ele].nodeName == 'SPAN') {
+				navs[ele].classList.remove('active');
+			}
+		}
+		// Activate the Clicked Nav
 		for (let i = 0; i < navs.length; i++) {
-			if (navs[i].nodeName == 'SPAN') {
+			if (navs[i].nodeName == 'SPAN' && navs[i].id === activeEle) {
 				navs[i].classList.toggle('active');
 			}
 		}
@@ -123,6 +155,7 @@
 
 <svelte:head>
 	<title>App Name | {paricipantName}</title>
+	<script defer src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 </svelte:head>
 
 <section class="participant-container">
@@ -146,41 +179,27 @@
 				<span class="navbar-toggler-icon" />
 			</button>
 			<div class="collapse navbar-collapse flex-grow-0" id="participant-menu">
-				<ul
-					class="navbar-nav me-auto mb-20 mb-lg-0 col-12 justify-content-around"
-					bind:this={navBar}
-				>
+				<ul class="navbar-nav me-auto mb-20 mb-lg-0 col-12 justify-content-around" bind:this={navBar}>
+					<li class="nav-item" on:click={() => toSec('upcomming')}>
+						<span class="nav-link active" id="upcomming"> Upcomming registeration </span>
+					</li>
 					<li class="nav-item" on:click={() => toSec('ongoing')}>
-						<span class="nav-link active" id="ongoing"> Ongoing Contests </span>
-					</li>
-					<li class="nav-item" on:click={() => toSec('registered')}>
-						<span class="nav-link" id="registered"> Registered Contests </span>
-					</li>
-					<li class="nav-item" on:click={() => toSec('pending')}>
-						<span class="nav-link" id="pending"> Pending Requests </span>
+						<span class="nav-link" id="ongoing"> Ongoing registeration </span>
 					</li>
 					<li class="nav-item" on:click={() => toSec('past')}>
-						<span class="nav-link" id="past"> Past Contests </span>
+						<span class="nav-link" id="past"> Past registeration </span>
+					</li>
+					<li class="nav-item" on:click={() => toSec('requests')}>
+						<span class="nav-link" id="requests"> Requests </span>
 					</li>
 					<li class="nav-item dropdown">
-						<div
-							class="nav-link dropdown-toggle d-flex align-items-center"
-							role="button"
-							data-bs-toggle="dropdown"
-							aria-expanded="false"
-						>
+						<div class="nav-link dropdown-toggle d-flex align-items-center" role="button" data-bs-toggle="dropdown" aria-expanded="false">
 							<img src={tempPhoto} alt="Logo" class="part-photo" />
 							<span> {paricipantName} </span>
 						</div>
 						<ul class="dropdown-menu mt-2 ms-3 rounded-0">
 							<li class:active={$page.url.pathname === '/info'}>
-								<a
-									sveltekit:prefetch
-									href="{base}/info/{userId}"
-									target="_blank"
-									content="Home"
-									class="dropdown-item nav-link"
-								>
+								<a sveltekit:prefetch href="{base}/info/{userId}" target="_blank" content="Home" class="dropdown-item nav-link">
 									<span class="fa fa-gears" />
 									Settings
 								</a>
@@ -198,206 +217,231 @@
 	</nav>
 
 	<div class="parts-container p-0" bind:this={sectionHolders}>
-		<div class="row part_4 justify-content-center" id="ongoing">
-			<div class="col-md-6">
-				<div class="card shadow-sm border-0">
-					<div class="card-header bg-light">
-						<nav class="navbar navbar-expand-lg bg-light navbar-light mb-3 align-items-center">
-							<div class="navbar-brand">
-								<h4 class="m-0">onGoing: Contest title</h4>
-							</div>
-							<button
-								class="navbar-toggler border-0"
-								type="button"
-								data-bs-toggle="collapse"
-								data-bs-target="#contest_1_data"
-								aria-controls="contest_1_data"
-								aria-expanded="false"
-								aria-label="Toggle navigation"
-							>
-								<span class="fa fa-ellipsis-v" style="font-size: 25px" />
-							</button>
-							<div class="collapse navbar-collapse" id="contest_1_data">
-								<ul class="navbar-nav mr-auto col-12 justify-content-end gap-3">
-									<li class="nav-item d-flex align-items-center">
-										<i class="fa fa-pencil me-1" />
-										<span id="WriterName"> Writer Name </span>
-									</li>
-									<li class="nav-item">
-										<i class="fa fa-calendar me-1" />
-										<span id="WriterName"> 15 Aug, 20:00 Am </span>
-									</li>
-								</ul>
-							</div>
-						</nav>
+		<div class="part_4 d-flex justify-content-center align-items-start">
+			<div class="row justify-content-center align-items-center gap-3 p-0 m-0" style="flex-flow: column nowrap; gap: 30px; width: max-content" id="upcomming">
+				{#if upComming_competitions.length == 0}
+					<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
+						<lottie-player src={lottieNotFoundSrc} background="transparent" style="width: 500px" speed="1" autoplay nocontrols></lottie-player>
+						<h2> No Upcomming registerations!</h2>
+						<small style = "margin-top:-10px; display:block; opacity: 0.7">  Please, try later. </small>
 					</div>
-					<div class="card-body gap-2">
-						<div class="btn btn-group gap-2 on:click={showContest}">
-							<button class="btn btn-primary">
-								<a class="link-light" href="/contests/apply/-apply" target="_blank">
-									<span class="fa fa-check-square-o" />
-									<span class="ptn-count"> Apply </span>
-								</a>
-							</button>
-							<button class="btn btn-primary" on:click={showContest}>
-								<a class="link-light" href="/contests/" target="_blank">
-									<span class="fa fa-eye" />
-									<span> View full Contest</span>
-								</a>
-							</button>
+				{/if}
+				{#each upComming_competitions as competition}
+					{@const diff = Date.parse(competition.registration_start) - Date.parse(Date())}
+					{@const regDay = Date.parse(competition.registration_start)}
+					{@const days = Math.floor(diff / (1000 * 60 * 60 * 24))}
+					{@const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))}
+					{@const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))}
+					{@const seconds = Math.floor((diff % (1000 * 60)) / 1000)}
+					<div class="col-md">
+						<div class="card shadow-sm border-0">
+							<div class="card-header bg-light">
+								<nav class="navbar navbar-expand-lg bg-light navbar-light mb-3 align-items-center">
+									<div class="navbar-brand">
+										<h4 class="m-0">{competition.name}</h4>
+									</div>
+								</nav>
+							</div>
+							<div class="card-body gap-2">
+								<table class="table">
+									<tbody>
+										<tr>
+											<th scope="row"><i class="fa-solid fa-calendar" /></th>
+											<td>Start date</td>
+											<td colspan="2">{new Date(regDay).toDateString()}</td>
+										</tr>
+										<tr>
+											<th scope="row"><i class="fa fa-clock" /></th>
+											<td colspan="2">Registeration will start in: </td>
+											<td>{days} day, {hours} hour, {minutes} min</td>
+										</tr>
+										<tr>
+											<th scope="row"><i class="fa fa-group" /></th>
+											<td colspan="2">Number of Contestant per team</td>
+											<td>{competition.persons_amount}</td>
+										</tr>
+									</tbody>
+								</table>
+								<div class="btn btn-group gap-2 on:click={showContest}">
+									<button class="btn btn-primary" on:click={showContest}>
+										<a class="link-light" href={competition.link} target="_blank">
+											<span class="fa fa-eye" />
+											<span> View full Contest</span>
+										</a>
+									</button>
+								</div>
+							</div>
 						</div>
 					</div>
+				{/each}
+
+			</div>
+		</div>
+		<div class="part_4 d-flex justify-content-center align-items-start">
+			<div class="row justify-content-center gap-4 justify-content-center align-items-center gap-3 p-0 m-0"  style="flex-flow: column nowrap; gap: 30px; width: max-content" id="ongoing">
+			{#if ongoing_competition.length == 0}
+			<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
+				<lottie-player src={lottieNotFoundSrc} background="transparent" style="width: 500px" speed="1" autoplay nocontrols></lottie-player>
+				<h2> No ongoing registerations!</h2>
+				<small style = "margin-top:-10px; display:block; opacity: 0.7">  Please, try later. </small>
+			</div>
+			{:else}
+					{#each ongoing_competition as comp}
+						{@const diff =  Date.parse(comp.registration_end) - Date.parse(Date())}
+						{@const regDay = new Date (Date.parse(comp.registration_start)).toDateString()}
+						{@const days = Math.floor(diff / (1000 * 60 * 60 * 24))}
+						{@const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))}
+						{@const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))}
+						{@const seconds = Math.floor((diff % (1000 * 60)) / 1000)}
+						{@const ApplyLink = '/contests/apply/'+comp.id}
+						<div class="col-md">
+							<div class="card shadow-sm border-0">
+								<div class="card-header bg-light">
+									<nav class="navbar navbar-expand-lg bg-light navbar-light mb-3 align-items-center">
+										<div class="navbar-brand">
+											<h4 class="m-0">{comp.name}</h4>
+										</div>
+									</nav>
+								</div>
+								<div class="card-body gap-2">
+									<table class="table">
+										<tbody>
+											<tr>
+												<th scope="row"><i class="fa-solid fa-calendar" /></th>
+												<td>Start date</td>
+												<td colspan="2">{regDay}</td>
+											</tr>
+											<tr>
+												<th scope="row"><i class="fa fa-clock" /></th>
+												<td>Registeration ends in </td>
+												<td colspan="2">{days} days, {hours} hours, {minutes} mins</td>
+											</tr>
+											<tr>
+												<th scope="row"><i class="fa fa-group" /></th>
+												<td colspan="2"> Number of contestants per team</td>
+												<td>{comp.persons_amount}</td>
+											</tr>
+										</tbody>
+									</table>
+									<div class="btn btn-group gap-2 on:click={showContest}">
+										<button class="btn btn-primary">
+											<a class="link-light" href={ApplyLink} target="_blank">
+												<span class="fa fa-check-square-o" />
+												<span class="ptn-count"> Apply </span>
+											</a>
+										</button>
+										<button class="btn btn-primary" on:click={showContest}>
+											<a class="link-light" href={comp.link} target="_blank">
+												<span class="fa fa-eye" />
+												<span> View full Contest</span>
+											</a>
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					{/each}
+				{/if}
+			</div>
+		</div>
+		<div class="part_4 d-flex justify-content-center align-items-start">
+			<div class="row justify-content-center align-items-center gap-3 p-0 m-0 " id="past">
+				<div class="col-md">
+					{#if started_competitions.length == 0}
+						<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
+							<lottie-player src={lottieNotFoundSrc} background="transparent" style="width: 500px" speed="1" autoplay nocontrols></lottie-player>
+							<h2> No ongoing registerations!</h2>
+							<small style = "margin-top:-10px; display:block; opacity: 0.7">  Please, try later. </small>
+						</div>
+					{:else}
+					{#each started_competitions as comp}
+						{@const StartDay = new Date (Date.parse(comp.started_at)).toDateString()}
+
+						<div class="col-md-5" style:width="fit-content">
+							<div class="card shadow-sm border-0">
+								<div class="card-header bg-light">
+									<nav class="navbar navbar-expand-lg bg-light navbar-light mb-3 align-items-center">
+										<div class="navbar-brand">
+											<h4 class="m-0">{comp.name}</h4>
+										</div>
+									</nav>
+								</div>
+								<div class="card-body gap-2">
+									<table class="table">
+										<tbody>
+											<tr>
+												<th scope="row"><i class="fa-solid fa-calendar" /></th>
+												<td>Start date</td>
+												<td colspan="2">{StartDay}</td>
+											</tr>
+											<tr>
+												<th scope="row"><i class="fa fa-group" /></th>
+												<td colspan="2">Number of Contestant per team</td>
+												<td>{comp.persons_amount}</td>
+											</tr>
+										</tbody>
+									</table>
+									<div class="btn btn-group gap-2 on:click={showContest}">
+										<button class="btn btn-primary" on:click={showContest}>
+											<a class="link-light" href={comp.link} target="_blank">
+												<span class="fa fa-eye" />
+												<span> View full Contest</span>
+											</a>
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						{/each}
+					{/if}
 				</div>
 			</div>
 		</div>
-		<div class="row part_4 justify-content-center" id="registered">
-			<div class="col-md-6">
-				<div class="card shadow-sm border-0">
-					<div class="card-header bg-light">
-						<nav class="navbar navbar-expand-lg bg-light navbar-light mb-3 align-items-center">
-							<div class="navbar-brand">
-								<h4 class="m-0">registered: Contest title</h4>
-							</div>
-							<button
-								class="navbar-toggler border-0"
-								type="button"
-								data-bs-toggle="collapse"
-								data-bs-target="#contest_1_data"
-								aria-controls="contest_1_data"
-								aria-expanded="false"
-								aria-label="Toggle navigation"
-							>
-								<span class="fa fa-ellipsis-v" style="font-size: 25px" />
-							</button>
-							<div class="collapse navbar-collapse" id="contest_1_data">
-								<ul class="navbar-nav mr-auto col-12 justify-content-end gap-3">
-									<li class="nav-item d-flex align-items-center">
-										<i class="fa fa-pencil me-1" />
-										<span id="WriterName"> Writer Name </span>
-									</li>
-									<li class="nav-item">
-										<i class="fa fa-calendar me-1" />
-										<span id="WriterName"> 15 Aug, 20:00 Am </span>
-									</li>
-								</ul>
-							</div>
-						</nav>
+		<div class="part_4 d-flex justify-content-center align-items-start">
+			<div class="row part_4 justify-content-center align-items-center gap-3 p-0 m-0" id="requests">
+				{#if requests.length == 0}
+					<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
+						<lottie-player src={lottieNotFoundSrc} background="transparent" style="width: 500px" speed="1" autoplay nocontrols></lottie-player>
+						<h2> No requests found</h2>
+						<small style = "margin-top:-10px; display:block; opacity: 0.7">  Please, try later. </small>
 					</div>
-					<div class="card-body gap-2">
-						<div class="btn btn-group gap-2 on:click={showContest}">
-							<button class="btn btn-primary">
-								<a class="link-light" href="/contests/apply/-apply" target="_blank">
-									<span class="fa fa-check-square-o" />
-									<span class="ptn-count"> Apply </span>
-								</a>
-							</button>
-							<button class="btn btn-primary" on:click={showContest}>
-								<a class="link-light" href="/contests/" target="_blank">
-									<span class="fa fa-eye" />
-									<span> View full Contest</span>
-								</a>
-							</button>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="row part_4 justify-content-center" id="pending">
-			<div class="col-md-6">
-				<div class="card shadow-sm border-0">
-					<div class="card-header bg-light">
-						<nav class="navbar navbar-expand-lg bg-light navbar-light mb-3 align-items-center">
-							<div class="navbar-brand">
-								<h4 class="m-0">pending: Contest title</h4>
+				{:else}
+						{#each requests as request}
+							{@const createdAt = new Date (Date.parse(request.created_at))}
+							<div class="row justify-content-center algin-itmes-start">
+								<div class="card p-0 col-md-6 border-0 shadow-sm">
+									<h4 class="card-header p-4 m-0">
+										<li class="fa fa-paper-plane me-1"></li>
+										{request.team_name}
+									</h4>
+									<div class="card-body">
+										<p class="request-description"> {request.description} </p>
+
+										<table class="table table-striped table-hover">
+											<tbody>
+												<tr>
+													<th scope="row">Status</th>
+													<td>{request.status}</td>
+												</tr>
+												<tr>
+													<th scope="row">Created at</th>
+													<td>{createdAt.toDateString()}, {createdAt.getUTCHours()}</td>
+												</tr>
+												<tr>
+													<th scope="row">Participants</th>
+													<td>{request.participants.join(' ,')}</td>
+												</tr>
+											</tbody>
+										</table>
+										<div class="btn gap-2">
+											<button class="btn btn-primary btn-sm"> <li class="fa fa-edit" /> Edit </button>
+											<button class="btn btn-danger btn-sm"> <li class="fa fa-trash" /> Remove </button>
+										</div>
+									</div>
+								</div>
 							</div>
-							<button
-								class="navbar-toggler border-0"
-								type="button"
-								data-bs-toggle="collapse"
-								data-bs-target="#contest_1_data"
-								aria-controls="contest_1_data"
-								aria-expanded="false"
-								aria-label="Toggle navigation"
-							>
-								<span class="fa fa-ellipsis-v" style="font-size: 25px" />
-							</button>
-							<div class="collapse navbar-collapse" id="contest_1_data">
-								<ul class="navbar-nav mr-auto col-12 justify-content-end gap-3">
-									<li class="nav-item d-flex align-items-center">
-										<i class="fa fa-pencil me-1" />
-										<span id="WriterName"> Writer Name </span>
-									</li>
-									<li class="nav-item">
-										<i class="fa fa-calendar me-1" />
-										<span id="WriterName"> 15 Aug, 20:00 Am </span>
-									</li>
-								</ul>
-							</div>
-						</nav>
-					</div>
-					<div class="card-body gap-2">
-						<div class="btn btn-group gap-2">
-							<button class="btn btn-primary on:click={showContest}">
-								<a class="link-light" href="/contests/apply/-apply" target="_blank">
-									<span class="fa fa-pencil" />
-									<span class="ptn-count"> Edit Your Application </span>
-								</a>
-							</button>
-							<button class="btn btn-primary" on:click={showContest}>
-								<a class="link-light" href="/contests/" target="_blank">
-									<span class="fa fa-eye" />
-									<span> View full Contest</span>
-								</a>
-							</button>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="row part_4 justify-content-center" id="past">
-			<div class="col-md-6">
-				<div class="card shadow-sm border-0">
-					<div class="card-header bg-light">
-						<nav class="navbar navbar-expand-lg bg-light navbar-light mb-3 align-items-center">
-							<div class="navbar-brand">
-								<h4 class="m-0">past: Contest title</h4>
-							</div>
-							<button
-								class="navbar-toggler border-0"
-								type="button"
-								data-bs-toggle="collapse"
-								data-bs-target="#contest_1_data"
-								aria-controls="contest_1_data"
-								aria-expanded="false"
-								aria-label="Toggle navigation"
-							>
-								<span class="fa fa-ellipsis-v" style="font-size: 25px" />
-							</button>
-							<div class="collapse navbar-collapse" id="contest_1_data">
-								<ul class="navbar-nav mr-auto col-12 justify-content-end gap-3">
-									<li class="nav-item d-flex align-items-center">
-										<i class="fa fa-pencil me-1" />
-										<span id="WriterName"> Writer Name </span>
-									</li>
-									<li class="nav-item">
-										<i class="fa fa-calendar me-1" />
-										<span id="WriterName"> 15 Aug, 20:00 Am </span>
-									</li>
-								</ul>
-							</div>
-						</nav>
-					</div>
-					<div class="card-body gap-2">
-						<div class="btn btn-group gap-2">
-							<button class="btn btn-primary" on:click={showContest}>
-								<a class="link-light" href="/contests/" target="_blank">
-									<span class="fa fa-eye" />
-									<span> View full Contest</span>
-								</a>
-							</button>
-						</div>
-					</div>
-				</div>
+						{/each}
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -407,7 +451,7 @@
 	@import '../../lib/Assets/common.scss';
 	.participant-container {
 		width: 100vw;
-		min-height: 100vh;
+		min-height: calc(100vh );
 		align-items: center;
 		background-color: $bg-color;
 		@include bg;
@@ -435,19 +479,34 @@
 	}
 	.parts-container {
 		display: flex;
-		width: 100vw;
+		width: 400vw;
 		flex-direction: row nowrap;
+	}
+	.request-description{
+		font-family: 'light';
+		line-height: 25px;
+		font-size: 16px;
+		text-align: justify;
+		padding: 8px;
 	}
 	.part_4 {
 		flex-shrink: 0;
 		padding: 0px !important;
 		margin: 0px !important;
-		width: 100% !important;
+		width: 100vw !important;
 	}
 	nav {
 		position: sticky !important;
 		z-index: 10 !important;
 		background-color: #f8f9fa !important;
+	}
+	.notFound{
+		font-family: 'light';
+		font-size: 18px;
+		padding-bottom: 100px !important;
+		h2{
+			margin-top: -40px
+		}
 	}
 	@media screen and (min-width: 1000px) {
 		.navbar-nav {

@@ -573,12 +573,12 @@
 				showMessage('Error', 'Something went wrong.');
 				res.json().then(data => {
 					console.log(data)
-					showMessage(res.statusText, data.details);
+					showMessage(res.statusText, (data.details !== undefined)? data.details: "Please fill the form correctly!");
 				});
 			}
 		}).catch(err => {
 			let error = '';
-			showMessage('Error', 'Something went wrong: '+err);
+			showMessage('Error', 'Something went wrong: ' + err);
 		});
 	}
 
@@ -726,10 +726,10 @@
 			<div class="slide" style="position: relative;">
 				<div class="row shadow p-0 m-0 justify-content-between" style="position: relative; z-index: 10">
 					<div class="card col-md border-0 rounded-0">
-						<h3 class="m-0 card-title d-flex align-items-center p-3 border-0 rounded-0">
+						<h1 class="m-0 card-title d-flex align-items-center p-3 border-0 rounded-0">
 							<i class="fa-brands fa-wpforms me-2" style:font-size="30px" />
 							Create Field
-						</h3>
+						</h1>
 						<div class="card-body form-creator">
 							<div class="form-group" style="position:relative; margin-bottom: 20px">
 								<label for="question"> Question Id </label>
@@ -831,10 +831,10 @@
 			<div class="slide">
 				<div class="row col-12 justify-content-center">
 					<div class="card p-0 mb-3 col-md-5">
-						<h5 class="card-header" style="padding: 20px">
+						<h1 class="card-header" style="padding: 20px">
 							<i class="fa-solid fa-gear me-1" />
 							Set admin
-						</h5>
+						</h1>
 						<div class="card-body">
 							<div class="showSelectedAdmin d-flex" style="width: fit-content; flex-flow: row wrap;" bind:this={monitorsCont} />
 							<input type="text" class="form-control" id="admin" placeholder="Enter admin id ..." bind:value={monitorId} />

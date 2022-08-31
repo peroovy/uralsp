@@ -1,348 +1,171 @@
-<script lang="ts">
-	import { contest }  from '$lib/stores';
-	import { onMount } from 'svelte';
-	import dotsSrc from '$lib/Assets/imgs/dots.png';
-	import type {Draft, Mcq, Form, ContestType }  from '$lib/types'
-    
-	let contestObject: ContestType = {
-		contestID: '',
-		writerName: '',
-		contestTitle: '',
-		description: '',
-		start_time: '',
-		end_time: '',
-        form: {
-            longQuestion: [],
-            shortQuestion: [],
-            mcqs: [],
-            uploads: []
-        },
-	};
-    
-    let form_data: Form = {
-        longQuestion: [],
-        shortQuestion: [],
-        mcqs: [],
-        uploads: []
-    };
-	
-	let ID: String, title : HTMLElement;
-    let formContainer = "" as unknown as HTMLElement;
-    let alertDiv = "" as unknown as HTMLElement;
-	let submitted = true;
-    let shortQuestion: string[] = [];
-    let longQuestion: string[] = [];
-    let mcqs: Mcq[] = [];
-    let uploads: string[] = [];
-    let email: string = '';
-    let remaningTime : HTMLElement = '' as unknown as HTMLElement;
-	let now = new Date();
-	let end = new Date();
-	
-    function updateDate(){
-        // remainning time in days, hours, minutes, seconds
-        let timeDiff = end.getTime() - now.getTime();
-        let days = Math.floor(timeDiff / (1000 * 3600 * 24));
-        let hours = Math.floor((timeDiff % (1000 * 3600 * 24)) / (1000 * 3600));
-        let minutes = Math.floor((timeDiff % (1000 * 3600)) / (1000 * 60));
-        remaningTime.innerHTML = `${days} days, ${hours} hours, ${minutes} minutes</span>`;
+<script context="module" lang="ts">
+	import { browser } from '$app/env';
+	import { parsePayload } from '$lib/parse';
+	import type { Requests } from '$lib/types';
+	// @ts-ignore
+	export async function load({ params }) {
+		const contestId = parseInt(params.application);
+		if (isNaN(contestId)) {
+			return {
+				status: 301,
+				return: '/'
+			};
+		}
+
+		if (browser) {
+			// Check the access token in the local storage
+			const accessToken = localStorage.getItem('access_token');
+			if (accessToken == null) {
+				return {
+					status: 300,
+					redirect: '/'
+				};
+			}
+			let payload = parsePayload(accessToken);
+			const userId = payload.user_id;
+			const permissions = payload.permission;
+			// Get the competition info
+			const contest = await fetch(`http://localhost:8000/competitions/${contestId}`);
+			// Get the user old requests
+			const oldRequests = await fetch(`http://localhost:8000/requests`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${accessToken}`
+				}
+			})
+            if(oldRequests.status != 200 || contest.status != 200) {
+                return {
+                    status: 300,
+                    redirect: '/'
+                }
+            }
+            const oldRequestsJson = await oldRequests.json();
+            const contestJson = await contest.json();
+            // check if the contest is overdue or upcoming
+            const now = Date.now();
+            const contestStart = Date.parse(contestJson.registration_start);
+            const contestEnd = Date.parse(contestJson.registration_end);
+
+            if (now < contestStart || now > contestEnd) {
+                alert('The contest is not open for registration');
+                return {
+                    status: 300,
+                    redirect: '/'
+                }
+                
+            }
+			// Check if the user has already made a request for this competition
+			const oldRequest = (oldRequestsJson as Requests).find((request) => request.owner == contestId || request.participants.includes(userId));
+
+			return {
+				props: {
+					contest: contestJson,
+					oldRequest,
+					userId,
+					accessToken,
+					permissions
+				}
+			};
+		}
 	}
-    let getDraft: Draft, draftReady: boolean = false;
+</script>
+
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
+	import dotsSrc from '$lib/Assets/imgs/dots.png';
+	import type { UserRequest, CompetitionWithFields } from '$lib/types';
+
+	export let contest: CompetitionWithFields = {} as CompetitionWithFields,
+		oldRequest: UserRequest = {} as UserRequest,
+		userId: number,
+		accessToken: string,
+		permissions: string;
+
+	let alertDiv: HTMLDivElement;
+
+	let everyThingIsOk = true;
+	if (Object.keys(contest).length == 0 || userId === undefined || accessToken == undefined || permissions == undefined) everyThingIsOk = false;
+
 	onMount(() => {
-		contestObject = JSON.parse($contest) as ContestType;
-		ID = contestObject.contestID;
-		title.innerHTML = `${contestObject.contestTitle} - Application`;
-		
-        // remaning time
-        end = new Date(contestObject.end_time);
-		updateDate();
-        
-        //form Data
-        form_data = contestObject.form;
-        longQuestion = form_data.longQuestion;
-        shortQuestion = form_data.shortQuestion;
-        mcqs = form_data.mcqs;
-        uploads = form_data.uploads;
+        if (!everyThingIsOk) goto(base + '/');
+        setTimeout(() => {
+            
+        }, 0);
+    });
 
-        let temp = localStorage.getItem(`${ID}_draft`);
-        if(temp){
-            getDraft = JSON.parse(temp);
-            draftReady = true;
-        }
-
-	});
-    
-    //validate checkBoxes
-    function validateCheckBoxes(){        
-        let checkBoxes = formContainer.querySelectorAll('input[type="checkbox"]');
-        let textFields = formContainer.querySelectorAll('input[type="text"]');
-        let email  = formContainer.querySelector('input[type="email"]');
-        let textArea = formContainer.querySelectorAll('textarea');
-        let radio = formContainer.querySelectorAll('input[type="radio"]');
-        let uploadFields = formContainer.querySelectorAll('input[type="file"]');
-
-        let check = false;
-        let allRight = true;
-        if(checkBoxes !=    null){
-            for(let i=0; i < checkBoxes.length; i++){
-                if((checkBoxes[i] as HTMLInputElement).checked){
-                    check = true;
-                    break;
-                }
-            }
-            if(!check){
-                allRight = false;
-                return alert("Please fill all the form fields");
-            }
-        }
-        if(textFields != null){
-            for(let i=0; i < textFields.length; i++){
-                if((textFields[i] as HTMLInputElement).value == ''){
-                    allRight = false;
-                    break;
-                }
-            }
-        }
-        if(textArea != null){
-            for(let i=0; i < textArea.length; i++){
-                if((textArea[i] as HTMLTextAreaElement).value == ''){
-                    allRight = false;
-                    break;
-                }
-            }
-        }
-        if(email != null){
-            if((email as HTMLInputElement).value == ''){
-                allRight = false;
-            }
-        }
-        if(radio != null){
-            for(let i=0; i < radio.length; i++){
-                if((radio[i] as HTMLInputElement).checked){
-                    check = true;
-                    break;
-                }
-            }
-            if(!check){
-                allRight = false;
-                return alert("Please fill all the form fields");
-            }
-        }
-        if(uploadFields != null){
-            for(let i=0; i < uploadFields.length; i++){
-                if((uploadFields[i] as HTMLInputElement).value == ''){
-                    allRight = false;
-                    break;
-                }
-            }
-        }
-
-
-        if(allRight){
-            return true;
-        }
-        return alert("Please fill all the form fields");
-    }
-	
-
-    // update remaning time
-	setInterval(() => {
-		now = new Date();
-		updateDate();
-	}, 60000);
-    
-    // Save ansers as a drafr to localstorage
-    function saveDraft(){
-
-        let answers: Draft ={
-            email: '',
-            longQuestion: [{
-                question: '',
-                answer: ''
-            }],
-            shortQuestion: [{
-                answer: '',
-                question: ''
-            }],
-            mcqs: [{
-                answer: [''],
-                question: ''
-            }],
-        };
-
-        // Email
-        answers.email = email;
-        //longQuestions;
-        answers.longQuestion.pop(); // pop the empty temp
-        for(let i=0; i < longQuestion.length; i++){
-            answers.longQuestion.push({
-                question: longQuestion[i],
-                answer: (formContainer.querySelector(`#Ql${i}`)! as HTMLInputElement).value
-            });
-        }
-
-        //shortQuestions
-        answers.shortQuestion.pop(); // pop the empty temp
-        for(let i=0; i < shortQuestion.length; i++){
-            answers.shortQuestion.push({
-                question: shortQuestion[i],
-                answer: (formContainer.querySelector(`#Qs${i}`)! as HTMLInputElement).value
-            });
-        }
-
-        //mcqs
-        answers.mcqs.pop(); // pop the empty temp
-        for(let i=0; i < mcqs.length; i++){
-            let userAns = [];
-            for(let d=0; d < mcqs[i].options.length; d++){
-                if((formContainer.querySelector(`#formCheck${i}${d}`)! as HTMLInputElement).checked){
-                    userAns.push(mcqs[i].options[d]);        
-                }
-            }
-            answers.mcqs.push({
-                question: mcqs[i].question,
-                answer: userAns
-            });
-        }
-        if(window !== undefined){
-            localStorage.setItem(`${ID}_draft`, JSON.stringify(answers));
-            alertDiv.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
-                                        <strong>Draft Saved Successfully!</strong> 
-                                        ${(contestObject.form.uploads.length > 0)? "Please note: files are not going to be saved!": ""}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                    </div>`;
-        }
-    }
-
-    
 </script>
 
 <svelte:head>
-	<title>App Name | {ID}-form </title>
+	<title>App Name | {contest.name}-form</title>
 </svelte:head>
 
-<section class="contestForm">
+<section class="container-fluid p-0 m-0 pt-5 contestForm d-flex justify-content-center align-items-start">
 	<img class="d1" src={dotsSrc} alt="" />
 	<div class="d2" />
 
-	<div class="container-fluid d-flex p-0 pt-5 justify-content-center" bind:this={formContainer}>
-		<div class="row m-0 p-0 align-self-center">
-            <div class="card needs-validation shadow col-12 d-flex align-self-center p-0">
-                <nav class="navbar card-header bg-light navbar-light mb-3 align-items-center">
-                    <div class="navbar-brand">
-                        <h4 class="m-0" bind:this={title}>Title</h4>
+    <div class="row col-12 m-0 p-0 justify-content-center">
+        <div class="card col-md-4 p-0" style:max-width="fit-content">
+            <nav class="navbar card-header">
+                <div class="container-fluid justify-content-left">
+                    <div class="d-flex navbar-brand mb-0 justify-content-left align-items-center gap-3 p-3">
+                        <li class="fa fa-certificate" />
+                        {contest.name}
                     </div>
-                    <button
-                        class="navbar-toggler border-0"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#form_data"
-                        aria-controls="form_data"
-                        aria-expanded="false"
-                        aria-label="Toggle navigation"
-                    >
-                        <span class="fa fa-ellipsis-v" style="font-size: 25px" />
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#compDetails" aria-controls="compDetails" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="fa fa-ellipsis-v"></span>
                     </button>
-                    <div class="collapse navbar-collapse" id="form_data">
-                        <ul class="navbar-nav mr-auto justify-content-end gap-3">
-                            <li class="nav-item d-flex align-items-center">
-                                <i class="fa fa-hourglass-2 me-1" />
-                                <span bind:this={remaningTime}> 00: 00</span>
+                    <div class="collapse navbar-collapse" id="compDetails">
+                        <ul class="navbar-nav gap-2">
+                            <li class="nav-item">
+                                <i class="fa fa-calendar"></i>
+                                Starts on: 
+                                {new Date(Date.parse(contest.started_at)).toDateString()}
+                            </li>
+                            <li class="nav-item">
+                                <i class="fa fa-clock"></i>
+                                Registration ends in: 
+                                {new Date(Date.parse(contest.registration_end) - Date.now()).getDay()} days,
+                                {new Date(Date.parse(contest.registration_end) - Date.now()).getHours()} hours,
+                                {new Date(Date.parse(contest.registration_end) - Date.now()).getMinutes()} minutes
+                            </li>
+                            <li class="nav-item">
+                                <i class="fa fa-group"></i>
+                                Number of contestants per team: 
+                                {contest.persons_amount}
                             </li>
                         </ul>
                     </div>
-                </nav>
-                <div class="form-group align-self-center col-11 justify-content-center">
-                    <label for="applicantEmail"> Email </label>
-                    {#if draftReady}
-                        <input type="email" class="form-control" value={getDraft.email} id="applicantEmail" placeholder="Enter email"/>
-                    {:else}
-                        <input type="email" class="form-control" bind:value={email} id="applicantEmail" placeholder="Enter email" />
-                    {/if}
-
                 </div>
-                {#each shortQuestion as s, i}
-                    <div class="form-group align-self-center col-11 justify-content-center">
-                        <label for="Q{i}">{s}</label>
-                        {#if draftReady}
-                            <input required type="text" class="form-control" id="Qs{i}" placeholder="Enter Your Answer ..." value={getDraft.shortQuestion[i].answer} />
-                        {/if}
-                        {#if !draftReady}
-                            <input required type="text" class="form-control" id="Qs{i}" placeholder="Enter Your Answer ..."/>
-                        {/if}
+            </nav>
+            
+            <div class="card-body">
+                <div class="row gap-1">
+                {#each Array(contest.persons_amount) as _, i}
+                <button class="btn btn-light border-0 rounded-0 btn-block" type="button" data-bs-toggle="collapse" data-bs-target="#appLicationNum{i}" aria-expanded="false" aria-controls="appLicationNum{i}"> Application Number: {i+1} </button>
+                <div class="collapse multi-collapse {(i == 0)? "show": ''}" id="appLicationNum{i}">
+                    <div>
+                        {@html contest.request_template}
                     </div>
-                {/each}
-                
-                {#each longQuestion as l, i}
-                    <div class="form-group align-self-center col-11 justify-content-center">
-                        <label for="Ql{i}">{l}</label>
-                        {#if draftReady}
-                            <textarea class="form-control" id="Ql{i}" rows="3" placeholder="Enter Your Answer ..." value="{getDraft.longQuestion[i].answer}" required></textarea>
-                        {/if}
-                        {#if !draftReady}
-                            <textarea class="form-control" id="Ql{i}" rows="3" placeholder="Enter Your Answer ..." required></textarea>
-                        {/if}
-                    </div>
-                {/each}
-                
-                {#each mcqs as m, i}
-                    <div class="form-check p-0 justify-content-center align-self-center col-11">
-                        {#if m.numberOFAllowedOptions.one > 0}
-                            <label for="formCheck{i}">{m.question}</label>
-                            {#each m.options as o, d}
-                                <fieldset class="form-check" required>
-                                    {#if draftReady && getDraft.mcqs[i].answer.includes(o)}
-                                        <input type="radio" name="formCheck{m.question}" class="form-check-input" id="formCheck{i}{d}" value="{o}" checked/>
-                                    {/if}
-                                    {#if !draftReady || !getDraft.mcqs[i].answer.includes(o)}
-                                        <input type="radio" name="formCheck{m.question}" class="form-check-input" id="formCheck{i}{d}" value="{o}" />
-                                    {/if}
-                                    <label class="form-check-label" for="formCheck{i}{o}">
-                                        {o}
-                                    </label>
-                                </fieldset>
-                            {/each}
-                        {:else}
-                            <label for="formCheck{i}">{m.question}</label>
-                            {#each m.options as o, d}
-                                <fieldset class="form-check">
-                                    {#if draftReady && getDraft.mcqs[i].answer.includes(o)}
-                                        <input type="checkbox" class="form-check-input" name="formCheck{m.question}" id="formCheck{i}{d}" value="{o}" checked/>
-                                    {/if}
-                                    {#if !draftReady || !getDraft.mcqs[i].answer.includes(o)}
-                                        <input type="checkbox" class="form-check-input" name="formCheck{m.question}" id="formCheck{i}{d}" value="{o}" />
-                                    {/if}
-                                    <label class="form-check-label" for="formCheck{i}{d}">
-                                        {o}
-                                    </label>
-                                </fieldset>
-                            {/each}
-                        {/if}
-                    </div>
-                {/each}
-
-                {#each uploads as u}
-                    <div class="form-group justify-content-center align-self-center col-11">
-                        <label for="uploads{u}" class="formUpload">{u}</label>
-                        <div class="uploadinfo"> 
-                            <input type="file" class="form-control-file" id="uploads{u}" required>
-                        </div>
-                    </div>
-                {/each}
-
-                <div class="form-group d-flex gap-3 justify-content-center align-items-center col-11 m-3">
-                    <button class="btn btn-primary" on:click={validateCheckBoxes}>Submit</button>
-                    <button class="btn btn-primary" on:click={saveDraft}>Save a draft</button>
-                    {#if submitted}
-                        <button class="btn btn-danger"> Retract  </button>
-                    {/if}
+                    <button class="btn btn-sm btn-primary m-2 ms-0 border-0" style="max-width: max-content; background-color: #3490dc"> 
+                        <i class="fas fa-save me-1"></i>
+                        Save 
+                    </button>
                 </div>
-
+                {/each}
+                </div>
+                <div class="btn-group col-12 pt-3 ">
+                    <button class="btn btn-block btn-primary rounded-0 border-0" style="background-color: #3490dc"> 
+                        <li class="fa fa-paper-plane me-1"/>
+                        Sumbit
+                     </button>
+                </div>
             </div>
-		</div>
-	</div>
-
-    <div class="alert" bind:this={alertDiv}></div>
+        </div>
+    </div>
+	<div class="alert" bind:this={alertDiv} />
 </section>
 
 <style lang="scss">
@@ -350,105 +173,31 @@
 
 	.contestForm {
 		width: 100vw;
-		min-height: 100vh;
+		min-height: calc(100vh - 38px);
 		align-items: center;
-		background-color: $bg-color;
+		background-image: $bg-color;
 		@include bg;
 		position: relative;
 		z-index: 1;
-    	padding-bottom: 30px;
-        nav {
-			z-index: 3;
-			position: sticky;
-			padding: 10px 20px;
-			font-family: 'Light';
-			font-size: 15px !important;
-			background-color: white;
-		}
+		padding-bottom: 30px;
         .card{
-            font-family: "Medium";
-            input[type="text"],input[type="email"], textarea{
-                border-radius: 0;
-                border: 0px;
-                border-bottom: 2px solid $secondary-color !important;
-                margin-bottom: 20px;
-                font-family: "Light";
+            font-family: 'Light';
+            .nav-item{
                 font-size: 15px;
-                &:focus{
-                    border-bottom: 2px solid $primary-color !important;
-                    outline: none;
-                    box-shadow: none;
-                }
-            }
-            
-            textarea{
-                border: 1px solid rgba(128, 128, 128, 0.205);
-            }
-            input[type="radio"], input[type="checkbox"]{
-                margin-top: 8px;
-                margin-left: 0px;
-                border-color: $primary-color;
-
-            }
-            input[type="radio"]:checked, input[type="checkbox"]:checked{
-                background-color: $secondary-color;
-                border-color: $secondary-color;
-            }
-            input[type="file"]{
-                position: absolute;
-                left: -75px;
-            }
-            .uploadinfo{
-                overflow: hidden;
-                position: relative;
-                margin-top: -20px;
-                height: 30px;
-                font-family: "light";
-                color: $secondary-color;
-            }
-            label[for="uploads"]{
-                font-size: 15px;
-                font-family: "Light";
-                margin-bottom: 10px;
-            }
-            .formUpload{
-                border: 1px solid rgba(177, 177, 177, 0.178);
-                margin: 20px 0px;
-                font-family: light;
-                padding-left: 10px;
-                box-shadow: 2px 2px 10px rgba(128, 128, 128, 0.055) inset;
-                &::after{
-                    content: "Browse";
-                    padding: 10px 15px;
-                    display: inline-block;
-                    margin-left: 30px;
-                    border: 2px solid $secondary-color;
-                    cursor: pointer;
-                    background-color: $secondary-color;
-                    color: white;
-                    font-family: 'Medium';
-                }
-            }
-            
-            .form-check-label{
-                display: inline-block;
-                margin: 5px 5px;
-                font-size: 16px;
                 font-family: 'Light';
-                &:hover{
-                    cursor: pointer;
+                .fa{
+                    margin-right: 10px;
                 }
-                color: $primary-color;
             }
         }
 	}
-    .alert{
-        position: fixed;
-        bottom: 20px;
-        left: 0;
-        z-index: 5;
-    }
-    @media screen and (max-width: 2000px) {
+	.alert {
+		position: fixed;
+		bottom: 20px;
+		left: 0;
+		z-index: 5;
+	}
+	@media screen and (max-width: 2000px) {
 		.navbar-nav {
 			margin: 20px 0px;
 			&::before {
