@@ -40,6 +40,14 @@ def get_request_router(request_handlers: RequestHandlers) -> Router:
     )
 
     router.add_api_operation(
+        path="/{int:request_id}",
+        methods=["DELETE"],
+        auth=[AnyAdmin()],
+        view_func=request_handlers.delete_request,
+        response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
+    )
+
+    router.add_api_operation(
         path="/{int:request_id}/cancel",
         methods=["PATCH"],
         view_func=request_handlers.cancel_request,

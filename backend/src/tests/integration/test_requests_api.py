@@ -21,6 +21,7 @@ from tests.integration.conftest import (
     assert_not_200,
     assert_not_422_body,
     assert_validation_error,
+    delete,
     get,
     patch,
     post,
@@ -524,3 +525,46 @@ def test_processing(client: Client, user_request: Request, super_admin_token: st
         body = {"status": status, "description": description}
         assert_validation_error(patch(client, PROCESS.format(id=user_request.id), super_admin_token, body))
         assert Request.objects.get(pk=user_request.pk) == user_request
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+def test_access_deleting(
+    client: Client,
+    user_token: str,
+    user: User,
+    admin: User,
+    competition: Competition,
+    admin_token: str,
+    super_admin_token: str,
+) -> None:
+    method = delete_method(client, user, competition)
+
+    assert_access(method, [super_admin_token], [user_token, admin_token])
+
+    competition.admins.add(admin)
+    assert_access(method, [admin_token, super_admin_token], [user_token])
+
+
+def delete_method(client: Client, user: User, competition: Competition) -> Callable:
+    def wrapper(token: str):
+        request = Request.objects.create(owner=user, competition=competition)
+
+        return delete(client, REQUEST.format(id=request.id), token)
+
+    return wrapper
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+def test_deleting(
+    client: Client, user_request: Request, participation: Participation, field: Field, super_admin_token: str
+) -> None:
+    value = FormValue.objects.create(participation=participation, field=field, value="123")
+
+    assert_200(delete(client, REQUEST.format(id=user_request.id), super_admin_token))
+    assert not Request.objects.filter(pk=user_request.pk).exists()
+    assert not Participation.objects.filter(pk=participation.pk).exists()
+    assert not FormValue.objects.filter(pk=value.pk).exists()
+
+    assert_404(delete(client, REQUEST.format(id=user_request.id), super_admin_token), "request")

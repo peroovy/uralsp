@@ -64,6 +64,16 @@ class RequestHandlers(metaclass=HandlersMetaclass):
 
         return self._request_service.get_request_details(user_request)
 
+    def delete_request(self, request: HttpRequest, _operation_id: UUID, request_id: int) -> SuccessResponse:
+        if not (user_request := self._request_service.get_request(request_id)):
+            raise NotFoundException(self.REQUEST)
+
+        if not self._request_service.has_access(request.user, user_request, only_admin=True):
+            raise ForbiddenException()
+
+        user_request.delete()
+        return SuccessResponse()
+
     def create_request(self, request: HttpRequest, _operation_id: UUID, data: RequestIn = Body(...)) -> SuccessResponse:
         user: User = request.user
         log_kwargs = {"creator_id": user.id, "creator_permission": user.permission} | data.dict()
