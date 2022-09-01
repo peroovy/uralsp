@@ -11,12 +11,15 @@ from ninja.responses import Response
 
 from api.internal.db.models import Competition, Field, FormValue, Participation, Request, User
 from api.internal.db.models.request import RequestStatus
+from api.internal.db.models.user import Permissions
 from tests.conftest import AFTER_NOW, BEFORE_NOW, datetime_to_string
 from tests.integration.conftest import (
     assert_200,
     assert_404,
     assert_422,
     assert_access,
+    assert_not_200,
+    assert_not_422_body,
     assert_validation_error,
     get,
     patch,
@@ -97,10 +100,15 @@ def test_creating__request_already_created(
     client: Client, competition: Competition, user: User, user_token: str
 ) -> None:
     request = Request.objects.create(competition=competition, owner=user)
-
+    error, details = "request", "Request has already created"
     body = {"competition": competition.id, "team_name": "SUPER-PUPER TEAM", "team": []}
-    assert_422(post(client, REQUESTS, user_token, body), error="request", details="Request has already created")
+
+    assert_422(post(client, REQUESTS, user_token, body), error, details)
     assert not Request.objects.filter(~Q(id=request.id)).exists()
+
+    user.permission = Permissions.TEACHER
+    user.save(update_fields=["permission"])
+    assert_not_422_body(post(client, REQUESTS, user_token, body), error, details)
 
 
 @pytest.mark.integration
@@ -189,16 +197,31 @@ def test_creating(
         ],
     }
 
+    expected_amount = 1
     assert_200(post(client, REQUESTS, user_token, body))
+    assert Request.objects.filter(owner=user, competition=competition).count() == expected_amount
+    assert_creating_request(body, user, another, field, another_field)
 
-    actual = Request.objects.get(
+    assert_not_200(post(client, REQUESTS, user_token, body))
+
+    for permission in [Permissions.TEACHER, Permissions.ADMIN, Permissions.SUPER_ADMIN]:
+        expected_amount += 1
+        user.permission = permission
+        user.save(update_fields=["permission"])
+        assert_200(post(client, REQUESTS, user_token, body))
+        assert Request.objects.filter(owner=user, competition=competition).count() == expected_amount
+        assert_creating_request(body, user, another, field, another_field)
+
+
+def assert_creating_request(body: dict, user: User, another: User, field: Field, another_field: Field) -> None:
+    actual = Request.objects.filter(
         owner=user,
         competition_id=body["competition"],
         team_name=body["team_name"],
         created_at=now(),
         status=RequestStatus.AWAITED,
         description=None,
-    )
+    ).last()
 
     for id_ in [user.id, another.id]:
         assert Participation.objects.filter(request=actual, user_id=id_)

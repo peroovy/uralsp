@@ -15,14 +15,6 @@ from ninja.responses import Response
 
 from api.internal.db.models import User
 
-
-class TokenOwner(IntEnum):
-    TEACHER = auto()
-    DEFAULT = auto()
-    ADMIN = auto()
-    SUPER_ADMIN = auto()
-
-
 EMAIL__IS_CORRECT = [
     [None, True],
     ["", False],
@@ -130,6 +122,10 @@ def assert_not_422_body(response, error: str, details: str) -> None:
 
 def assert_200(response) -> None:
     assert response.status_code == 200 and response.json() == {"details": "Success"}
+
+
+def assert_not_200(response) -> None:
+    assert response.status_code != 200 and response.json() != {"details": "Success"}
 
 
 def assert_access(

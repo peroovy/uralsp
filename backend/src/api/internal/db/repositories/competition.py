@@ -69,7 +69,7 @@ class ICompetitionRepository(ABC):
         ...
 
     @abstractmethod
-    def exists_in_admin(self, user_id: int) -> bool:
+    def has_admin(self, user_id: int) -> bool:
         ...
 
     @abstractmethod
@@ -164,7 +164,7 @@ class CompetitionRepository(ICompetitionRepository):
 
         return queryset.first()
 
-    def exists_in_admin(self, user_id: int) -> bool:
+    def has_admin(self, user_id: int) -> bool:
         return Competition.objects.filter(admins__id=user_id).exists()
 
     def exists_field_in_form(self, field_id: str) -> bool:

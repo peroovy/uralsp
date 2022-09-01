@@ -11,13 +11,12 @@ from tests.integration.conftest import (
     EMAIL__IS_CORRECT,
     INSTITUTION__IS_CORRECT,
     PHONE__IS_CORRECT,
-    TokenOwner,
     assert_200,
     assert_400,
-    assert_403,
     assert_404,
     assert_422,
     assert_access,
+    assert_not_422_body,
     assert_validation_error,
     get,
     post,
@@ -262,7 +261,7 @@ def test_access_getting_user(
 
 
 @pytest.mark.integration
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 def test_updating_user(
     client: Client,
     user: User,
@@ -272,12 +271,6 @@ def test_updating_user(
 
     assert_200(put(client, USER.format(id=user.id), super_admin_token, body))
     assert_updating(user, body)
-
-    for key in list(body.keys()):
-        del body[key]
-
-        assert_validation_error(put(client, USER.format(id=user.id), super_admin_token, body))
-        assert_not_updating(user)
 
 
 @pytest.mark.integration
@@ -349,22 +342,37 @@ def test_updating_permission(
 
 @pytest.mark.integration
 @pytest.mark.django_db
-@pytest.mark.parametrize("value", ["default", "teacher", "super_admin"])
-def test_updating_permission__competition_has_the_admin(
-    client: Client, user: User, admin: User, super_admin_token: str, competition: Competition, value: str
+def test_updating__permissions_comparison(client: Client, user: User, admin_token: str, super_admin_token: str) -> None:
+    order = [Permissions.DEFAULT, Permissions.TEACHER, Permissions.ADMIN, Permissions.SUPER_ADMIN]
+    body = get_body_for_updating()
+    error, details = "permissions comparison", "Permission must be lte than the updater permission"
+
+    for token, bad_permissions in [[super_admin_token, order], [admin_token, order[:-1]]]:
+        for bad in bad_permissions:
+            body["permission"] = bad
+
+            response = put(client, USER.format(id=user.id), token, body)
+            assert_not_422_body(response, error, details)
+
+    body["permission"] = Permissions.SUPER_ADMIN
+    assert_422(put(client, USER.format(id=user.id), admin_token, body), error, details)
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+def test_updating__competition_has_the_admin(
+    client: Client, user: User, admin: User, super_admin_token: str, competition: Competition
 ) -> None:
     body = get_body_for_updating()
-    error, details = "bad permission", "The permission cannot be updated"
+    error, details = "competition admin", "Some competition has this admin"
 
     competition.admins.add(admin)
-    body["permission"] = value
 
     assert_422(
         put(client, USER.format(id=admin.id), super_admin_token, body),
         error=error,
         details=details,
     )
-    assert_not_updating(user)
 
 
 @pytest.mark.integration
@@ -506,34 +514,28 @@ def test_merging_defaults(
 
 @pytest.mark.integration
 @pytest.mark.django_db
+def test_merging_teachers(
+    client: Client,
+    super_admin_token: str,
+    teacher: User,
+    another_teacher: User,
+    competition: Competition,
+) -> None:
+    assert_merging_teacher_or_gte(client, teacher, another_teacher, competition, super_admin_token)
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
 def test_merging_admins(
     client: Client,
     super_admin_token: str,
     admin: User,
     another_admin: User,
-    user_request: Request,
-    participation: Participation,
     competition: Competition,
-    another_competition: Competition,
-    field: Field,
 ) -> None:
-    user_request.owner = admin
-    user_request.save(update_fields=["owner"])
-    participation.user = admin
-    participation.save(update_fields=["user"])
     competition.admins.add(admin)
 
-    assert_merging_default_users(
-        client,
-        super_admin_token,
-        admin,
-        user_request,
-        participation,
-        another_admin,
-        competition,
-        another_competition,
-        field,
-    )
+    assert_merging_teacher_or_gte(client, admin, another_admin, competition, super_admin_token)
     assert competition.admins.count() == 0
 
 
@@ -544,34 +546,38 @@ def test_merging_super_admins(
     super_admin_token: str,
     super_admin: User,
     another_super_admin: User,
-    user_request: Request,
-    participation: Participation,
-    another_competition: Competition,
     competition: Competition,
-    field: Field,
 ) -> None:
-    user_request.owner = super_admin
-    user_request.save(update_fields=["owner"])
-    participation.user = super_admin
-    participation.save(update_fields=["user"])
-
-    assert_merging_default_users(
-        client,
-        super_admin_token,
-        super_admin,
-        user_request,
-        participation,
-        another_super_admin,
-        competition,
-        another_competition,
-        field,
-    )
+    assert_merging_teacher_or_gte(client, super_admin, another_super_admin, competition, super_admin_token)
 
 
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_access_merging(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
     assert_access(lambda token: post(client, MERGE, token), [admin_token, super_admin_token], [user_token])
+
+
+def assert_merging_teacher_or_gte(
+    client: Client, from_user: User, to_user: User, competition: Competition, super_admin_token: str
+) -> None:
+    from_req_1, from_req_2 = Request.objects.bulk_create(
+        Request(owner=from_user, competition=competition) for _ in range(2)
+    )
+    from_req_1__part = Participation.objects.create(request=from_req_1, user=from_user)
+    to_req = Request.objects.create(owner=to_user, competition=competition)
+    to_req__part = Participation.objects.create(request=to_req, user=from_user)
+
+    assert_200(post(client, MERGE, super_admin_token, get_body_for_merging(from_user.id, to_user.id)))
+
+    assert Request.objects.filter(pk=from_req_1.pk, owner=to_user).exists()
+    assert Request.objects.filter(pk=from_req_2.pk, owner=to_user).exists()
+    assert Request.objects.filter(pk=to_req.pk, owner=to_user).exists()
+    assert Participation.objects.filter(pk=from_req_1__part.pk, user=to_user).exists()
+    assert Participation.objects.filter(pk=to_req__part.pk, user=to_user).exists()
+
+    to_user.refresh_from_db()
+    assert not User.objects.filter(id=from_user.id).exists()
+    assert model_to_dict(to_user, exclude=["id"]) == model_to_dict(from_user, exclude=["id"])
 
 
 def assert_merging_default_users(
@@ -608,7 +614,7 @@ def assert_merging_default_users(
     assert user_form_value.participation.user == to_user
     assert not User.objects.filter(pk=from_user.pk).exists()
 
-    actual, expected = model_to_dict(to_user, exclude=["id"]), model_to_dict(from_user, exclude=["id"])
+    actual, expected = [model_to_dict(usr, exclude=["id"]) for usr in [to_user, from_user]]
     assert expected == actual
 
 
@@ -660,7 +666,7 @@ def test_merging__participation_intersect(
     participation_another = Participation.objects.create(request=participation.request, user=another)
 
     response = post(client, MERGE, super_admin_token, get_body_for_merging(user.id, another.id))
-    assert_422(response, error="participation", details="Exists intersection of participation")
+    assert_422(response, error="participants", details="Exists intersection of participants")
 
     assert User.objects.get(pk=user.pk) == user
     assert User.objects.get(pk=another.pk) == another

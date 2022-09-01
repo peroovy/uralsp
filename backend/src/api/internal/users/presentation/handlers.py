@@ -13,6 +13,7 @@ from api.internal.auth.domain.socials.entities import GoogleCredentialsIn, Teleg
 from api.internal.auth.domain.socials.services import GoogleAuth, SocialAuthStatus, SocialBase, TelegramAuth, VKAuth
 from api.internal.base import HandlersMetaclass
 from api.internal.db.models import User
+from api.internal.db.models.user import Permissions
 from api.internal.db.repositories import google_repo, telegram_repo, vk_repo
 from api.internal.exceptions import (
     BadRequestException,
@@ -43,16 +44,20 @@ OPERATION_IS_OVER__CANNOT_UPDATE_EMAIL = f"{OPERATION_IS_OVER} (cannot update em
 OPERATION_IS_OVER__NOT_EQUAL_PERMISSIONS = f"{OPERATION_IS_OVER} (not equal permissions)"
 OPERATION_IS_OVER__EXISTS_INTERSECTION_OF_REQUESTS = f"{OPERATION_IS_OVER} (exists intersection of requests)"
 OPERATION_IS_OVER__EXISTS_INTERSECTION_OF_PARTICIPATION = f"{OPERATION_IS_OVER} (exists intersection of participation)"
+OPERATION_IS_OVER__COMPETITION_ADMIN = f"{OPERATION_IS_OVER} (user is competition admin)"
+OPERATION_IS_OVER__PERMISSIONS_COMPARISON = f"{OPERATION_IS_OVER} (permissions comparison)"
 
 
 class UserHandlers(metaclass=HandlersMetaclass):
     INTERSECTION_REQUESTS = "Exists intersection of requests"
-    INTERSECTION_PARTICIPATION = "Exists intersection of participation"
+    INTERSECTION_PARTICIPANTS = "Exists intersection of participants"
     NOT_EQUAL_PERMISSIONS = "Permissions must be equal"
     EMAIL_ALREADY_EXISTS = "The email already exists"
     UPDATING_SELF_IS_NOT_ALLOWED = "Updating self is not allowed"
     PERMISSION_CANNOT_BE_UPDATED = "The permission cannot be updated"
     MERGING_SELF_IS_NOT_ALLOWED = "Merging self is not allowed"
+    SOME_COMPETITION_HAS_THIS_ADMIN = "Some competition has this admin"
+    PERMISSION_MUST_BE_LTE_THAN_UPDATER_PERMISSION = "Permission must be lte than the updater permission"
 
     BAD_USER = "bad user"
     BAD_USERS = "bad users"
@@ -60,12 +65,14 @@ class UserHandlers(metaclass=HandlersMetaclass):
     BAD_PERMISSIONS = "bad permissions"
     BAD_PERMISSION = "bad permission"
     BAD_EMAIL = "bad email"
+    COMPETITION_ADMIN = "competition admin"
+    PERMISSIONS_COMPARISON = "permissions comparison"
 
     USERS = "users"
     USER = "user"
     PERMISSION = "permission"
     REQUESTS = "requests"
-    PARTICIPATION = "participation"
+    PARTICIPANTS = "participants"
 
     def __init__(self, user_service: UserService, merging_service: MergingService, document_service: UserSerializer):
         self._user_service = user_service
@@ -83,47 +90,48 @@ class UserHandlers(metaclass=HandlersMetaclass):
         return FullProfileOut.from_orm(user)
 
     def update_user(
-        self, request: HttpRequest, user_id: int, data: ProfileIn = Body(...), _operation_id: UUID = None
+        self, request: HttpRequest, _operation_id: UUID, user_id: int, data: ProfileIn = Body(...)
     ) -> SuccessResponse:
-        if not (target := self._user_service.get_user(user_id)):
+        if not (user := self._user_service.get_user(user_id)):
             raise NotFoundException(self.USER)
 
-        updater = request.user
+        updater: User = request.user
         log_kwargs = {
             "updater_id": updater.id,
             "updater_permission": updater.permission,
-            "target_id": target.id,
-            "target_permission": target.permission,
+            "target_id": user.id,
+            "target_permission": user.permission,
         } | data.dict()
 
         logger.info(log(_operation_id, STARTING, **log_kwargs))
 
-        if updater.pk == target.pk:
+        if updater.pk == user.pk:
             logger.success(log(_operation_id, OPERATION_IS_OVER__UPDATING_SELF))
             raise UnprocessableEntityException(self.UPDATING_SELF_IS_NOT_ALLOWED, error=self.BAD_USER)
 
-        if not self._user_service.can_update_permission(updater, target, data.permission):
-            logger.success(
-                log(
-                    _operation_id,
-                    OPERATION_IS_OVER__CANNOT_UPDATE_PERMISSION,
-                )
+        if self._user_service.compare_permissions(Permissions(updater.permission), data.permission) > 0:
+            logger.success(log(_operation_id, OPERATION_IS_OVER__PERMISSIONS_COMPARISON))
+            raise UnprocessableEntityException(
+                self.PERMISSION_MUST_BE_LTE_THAN_UPDATER_PERMISSION, error=self.PERMISSIONS_COMPARISON
             )
-            raise UnprocessableEntityException(self.PERMISSION_CANNOT_BE_UPDATED, error=self.BAD_PERMISSION)
 
-        if self._user_service.have_others_email(target, data.email):
+        if self._user_service.is_competition_admin(user):
+            logger.success(log(_operation_id, OPERATION_IS_OVER__COMPETITION_ADMIN))
+            raise UnprocessableEntityException(self.SOME_COMPETITION_HAS_THIS_ADMIN, error=self.COMPETITION_ADMIN)
+
+        if self._user_service.have_others_email(user, data.email):
             logger.success(
                 log(
                     _operation_id,
                     OPERATION_IS_OVER__CANNOT_UPDATE_EMAIL,
-                    email=target.email,
+                    email=user.email,
                     new_email=data.email,
                 )
             )
             raise UnprocessableEntityException(self.EMAIL_ALREADY_EXISTS, error=self.BAD_EMAIL)
 
         logger.info(log(_operation_id, PROCESSING))
-        self._user_service.update(target, data)
+        self._user_service.update(user, data)
 
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
@@ -162,7 +170,8 @@ class UserHandlers(metaclass=HandlersMetaclass):
             )
             raise UnprocessableEntityException(self.NOT_EQUAL_PERMISSIONS, error=self.BAD_PERMISSIONS)
 
-        if self._merging_service.exists_requests_intersection(data):
+        common_permission = from_user.permission
+        if common_permission == Permissions.DEFAULT and self._merging_service.exists_requests_intersection(data):
             logger.success(log(_operation_id, OPERATION_IS_OVER__EXISTS_INTERSECTION_OF_REQUESTS))
             raise UnprocessableEntityException(self.INTERSECTION_REQUESTS, error=self.REQUESTS)
 
@@ -173,7 +182,7 @@ class UserHandlers(metaclass=HandlersMetaclass):
                     OPERATION_IS_OVER__EXISTS_INTERSECTION_OF_PARTICIPATION,
                 )
             )
-            raise UnprocessableEntityException(self.INTERSECTION_PARTICIPATION, error=self.PARTICIPATION)
+            raise UnprocessableEntityException(self.INTERSECTION_PARTICIPANTS, error=self.PARTICIPANTS)
 
         logger.info(log(_operation_id, PROCESSING))
         self._merging_service.merge(data)
@@ -217,7 +226,7 @@ class CurrentUserHandlers(metaclass=HandlersMetaclass):
     def update_profile(
         self, request: HttpRequest, _operation_id: UUID, data: CurrentProfileIn = Body(...)
     ) -> SuccessResponse:
-        user = request.user
+        user: User = request.user
         log_kwargs = {"user_id": user.id} | data.dict()
 
         logger.info(log(_operation_id, STARTING, **log_kwargs))

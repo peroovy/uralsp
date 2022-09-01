@@ -84,7 +84,7 @@ class RequestService:
             or self._competition_repo.is_admin(request.competition_id, user.id)
         )
 
-    def exists_request_on_competition(self, owner_id: int, competition_id: int) -> bool:
+    def exists_request_for_competition(self, owner_id: int, competition_id: int) -> bool:
         return self._request_repo.exists_request_on_competition(owner_id, competition_id)
 
     def validate_users(self, competition: Competition, data: FormsIn) -> bool:

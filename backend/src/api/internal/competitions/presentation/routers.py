@@ -84,7 +84,7 @@ def get_competitions_router(competition_handlers: CompetitionHandlers) -> Router
         path="/{int:competition_id}/requests",
         methods=["GET"],
         auth=[AnyAdmin()],
-        view_func=competition_handlers.get_requests_on_competition,
+        view_func=competition_handlers.get_requests_for_competition,
         response={200: List[RequestOut], 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
     )
 
@@ -92,7 +92,7 @@ def get_competitions_router(competition_handlers: CompetitionHandlers) -> Router
         path="/{int:competition_id}/requests/xlsx",
         methods=["GET"],
         auth=[AnyAdmin()],
-        view_func=competition_handlers.get_requests_on_competition_in_xlsx,
+        view_func=competition_handlers.get_requests_for_competition_in_xlsx,
         response={401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
     )
 
@@ -100,7 +100,7 @@ def get_competitions_router(competition_handlers: CompetitionHandlers) -> Router
         path="/{int:competition_id}/requests/csv",
         methods=["GET"],
         auth=[AnyAdmin()],
-        view_func=competition_handlers.get_requests_on_competition_in_csv,
+        view_func=competition_handlers.get_requests_for_competition_in_csv,
         response={401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
     )
 

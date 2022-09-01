@@ -35,6 +35,7 @@ class UserService:
         self._user_repo = user_repo
         self._form_value_repo = form_value_repo
         self._competition_repo = competition_repo
+        self._request_repo = request_repo
 
     def get_filtered(self, filters: Filters) -> List[User]:
         return list(
@@ -57,17 +58,14 @@ class UserService:
     def update(self, user: User, data: Union[ProfileIn, CurrentProfileIn]) -> bool:
         return self._user_repo.update(user.id, **data.dict())
 
-    def can_update_permission(self, user: User, target: User, permission: Permissions) -> bool:
-        if target.permission == permission:
-            return True
+    def compare_permissions(self, a: Permissions, b: Permissions) -> int:
+        if a == b:
+            return 0
 
-        if self.SORTED_PERMISSIONS.index(user.permission) < self.SORTED_PERMISSIONS.index(permission):
-            return False
+        return 1 if self.SORTED_PERMISSIONS.index(a) < self.SORTED_PERMISSIONS.index(b) else -1
 
-        if target.permission == Permissions.ADMIN:
-            return not self._competition_repo.exists_in_admin(target.id)
-
-        return True
+    def is_competition_admin(self, user: User) -> bool:
+        return user.permission == Permissions.ADMIN and self._competition_repo.has_admin(user.id)
 
     def get_last_form_values(self, user_id: int, field_ids: Set[str]) -> List[FormValue]:
         return list(self._form_value_repo.get_lasts_for(user_id, field_ids))

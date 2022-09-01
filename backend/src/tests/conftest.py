@@ -44,6 +44,24 @@ def another() -> User:
 
 
 @pytest.fixture(scope="function")
+def teacher() -> User:
+    return User.objects.create(
+        name="Lexa",
+        surname="Pro",
+        permission=Permissions.TEACHER,
+    )
+
+
+@pytest.fixture(scope="function")
+def another_teacher() -> User:
+    return User.objects.create(
+        name="Igor",
+        surname="Qwerty",
+        permission=Permissions.TEACHER,
+    )
+
+
+@pytest.fixture(scope="function")
 def admin() -> User:
     return User.objects.create(
         name="Ksusha",

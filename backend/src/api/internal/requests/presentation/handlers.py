@@ -8,6 +8,8 @@ from ninja import Body
 
 from api.internal.base import HandlersMetaclass
 from api.internal.competitions.domain.services import CompetitionService
+from api.internal.db.models import User
+from api.internal.db.models.user import Permissions
 from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException
 from api.internal.logging import log
 from api.internal.requests.domain.entities import FormsIn, ProcessIn, RequestDetailsOut, RequestIn, RequestOut
@@ -63,7 +65,7 @@ class RequestHandlers(metaclass=HandlersMetaclass):
         return self._request_service.get_request_details(user_request)
 
     def create_request(self, request: HttpRequest, _operation_id: UUID, data: RequestIn = Body(...)) -> SuccessResponse:
-        user = request.user
+        user: User = request.user
         log_kwargs = {"creator_id": user.id, "creator_permission": user.permission} | data.dict()
 
         logger.info(log(_operation_id, STARTING, **log_kwargs))
@@ -78,7 +80,9 @@ class RequestHandlers(metaclass=HandlersMetaclass):
             )
             raise UnprocessableEntityException(self.UNKNOWN_COMPETITION, error=self.COMPETITION)
 
-        if self._request_service.exists_request_on_competition(user.id, data.competition):
+        if user.permission == Permissions.DEFAULT and self._request_service.exists_request_for_competition(
+            user.id, data.competition
+        ):
             logger.success(
                 log(
                     _operation_id,
@@ -130,7 +134,7 @@ class RequestHandlers(metaclass=HandlersMetaclass):
         if not (user_request := self._request_service.get_request(request_id)):
             raise NotFoundException(self.REQUEST)
 
-        updater = request.user
+        updater: User = request.user
         log_kwargs = {
             "updater_id": updater.id,
             "updater_permission": updater.permission,
@@ -174,7 +178,7 @@ class RequestHandlers(metaclass=HandlersMetaclass):
         if not (user_request := self._request_service.get_request(request_id)):
             raise NotFoundException(self.REQUEST)
 
-        updater = request.user
+        updater: User = request.user
         log_kwargs = {
             "updater_id": updater.id,
             "updater_permission": updater.permission,
@@ -212,7 +216,7 @@ class RequestHandlers(metaclass=HandlersMetaclass):
         if not (user_request := self._request_service.get_request(request_id)):
             raise NotFoundException(self.REQUEST)
 
-        updater = request.user
+        updater: User = request.user
         log_kwargs = {
             "updater_id": updater.id,
             "updater_permission": updater.permission,

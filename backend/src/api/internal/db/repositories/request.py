@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from django.db.models import Prefetch, QuerySet
+from django.db.models import Count, Prefetch, QuerySet
 
 from api.internal.db.models import FormValue, Request
 from api.internal.db.models.request import RequestStatus
@@ -44,6 +44,10 @@ class IRequestRepository(ABC):
     def try_get_request_with_participation_and_forms(self, request_id: int) -> Optional[Request]:
         ...
 
+    @abstractmethod
+    def exist_many_requests_for_one_competition(self, owner_id: int) -> bool:
+        ...
+
 
 class RequestRepository(IRequestRepository):
     def get_requests(self, owner_id: int) -> QuerySet[Request]:
@@ -79,4 +83,12 @@ class RequestRepository(IRequestRepository):
                 "participation", Prefetch("participation__form", queryset=FormValue.objects.order_by("field_id"))
             )
             .first()
+        )
+
+    def exist_many_requests_for_one_competition(self, owner_id: int) -> bool:
+        return (
+            Request.objects.values("competition_id")
+            .annotate(total=Count("id"))
+            .filter(owner_id=owner_id, total__gt=1)
+            .exists()
         )

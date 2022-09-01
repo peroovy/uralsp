@@ -135,7 +135,7 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
 
         return SuccessResponse()
 
-    def get_requests_on_competition(
+    def get_requests_for_competition(
         self, request: HttpRequest, _operation_id: UUID, competition_id: int
     ) -> List[RequestOut]:
         if not (competition := self._competition_service.get_with_requests(competition_id)):
@@ -146,29 +146,29 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
 
         return [RequestOut.from_orm(user_request) for user_request in competition.requests.all()]
 
-    def get_requests_on_competition_in_xlsx(
+    def get_requests_for_competition_in_xlsx(
         self,
         request: HttpRequest,
         _operation_id: UUID,
         competition_id: int,
         params: RequestsSerializationIn = Query(...),
     ) -> FileResponse:
-        return self._get_requests_on_competition_in_file(
+        return self._get_requests_for_competition_in_file(
             request, competition_id, params, self._competition_serializer.requests_to_xlsx, extension="xlsx"
         )
 
-    def get_requests_on_competition_in_csv(
+    def get_requests_for_competition_in_csv(
         self,
         request: HttpRequest,
         _operation_id: UUID,
         competition_id: int,
         params: RequestsSerializationIn = Query(...),
     ) -> FileResponse:
-        return self._get_requests_on_competition_in_file(
+        return self._get_requests_for_competition_in_file(
             request, competition_id, params, self._competition_serializer.requests_to_csv, extension="csv"
         )
 
-    def _get_requests_on_competition_in_file(
+    def _get_requests_for_competition_in_file(
         self,
         request: HttpRequest,
         competition_id: int,
