@@ -59,7 +59,7 @@ class UserHandlers(metaclass=HandlersMetaclass):
     SOME_COMPETITION_HAS_THIS_ADMIN = "Some competition has this admin"
     PERMISSION_MUST_BE_LTE_THAN_UPDATER_PERMISSION = "Permission must be lte than the updater permission"
 
-    BAD_USER = "bad user"
+    UPDATING_SELF = "updating self"
     BAD_USERS = "bad users"
     ANY_USERS = "any users"
     BAD_PERMISSIONS = "bad permissions"
@@ -92,6 +92,14 @@ class UserHandlers(metaclass=HandlersMetaclass):
     def update_user(
         self, request: HttpRequest, _operation_id: UUID, user_id: int, data: ProfileIn = Body(...)
     ) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "updating self" - updating self is not allowed
+            "permissions comparison" - permission must be less than or equal to updater permission
+            "competition admin" - some competition has admin
+            "bad email" - some user has this email. 'null' value can set for all users
+        """
+
         if not (user := self._user_service.get_user(user_id)):
             raise NotFoundException(self.USER)
 
@@ -107,7 +115,7 @@ class UserHandlers(metaclass=HandlersMetaclass):
 
         if updater.pk == user.pk:
             logger.success(log(_operation_id, OPERATION_IS_OVER__UPDATING_SELF))
-            raise UnprocessableEntityException(self.UPDATING_SELF_IS_NOT_ALLOWED, error=self.BAD_USER)
+            raise UnprocessableEntityException(self.UPDATING_SELF_IS_NOT_ALLOWED, error=self.UPDATING_SELF)
 
         if self._user_service.compare_permissions(Permissions(updater.permission), data.permission) > 0:
             logger.success(log(_operation_id, OPERATION_IS_OVER__PERMISSIONS_COMPARISON))
@@ -145,6 +153,12 @@ class UserHandlers(metaclass=HandlersMetaclass):
     def merge_users(
         self, request: HttpRequest, data: MergingIn = Body(...), _operation_id: UUID = None
     ) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "bad permissions" - permissions are not equal
+            "requests" - exists intersection of requests from default user
+            "participants" - exists intersection of participants in some request
+        """
         if data.from_id == data.to_id:
             raise BadRequestException(self.MERGING_SELF_IS_NOT_ALLOWED)
 
@@ -206,16 +220,16 @@ class UserHandlers(metaclass=HandlersMetaclass):
 class CurrentUserHandlers(metaclass=HandlersMetaclass):
     EMAIL_ALREADY_EXISTS = "The email already exists"
     INVALID_CREDENTIALS = "Invalid credentials"
-    BAD_EMAIL = "bad email"
 
     SOCIAL_CONNECTING = "Failed to get user information"
     MIN_AMOUNT_SOCIALS = f"Min amount of socials is {settings.MIN_SOCIALS_AMOUNT}"
     NOT_FOUND_ANY_FIELD_IDS = "Any field ids were not found"
     SOCIAL_ID_ALREADY_EXISTS = "Social id already exists"
 
-    SOCIALS_AMOUNT = "socials_amount"
+    SOCIALS_AMOUNT = "socials amount"
     BAD_CREDENTIALS = "bad credentials"
     BAD_SOCIAL_ID = "bad social id"
+    BAD_EMAIL = "bad email"
 
     def __init__(self, user_service: UserService):
         self._user_service = user_service
@@ -226,6 +240,10 @@ class CurrentUserHandlers(metaclass=HandlersMetaclass):
     def update_profile(
         self, request: HttpRequest, _operation_id: UUID, data: CurrentProfileIn = Body(...)
     ) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "bad email" - some user has this email. 'null' value can set for all users
+        """
         user: User = request.user
         log_kwargs = {"user_id": user.id} | data.dict()
 
@@ -258,25 +276,52 @@ class CurrentUserHandlers(metaclass=HandlersMetaclass):
     def link_vkontakte(
         self, request: HttpRequest, _operation_id: UUID, credentials: VKCredentialsIn = Body(...)
     ) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "bad credentials" - invalid social credentials
+            "bad social id" - this social id already exists
+        """
         return self._link_social(request, VKAuth(credentials, vk_repo))
 
     def link_google(
         self, request: HttpRequest, _operation_id: UUID, credentials: GoogleCredentialsIn = Body(...)
     ) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "bad credentials" - invalid social credentials
+            "bad social id" - this social id already exists
+        """
         return self._link_social(request, GoogleAuth(credentials, google_repo))
 
     def link_telegram(
         self, request: HttpRequest, _operation_id: UUID, credentials: TelegramCredentialsIn = Body(...)
     ) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "bad credentials" - invalid social credentials
+            "bad social id" - this social id already exists
+        """
         return self._link_social(request, TelegramAuth(credentials, telegram_repo))
 
     def unlink_vkontakte(self, request: HttpRequest, _operation_id: UUID) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "socials amount" - at least one social network must be linked
+        """
         return self._unlink_social(request, VKAuth(None, vk_repo))
 
     def unlink_google(self, request: HttpRequest, _operation_id: UUID) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "socials amount" - at least one social network must be linked
+        """
         return self._unlink_social(request, GoogleAuth(None, google_repo))
 
     def unlink_telegram(self, request: HttpRequest, _operation_id: UUID) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "socials amount" - at least one social network must be linked
+        """
         return self._unlink_social(request, TelegramAuth(None, telegram_repo))
 
     def _link_social(self, request: HttpRequest, social: SocialBase) -> SuccessResponse:

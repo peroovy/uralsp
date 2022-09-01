@@ -46,7 +46,7 @@ def get_users_router(users_handlers: UserHandlers) -> Router:
 
 
 def get_current_user_router(current_user_handlers: CurrentUserHandlers) -> Router:
-    router = Router(tags=["auth_user"], auth=[AnyUser()])
+    router = Router(tags=["current user"], auth=[AnyUser()])
 
     router.add_api_operation(
         path="/profile",

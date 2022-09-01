@@ -374,7 +374,7 @@ def test_unlinking_telegram(client: Client, user: User, user_token: str) -> None
 
 
 def assert_unlinking_social(client: Client, uri: str, social_field: str, user: User, user_token: str) -> None:
-    error, details = "socials_amount", "Min amount of socials is 1"
+    error, details = "socials amount", "Min amount of socials is 1"
 
     assert_422(patch(client, uri, user_token), error=error, details=details)
 

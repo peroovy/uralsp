@@ -187,14 +187,14 @@ def test_deleting(
 
     competition.fields.add(field)
     assert_422(
-        delete(client, FIELD.format(id=field.id), super_admin_token), error="form", details="The field exists in form"
+        delete(client, FIELD.format(id=field.id), super_admin_token),
+        error="form",
+        details="The field is used in some form",
     )
 
     competition.fields.clear()
     FormValue.objects.create(participation=participation, field=field, value="123")
-    assert_422(
-        delete(client, FIELD.format(id=field.id), super_admin_token), error="field value", details="Field value exists"
-    )
+    assert_422(delete(client, FIELD.format(id=field.id), super_admin_token), error="value", details="Form value exists")
 
     FormValue.objects.all().delete()
     assert_200(delete(client, FIELD.format(id=field.id), super_admin_token))

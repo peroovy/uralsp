@@ -124,7 +124,7 @@ def test_creating__competition_registration_has_not_started_yet(
 
     body = {"competition": competition.id, "team_name": "SUPER-PUPER TEAM", "team": []}
     assert_422(
-        post(client, REQUESTS, user_token, body), error="registration_start", details="Registration has not started yet"
+        post(client, REQUESTS, user_token, body), error="registration start", details="Registration has not started yet"
     )
     assert not Request.objects.exists()
 
@@ -140,7 +140,7 @@ def test_creating__competition_registration_is_over(
     competition.save(update_fields=["registration_end"])
 
     body = {"competition": competition.id, "team_name": "SUPER-PUPER TEAM", "team": []}
-    assert_422(post(client, REQUESTS, user_token, body), error="registration_end", details="Registration is over")
+    assert_422(post(client, REQUESTS, user_token, body), error="registration end", details="Registration is over")
     assert not Request.objects.exists()
 
 
@@ -381,7 +381,7 @@ def test_updating__competition_registration_is_over(
 
     assert_422(
         put(client, REQUEST.format(id=user_request.id), user_token, body),
-        error="registration_end",
+        error="registration end",
         details="Registration is over",
     )
     assert Request.objects.get(pk=user_request.pk) == user_request
@@ -476,8 +476,8 @@ def test_canceling__competition_has_already_started(
 
     assert_422(
         patch(client, CANCEL.format(id=user_request.id), user_token),
-        error="competition",
-        details="Competition started",
+        error="started competition",
+        details="The competition has already started",
     )
     assert Request.objects.get(pk=user_request.pk).status == user_request.status
 

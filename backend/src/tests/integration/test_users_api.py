@@ -301,7 +301,7 @@ def test_updating_self(
 
     response = put(client, USER.format(id=super_admin.id), super_admin_token, body)
 
-    assert_422(response, error="bad user", details="Updating self is not allowed")
+    assert_422(response, error="updating self", details="Updating self is not allowed")
     assert_not_updating(super_admin)
 
 

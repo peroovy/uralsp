@@ -25,7 +25,7 @@ VK = SIGNIN + "vkontakte"
 GOOGLE = SIGNIN + "google"
 TELEGRAM = SIGNIN + "telegram"
 
-BAD_SOCIAL_CREDENTIALS = "bad social credentials"
+BAD_CREDENTIALS = "bad credentials"
 
 VK_APP_ID, VK_APP_SECRET, VK_USER_ID, VK_HASH = (
     51395235,
@@ -71,7 +71,7 @@ def test_vk_auth__bad_credentials(client: Client, uid: int, hash_: str) -> None:
 
     body = {"uid": uid, "first_name": "Pety", "last_name": "Petrov", "hash": hash_}
 
-    assert_401(post(client, VK, body=body), BAD_SOCIAL_CREDENTIALS)
+    assert_401(post(client, VK, body=body), BAD_CREDENTIALS)
     assert not User.objects.filter(vkontakte_id=uid, name=body["first_name"], surname=body["last_name"]).exists()
 
 
@@ -109,7 +109,7 @@ def test_google_auth__bad_credentials(client: Client, google_api: id_token) -> N
     body = {"id_token": "bad"}
     google_api.verify_oauth2_token.side_effect = ValueError()
 
-    assert_401(post(client, GOOGLE, body=body), BAD_SOCIAL_CREDENTIALS)
+    assert_401(post(client, GOOGLE, body=body), BAD_CREDENTIALS)
 
 
 @pytest.mark.integration
@@ -166,7 +166,7 @@ def test_telegram_auth__bad_credentials(client: Client, hmac: HMAC, body: dict) 
     body["hash"] = "qwerty123"
     hmac.hexdigest.return_value = "bad"
 
-    assert_401(post(client, TELEGRAM, body=body), BAD_SOCIAL_CREDENTIALS)
+    assert_401(post(client, TELEGRAM, body=body), BAD_CREDENTIALS)
     assert not User.objects.filter(telegram_id=body["id"]).exists()
 
 

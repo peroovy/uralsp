@@ -13,11 +13,11 @@ from api.internal.responses import SuccessResponse
 
 class FieldHandlers(metaclass=HandlersMetaclass):
     FIELD_ALREADY_EXISTS = "Field id already exists"
-    FORM_VALUE_EXISTS = "Field value exists"
-    FIELD_EXISTS_IN_FORM = "The field exists in form"
+    FORM_VALUE_EXISTS = "Form value exists"
+    FIELD_IS_USED_IN_SOME_FORM = "The field is used in some form"
 
     FIELD = "field"
-    FIELD_VALUE = "field value"
+    VALUE = "value"
     UNIQUE_ID = "unique id"
     FORM = "form"
 
@@ -36,6 +36,11 @@ class FieldHandlers(metaclass=HandlersMetaclass):
         return self._field_service.get_field_out(field)
 
     def create_field(self, request: HttpRequest, _operation_id: UUID, data: FieldSchema = Body(...)) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "unique id" - id must be unique
+        """
+
         if self._field_service.exists(data.id):
             raise UnprocessableEntityException(self.FIELD_ALREADY_EXISTS, error=self.UNIQUE_ID)
 
@@ -54,11 +59,17 @@ class FieldHandlers(metaclass=HandlersMetaclass):
         return SuccessResponse()
 
     def delete_field(self, request: HttpRequest, _operation_id: UUID, field_id: str) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "form" - the field is used in some form
+            "value" - form value exists
+        """
+
         if self._field_service.exists_in_form(field_id):
-            raise UnprocessableEntityException(self.FIELD_EXISTS_IN_FORM, error=self.FORM)
+            raise UnprocessableEntityException(self.FIELD_IS_USED_IN_SOME_FORM, error=self.FORM)
 
         if self._field_service.exists_value(field_id):
-            raise UnprocessableEntityException(self.FORM_VALUE_EXISTS, error=self.FIELD_VALUE)
+            raise UnprocessableEntityException(self.FORM_VALUE_EXISTS, error=self.VALUE)
 
         if not self._field_service.delete(field_id):
             raise NotFoundException(self.FIELD)

@@ -34,7 +34,7 @@ class AuthHandlers(metaclass=HandlersMetaclass):
     REVOKED_TOKEN = "revoked token"
     EXPIRED_TOKEN = "expired token"
     BAD_COOKIES = "bad cookies"
-    BAD_SOCIAL_CREDENTIALS = "bad social credentials"
+    BAD_CREDENTIALS = "bad credentials"
     BAD_TOKEN = "bad token"
 
     def __init__(self, jwt_service: JWTService):
@@ -64,7 +64,7 @@ class AuthHandlers(metaclass=HandlersMetaclass):
     def _signin(self, social: SocialBase, _operation_id: UUID) -> Response:
         if not (user := social.signin()):
             logger.success(log(_operation_id, OPERATION_IS_OVER__BAD_SOCIAL_CREDENTIALS))
-            raise UnauthorizedException(error=self.BAD_SOCIAL_CREDENTIALS)
+            raise UnauthorizedException(error=self.BAD_CREDENTIALS)
 
         logger.info(log(_operation_id, CREATING_TOKENS, user_id=user.id, permission=user.permission))
         details = self._jwt_service.create_access_and_refresh_tokens(user)

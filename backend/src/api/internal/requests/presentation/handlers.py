@@ -34,17 +34,18 @@ class RequestHandlers(metaclass=HandlersMetaclass):
     REGISTRATION_IS_OVER = "Registration is over"
     INVALID_TEAM = "Team validation error"
     INVALID_FORMS = "Forms validation error"
-    COMPETITION_STARTED = "Competition started"
+    COMPETITION_HAS_ALREADY_STARTED = "The competition has already started"
     UNKNOWN_COMPETITION = "Unknown competition"
     REQUEST_HAS_ALREADY_CREATED = "Request has already created"
     REGISTRATION_HAS_NOT_STARTED_YET = "Registration has not started yet"
 
     REQUEST = "request"
     COMPETITION = "competition"
+    STARTED_COMPETITION = "started competition"
     BAD_USERS = "bad users"
     BAD_FORMS = "bad forms"
-    REGISTRATION_END = "registration_end"
-    REGISTRATION_START = "registration_start"
+    REGISTRATION_END = "registration end"
+    REGISTRATION_START = "registration start"
 
     def __init__(self, request_service: RequestService, competition_service: CompetitionService):
         self._request_service = request_service
@@ -72,9 +73,24 @@ class RequestHandlers(metaclass=HandlersMetaclass):
             raise ForbiddenException()
 
         user_request.delete()
+
         return SuccessResponse()
 
     def create_request(self, request: HttpRequest, _operation_id: UUID, data: RequestIn = Body(...)) -> SuccessResponse:
+        """
+        Note:\n
+            1) Unknown fields are ignored
+            2) Optional fields are not created in the database if they are not in a user form
+
+        422 error codes:\n
+            "competition" - unknown competition id
+            "request" - the default user has already created request for the competition
+            "registration start" - the competition registration has not started yet
+            "registration end" - the competition registration is over
+            "bad users" - participant ids must be unique and exist, their number must equal the competition's persons_amount
+            "bad forms" - all required fields must be in any forms, any fields in form must be unique
+        """
+
         user: User = request.user
         log_kwargs = {"creator_id": user.id, "creator_permission": user.permission} | data.dict()
 
@@ -141,6 +157,20 @@ class RequestHandlers(metaclass=HandlersMetaclass):
     def update_request(
         self, request: HttpRequest, _operation_id: UUID, request_id: int, data: FormsIn = Body(...)
     ) -> SuccessResponse:
+        """
+        Note:\n
+            1) Unknown fields are ignored
+            2) Optional fields are not created in the database if they are not in a user form
+
+        422 error codes:\n
+            "competition" - unknown competition id
+            "request" - the default user has already created request for the competition
+            "registration start" - the competition registration has not started yet
+            "registration end" - the competition registration is over
+            "bad users" - participant ids must be unique and exist, their number must equal the competition's persons_amount
+            "bad forms" - all required fields must be in any forms, any fields in form must be unique
+        """
+
         if not (user_request := self._request_service.get_request(request_id)):
             raise NotFoundException(self.REQUEST)
 
@@ -185,6 +215,10 @@ class RequestHandlers(metaclass=HandlersMetaclass):
         return SuccessResponse()
 
     def cancel_request(self, request: HttpRequest, _operation_id: UUID, request_id: int) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "started competition" - the competition has already started
+        """
         if not (user_request := self._request_service.get_request(request_id)):
             raise NotFoundException(self.REQUEST)
 
@@ -212,7 +246,7 @@ class RequestHandlers(metaclass=HandlersMetaclass):
                     started_at=competition.started_at.strftime(settings.DATETIME_FORMAT),
                 )
             )
-            raise UnprocessableEntityException(self.COMPETITION_STARTED, error=self.COMPETITION)
+            raise UnprocessableEntityException(self.COMPETITION_HAS_ALREADY_STARTED, error=self.STARTED_COMPETITION)
 
         logger.info(log(_operation_id, PROCESSING))
         self._request_service.cancel(user_request)

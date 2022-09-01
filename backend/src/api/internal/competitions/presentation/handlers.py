@@ -22,7 +22,7 @@ from api.internal.competitions.domain.entities import (
     RequestTemplateIn,
 )
 from api.internal.competitions.domain.services import CompetitionSerializer, CompetitionService
-from api.internal.db.models import Competition
+from api.internal.db.models import Competition, User
 from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException
 from api.internal.fields.domain.services import FieldService
 from api.internal.logging import log
@@ -89,7 +89,15 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
     def create_competition(
         self, request: HttpRequest, _operation_id: UUID, data: CompetitionIn = Body(...)
     ) -> SuccessResponse:
-        creator = request.user
+        """
+        422 error codes:\n
+            "bad persons_amount" - persons_amount must be >= 1
+            "bad dates" - dates must be next: now < registration_start < registration_end < started_at
+            "bad admins" - admin ids must be unique and exist, amount >= 0
+            "bad fields" - field ids must be unique and exist, amount > 0
+        """
+
+        creator: User = request.user
         log_kwargs = {"creator_id": creator.id, "permission": creator.permission} | data.dict()
 
         logger.info(log(_operation_id, STARTING, **log_kwargs))
@@ -105,6 +113,14 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
     def update_competition(
         self, request: HttpRequest, _operation_id: UUID, competition_id: int, data: CompetitionIn = Body(...)
     ) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "bad persons_amount" - persons_amount must be >= 1
+            "bad dates" - dates must be next: now < registration_start < registration_end < started_at
+            "bad admins" - admin ids must be unique and exist, amount >= 0
+            "bad fields" - field ids must be unique and exist, amount > 0
+        """
+
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
@@ -193,6 +209,11 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
     def update_form(
         self, request: HttpRequest, _operation_id: UUID, competition_id: int, data: FormIn = Body(...)
     ) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "bad fields" - field ids must be unique and exist, amount > 0
+        """
+
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
@@ -222,6 +243,11 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
     def update_admins(
         self, request: HttpRequest, _operation_id: UUID, competition_id: int, data: AdminsIn = Body(...)
     ) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "bad admins" - admin ids must be unique and exist, amount >= 0
+        """
+
         if not self._competition_service.exists(competition_id):
             raise NotFoundException(self.COMPETITION)
 
