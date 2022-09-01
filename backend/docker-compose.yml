@@ -8,6 +8,8 @@ services:
     restart: always
     env_file:
       - src/config/.env
+    volumes:
+      - ./logs:/uralsp/logs
     environment:
       POSTGRES_HOST: db
     ports:
