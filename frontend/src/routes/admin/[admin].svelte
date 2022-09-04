@@ -295,7 +295,8 @@
 		  .then((data) => {
 			comp = data;
 		  })
-		let reg_s_date = comp.registration_start.replace("Z", '').trim().split('T');
+		  console.log(comp);
+		  let reg_s_date = comp.registration_start.replace("Z", '').trim().split('T');
 		let reg_e_date = comp.registration_end.replace("Z", '').trim().split('T');
 		let start_date = comp.started_at.replace("Z", '').trim().split('T');
 		selectedCompID = comp.id;
@@ -324,8 +325,14 @@
 				selectedComp = 'comp';
 				selectedCompItem(selectedComp);
 			}
-		);
-		appLength = requests.length;
+			);
+			appLength = requests.length;
+		if (requests.error != undefined) {
+			alert(requests.error);
+			requests = [];
+			appLength = 0;
+
+		}
 		selectedComp = comp.name;
 		setTimeout(() => {
 			applicationPage(0);

@@ -708,7 +708,10 @@
 							</div>
 						</div>`;
 	onMount(() => {
-		controlsCont.forEach((control) => {
+		controlsCont.forEach((control, i) => {
+			if (permission !== 'super_admin' && i == 2){
+				return;
+			}
 			let sliderBtns = control.children[0].children[0].children;
 			sliderBtns[0].addEventListener('click', () => {
 				prevSlide();
@@ -742,23 +745,41 @@
 			})
 			formFields = contest.fields;
 			addToPreview();
-			contest.admins.forEach((monitor) => {
-				addMonitor(monitor, false);
-			});
+			if(permission === 'super_admin'){
+				// hide the admin section
+				contest.admins.forEach((monitor) => {
+					addMonitor(monitor, false);
+				});
+			}
 
 			// Replace the default next button with a custom one- Create contest btn
 			// Create contest button
 			let updateContestBtn = document.createElement('button');
-			updateContestBtn.className = 'btn btn-sm btn-block p-2';
-			updateContestBtn.innerHTML = 'Update Contest <li class="fa fa-check-circle">';
-			// Add event listener to create contest button
-			updateContestBtn.addEventListener('click', () => {
-				update();
-			});
-			// Remove final button
-			(controlsCont[2].children[0].children[0].children[1] as HTMLElement).style.display = 'none';
-			// Add create contest button to final button
-			controlsCont[2].children[0].children[0].appendChild(updateContestBtn);
+			if(permission === 'super_admin'){
+				updateContestBtn.className = 'btn btn-sm btn-block p-2';
+				updateContestBtn.innerHTML = 'Update Contest <li class="fa fa-check-circle">';
+				// Add event listener to create contest button
+				updateContestBtn.addEventListener('click', () => {
+					update();
+				});
+				// Remove final button
+				(controlsCont[2].children[0].children[0].children[1] as HTMLElement).style.display = 'none';
+				// Add create contest button to final button
+				controlsCont[2].children[0].children[0].appendChild(updateContestBtn);
+			} else if (permission === 'admin'){
+				updateContestBtn.className = 'btn btn-sm btn-block p-2';
+				updateContestBtn.innerHTML = 'Update Contest <li class="fa fa-check-circle">';
+				// Add event listener to create contest button
+				updateContestBtn.addEventListener('click', () => {
+					update();
+				});
+				// Remove final button
+				(controlsCont[1].children[0].children[0].children[1] as HTMLElement).style.display = 'none';
+				// Add create contest button to final button
+				controlsCont[1].children[0].children[0].appendChild(updateContestBtn);
+			}
+			
+
 
 		} else {
 			// Replace the default next button with a custom one- Create contest btn
