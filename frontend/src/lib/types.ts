@@ -92,4 +92,16 @@ export type UserRequest = {
 	created_at: string;
 	participants: Array<number>;
 };
+
+export type RequestsOut = {
+	team_name: string,
+	team: {
+		user_id: number,
+		form: {
+			field_id: string,
+			value: string
+		  }[];
+	  }[],
+	competition: number
+}
 export type Requests = Array<UserRequest>;

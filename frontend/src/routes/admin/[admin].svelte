@@ -62,7 +62,7 @@
 	import src from '$lib/Assets/imgs/logo.png';
 	import tempPhoto from '$lib/Assets/imgs/temp-photo.png';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
-	import type { ContestType } from '$lib/types';
+	import type { Competition } from '$lib/types';
 	import lottie from '$lib/Assets/animations/lottie-search?url';
 	import lottieSelect from '$lib/Assets/animations/lottie-select.gif';
 	import { republics } from '$lib/Assets/republics.json';
@@ -424,6 +424,34 @@
 		applicationPage(0);
 	});
 
+	// Delete Competition
+	async function deleteComp(id :number): Promise<void> {
+		if(isNaN(id)){
+			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+										<strong>Error!</strong> Something went wrong.
+										<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+									</div>`;
+			return;
+		}
+		await fetch(`http://localhost:8000/competitions/${id}`,{
+			method: 'DELETE',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': 'Bearer ' + access_token
+			}
+		}).then((res) => res.json())
+			.then((data) => {
+				alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+											<strong>Success!</strong> ${data.message}
+											<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+										</div>`;
+			}).catch((err) => {
+				console.error(err);
+			}).finally(() => {
+				window.location.reload();
+			}
+		);
+	}
 	// Signout
 	function signout(): void {
 		// clear local storage
@@ -655,7 +683,7 @@
 							</div>
 						</div>
 					{:else}
-						<div class="card col-md p-0">
+						<div class="card col-md p-0" style="min-width: fit-content">
 							<div class="card-header" data-bs-toggle="collapse" href="#info" role="button" aria-expanded="false" aria-controls="info">
 								<span class="fa fa-info-circle" />
 								Information
@@ -781,8 +809,8 @@
 								</div>
 							</div>
 							<div class="btn-group stickyBottom">
-								<button class="btn btn-primary rounded-0" style="background-color:#3490dc; border: none"> <i class="fa fa-edit" /> Edit</button>
-								<button class="btn btn-danger rounded-0"> <i class="fa fa-trash" /> Delete</button>
+								<button class="btn btn-primary rounded-0" style="background-color:#3490dc; border: none" on:click={()=>goto(base+"contests/"+selectedCompID)}> <i class="fa fa-edit" /> Edit</button>
+								<button class="btn btn-danger rounded-0" on:click={() => deleteComp(parseInt(selectedCompID))}> <i class="fa fa-trash" /> Delete</button>
 							</div>
 						</div>
 					{/if}

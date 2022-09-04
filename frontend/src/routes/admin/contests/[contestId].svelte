@@ -2,9 +2,11 @@
 	import { browser } from '$app/env';
 	import { parsePayload } from '$lib/parse';
 
-	export async function load() {
+	// @ts-ignore
+	export async function load({params}) {
 		if (!browser) return;
 		let token = localStorage.getItem('access_token');
+		
 		if (token == null) {
 			return {
 				// status: 301,
@@ -14,12 +16,13 @@
 		let payload = parsePayload(token);
 		let id = payload.user_id;
 		let permission = payload.permission;
-		if (permission !== 'super_admin') {
+		if (permission != 'super_admin' && permission != 'admin') {
 			return {
-				// status: 301,
-				// redirect: '/'
+				status: 301,
+				redirect: '/'
 			};
 		}
+		
 		// Retrieve all the available fields
 		let fields = await fetch('http://127.0.0.1:8000/fields', {
 			method: 'GET',
@@ -37,12 +40,42 @@
 			};
 		}
 
+
+		// Parse the params
+		let contestId = parseInt(params.contestId);
+
+		let contest;
+		if(!isNaN(contestId)) {
+			// Retrieve the contest
+			contest = await fetch(`http://localhost:8000/competitions/${contestId}`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			}).then(res => res.json())
+				.then(data => data)
+				.catch(err => {
+					return {
+						status: 301,
+						redirect: '/'
+					};
+				});
+				// In case of something goes wrong
+				if (contest.error != undefined) {
+					return {
+						status: 301,
+						redirect: '/'
+					};
+				}
+		}
+
 		return {
 			props: {
 				id,
 				permission,
 				fields_data,
-				access_token: token
+				access_token: token,
+				contest
 			}
 		};
 	}
@@ -56,14 +89,17 @@
 	import { onMount } from 'svelte';
 	import lottieInfoSrc from '$lib/Assets/animations/lottie-info.json?url';
 	import lottieEmptySrc from '$lib/Assets/animations/lottie-empty.json?url';
+	import type { CompetitionWithFields } from '$lib/types';
 
 	sessionDuration();
 
 	export let id: number, permission: string, fields_data, access_token: string;
+	export let contest: undefined | CompetitionWithFields;
+	
 	let questionId = '',
 		questionTitle = '',
 		default_value = '',
-		questionType = undefined;
+		questionType : string | undefined = undefined;
 
 	let selectedOldField;
 	let filtered = [];
@@ -82,15 +118,15 @@
 	let is_visible = false,
 		is_requiered = false;
 	let fields = fields_data;
-	let contestName = '',
-		contestLink = '',
-		startOn = '',
-		startAt = '',
-		regStartOn = '',
-		regStartAt = '',
-		regEndOn = '',
-		regEndAt = '',
-		category: string;
+	$: contestName = ''
+	$:	contestLink = ''
+	$:	startOn = ''
+	$:	startAt = ''
+	$:	regStartOn = ''
+	$:	regStartAt = ''
+	$:	regEndOn = ''
+	$:	regEndAt = ''
+	$:	category = ''
 
 	let formFields = [];
 
@@ -338,9 +374,10 @@
 	}
 	function addToPreview(): void {
 		formPreview.innerHTML = '';
+		console.log(formFields);
 		formFields.forEach((field) => {
 			let type = 'text';
-			if (field.type == '0') {
+			if (field.type == 0) {
 				type = "text";
 			} else if (field.type === 1) {
 				type = 'textarea';
@@ -351,7 +388,7 @@
 			let newField = document.createElement('div');
 			newField.classList.add('form-field');
 			if (type == 'textarea') {
-				newField.innerHTML = `<div class="d-flex col-12 m-0 justify-content-between align-items-baseline">
+				newField.innerHTML = `<div class="d-flex col-12 m-0 justify-content-between align-items-baseline data-id="${field.Id}">
 										<div class="col-md-6">
 											<label for="${field.id}">${field.name}</label>
 											${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
@@ -367,7 +404,7 @@
 									 		<textarea class="form-control" id="${field.id}" rows="3" ${field.is_required ? 'required' : ''}>${field.default_values[0]}</textarea>
 									  </div>`;
 			} else {
-				newField.innerHTML = `<div class="d-flex col-12 m-0 justify-content-between align-items-baseline">
+				newField.innerHTML = `<div class="d-flex col-12 m-0 justify-content-between align-items-baseline" data-id="${field.Id}">
 										<div class="col-md-6">
 											<label for="${field.id}" class="mb-1">${field.name}</label>
 											${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
@@ -428,7 +465,8 @@
 		}, 2000);
 	}
 	let monitors: Array<number> = [];
-	function addMonitor(id: number | undefined): void {
+	function addMonitor(id: number | undefined, printMsg: boolean = true): void {
+		if(permission != "super_admin") return;
 		if (id === undefined) {
 			showMessage('Error', 'Please enter a valid ID');
 			return;
@@ -466,7 +504,9 @@
 			monitorsCont.removeChild(newMonitor);
 		});
 		// Success mesage
-		showMessage('Success', `Monitor with id: ${id} added to monitor list.`);
+		if(printMsg){
+			showMessage('Success', `Monitor with id: ${id} added to monitor list.`);
+		}
 		monitorId = undefined;
 	}
 	function nextSlide(): void {
@@ -505,6 +545,7 @@
 		]
 	}
 	async function create(): Promise<void> {
+		if(permission != "super_admin") return;
 		comp.name = contestName;
 		comp.registration_start = regStartOn+"T"+regStartAt+":00.000Z";
 		comp.registration_end = regEndOn+"T"+regEndAt+":00.000Z";
@@ -582,6 +623,84 @@
 		});
 	}
 
+	async function update(): Promise<void> {
+		comp.name = contestName;
+		comp.registration_start = regStartOn+"T"+regStartAt+"Z";
+		comp.registration_end = regEndOn+"T"+regEndAt+"Z";
+		comp.started_at = startOn+"T"+startAt+"Z";
+		if(contestantsPerTeam === undefined) {
+			comp.persons_amount = 1;
+		} else {
+			comp.persons_amount = contestantsPerTeam;
+		}
+		let template = "";
+		formFields.forEach((field) => {
+			let type = 'text';
+			if (field.type == 'text') {
+				type = field.category.toLowerCase;
+			} else if (field.type === 1) {
+				type = 'textarea';
+			} else if (field.type == 2) {
+				type = 'file';
+			}
+
+			let newField = document.createElement('div');
+			newField.classList.add('form-field');
+			if (type == 'textarea') {
+				newField.innerHTML = `<div class="form-group">
+												<div class="d-flex col-12 m-0 justify-content-between align-items-baseline">
+												<div class="col-md-6">
+													<label for="${field.id}">${field.name}</label>
+													${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
+												</div>
+											</div>
+												<textarea class="form-control ${field.is_visible? "hide": ""}" id="${field.id}" rows="3" ${field.is_required ? 'required' : ''}>${field.default_values[0]}</textarea>
+											</div>`;
+			} else {
+				newField.innerHTML = `<div class="d-flex col-12 m-0 justify-content-between align-items-baseline">
+										<div class="col-md-6">
+											<label for="${field.id}" class="mb-1">${field.name}</label>
+											${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
+										</div>
+									</div>
+									<div class="form-field-input">
+										<input type="${type}" class="form-control ${field.is_visible? "hide": ""}" placeholder="Enter ${field.name} " value="${field.default_values[0]}" ${
+											field.is_required ? 'required' : ''
+										}">
+									</div> `;
+			}
+			template += newField.innerHTML;
+		});
+		comp.request_template = template;
+		comp.link = contestLink;
+		comp.fields = formFields.map((field) => {
+			return field.id;
+		});
+		comp.admins = monitors;
+		console.log(comp);
+		await fetch(`http://localhost:8000/competitions/${contest?.id}`, {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${access_token}`
+			},
+			body: JSON.stringify(comp)
+		}).then(res => {
+			if (res.status === 200) {
+				showMessage('Success', 'Competition created successfully.');
+			} else {
+				// show the error message
+				showMessage('Error', 'Something went wrong.');
+				res.json().then(data => {
+					console.log(data)
+					showMessage(res.statusText, (data.details !== undefined)? data.details: "Please fill the form correctly!");
+				});
+			}
+		}).catch(err => {
+			let error = '';
+			showMessage('Error', 'Something went wrong: ' + err);
+		});
+	}
 	let slideContorls = `<div class="slideControls border-top">
 							<div class="btn-group gap-1 col-12 justify-content-center align-items-center p-0 m-0">
 								<button class="btn btn-sm btn-block p-2"><li class="me-1 fa fa-arrow-left"></li> Previous</button>
@@ -598,20 +717,64 @@
 				nextSlide();
 			});
 		});
+		if(contest !== undefined){
+			contestName = contest.name;
+			contestLink = contest.link;
+			contestantsPerTeam = contest.persons_amount;
+			
+			// set the start date
+			let start = new Date(contest.started_at);
+			startOn = start.toISOString().split('T')[0];
+			startAt = start.toTimeString().split(' ')[0];
+			// set the start date
+			let regStart = new Date(contest.registration_start);
+			regStartOn = regStart.toISOString().split('T')[0];
+			regStartAt = regStart.toTimeString().split(' ')[0];
+			// set the end date
+			let end = new Date(contest.registration_end);
+			regEndOn = end.toISOString().split('T')[0];
+			regEndAt = end.toTimeString().split(' ')[0];
 
-		// Replace the default next button with a custom one- Create contest btn
-		// Create contest button
-		let createContestBtn = document.createElement('button');
-		createContestBtn.className = 'btn btn-sm btn-block p-2';
-		createContestBtn.innerHTML = 'Create Contest <li class="fa fa-check-circle">';
-		// Add event listener to create contest button
-		createContestBtn.addEventListener('click', () => {
-			create();
-		});
-		// Remove final button
-		(controlsCont[2].children[0].children[0].children[1] as HTMLElement).style.display = 'none';
-		// Add create contest button to final button
-		controlsCont[2].children[0].children[0].appendChild(createContestBtn);
+			// update fields
+			contest.fields.forEach((field) => {
+				// add the default value
+				field.default_values = [""];
+			})
+			formFields = contest.fields;
+			addToPreview();
+			contest.admins.forEach((monitor) => {
+				addMonitor(monitor, false);
+			});
+
+			// Replace the default next button with a custom one- Create contest btn
+			// Create contest button
+			let updateContestBtn = document.createElement('button');
+			updateContestBtn.className = 'btn btn-sm btn-block p-2';
+			updateContestBtn.innerHTML = 'Update Contest <li class="fa fa-check-circle">';
+			// Add event listener to create contest button
+			updateContestBtn.addEventListener('click', () => {
+				update();
+			});
+			// Remove final button
+			(controlsCont[2].children[0].children[0].children[1] as HTMLElement).style.display = 'none';
+			// Add create contest button to final button
+			controlsCont[2].children[0].children[0].appendChild(updateContestBtn);
+
+		} else {
+			// Replace the default next button with a custom one- Create contest btn
+			// Create contest button
+			let createContestBtn = document.createElement('button');
+			createContestBtn.className = 'btn btn-sm btn-block p-2';
+			createContestBtn.innerHTML = 'Create Contest <li class="fa fa-check-circle">';
+			// Add event listener to create contest button
+			createContestBtn.addEventListener('click', () => {
+				create();
+			});
+			// Remove final button
+			(controlsCont[2].children[0].children[0].children[1] as HTMLElement).style.display = 'none';
+			// Add create contest button to final button
+			controlsCont[2].children[0].children[0].appendChild(createContestBtn);
+		}
 	});
 </script>
 
@@ -828,6 +991,7 @@
 					<div bind:this={controlsCont[1]} style="background-color: white">{@html slideContorls}</div>
 				</div>
 			</div>
+			{#if permission === "super_admin"}
 			<div class="slide">
 				<div class="row col-12 justify-content-center">
 					<div class="card p-0 mb-3 col-md-5">
@@ -850,6 +1014,7 @@
 					</div>
 				</div>
 			</div>
+			{/if}
 		</div>
 	</div>
 	<div bind:this={alertCont} class="alertCont" />

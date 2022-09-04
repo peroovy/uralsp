@@ -124,15 +124,17 @@
             "auth_date": user.detail.auth_date,
             "hash": user.detail.hash
         };
-        console.log(data);
+        console.log(data)
         fetch('http://127.0.01:8000/auth/signin-telegram', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(data)
+            
         }).then(res => {
             res.json().then(res => {
+                    console.log(res)
                         let expiresIn = res.expires_in;
                         let token = res.access_token;
                         localStorage.setItem('access_token', token);

@@ -88,7 +88,6 @@
 	export let requests : Requests = [];
 	let userId: number;
 	let paricipantName = '';
-	console.log(ongoing_competition);
 	onMount(() => {
 		userId = userInfo.id;
 		paricipantName = `${userInfo.name}  ${userInfo.surname}`;
