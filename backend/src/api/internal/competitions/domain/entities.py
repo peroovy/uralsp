@@ -7,7 +7,7 @@ from api.internal.db.models import Competition, Field, Request
 from api.internal.db.models.request import RequestStatus
 
 
-class Filters(Schema):
+class CompetitionFilters(Schema):
     name: Optional[str] = None
     admin: Optional[int] = None
     opened: Optional[bool] = None
@@ -51,12 +51,6 @@ class CompetitionDetailsOut(ModelSchema):
         model_fields = "__all__"
 
 
-class RequestOut(ModelSchema):
-    class Config:
-        model = Request
-        model_fields = ["id", "owner", "status", "description", "created_at", "participants"]
-
-
 class FormIn(Schema):
     fields: List[str]
 
@@ -67,9 +61,3 @@ class AdminsIn(Schema):
 
 class RequestTemplateIn(Schema):
     request_template: Optional[str]
-
-
-class RequestsSerializationIn(Schema):
-    fields: Set[str] = None
-    status: RequestStatus = None
-    has_headers: bool = False

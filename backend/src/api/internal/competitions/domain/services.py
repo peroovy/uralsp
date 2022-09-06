@@ -1,31 +1,26 @@
-from io import BytesIO
 from typing import List, Optional
 
 from django.conf import settings
 from django.db.transaction import atomic
 from django.forms import model_to_dict
-from django.utils.timezone import is_naive, localtime, make_aware, now
+from django.utils.timezone import now
 
 from api.internal.competitions.domain.entities import (
     AdminsIn,
+    CompetitionFilters,
     CompetitionIn,
     FieldDetailsOut,
-    Filters,
     FormIn,
-    RequestsSerializationIn,
     RequestTemplateIn,
 )
 from api.internal.db.models import Competition, User
-from api.internal.db.models.request import RequestStatus
-from api.internal.db.models.user import Permissions
-from api.internal.db.repositories import competition_repo, field_repo, user_repo
 from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.field import IFieldRepository
 from api.internal.db.repositories.user import IUserRepository
-from api.internal.utils import serialize_to_csv, serialize_to_xlsx, to_current_timezone
+from api.internal.utils import to_current_timezone
 
 
-class CompetitionService:
+class CompetitionsService:
     def __init__(
         self,
         competition_repo: ICompetitionRepository,
@@ -36,26 +31,16 @@ class CompetitionService:
         self._user_repo = user_repo
         self._field_repo = field_repo
 
-    def get_filtered(self, filters: Filters) -> List[Competition]:
+    def get_competitions_by_filters(self, filters: CompetitionFilters) -> List[Competition]:
         return list(self._competition_repo.get_filtered(filters.name, filters.admin, filters.opened, filters.started))
 
-    def get(self, competition_id: int) -> Optional[Competition]:
-        return self._competition_repo.try_get(competition_id)
+    def get_competition(self, competition_id: int) -> Optional[Competition]:
+        return self._competition_repo.get(competition_id)
 
-    def get_with_requests(self, competition_id: int) -> Optional[Competition]:
-        return self._competition_repo.try_get_with_requests(competition_id)
-
-    def get_with_requests_for_serialization(
-        self, competition_id: int, params: RequestsSerializationIn
-    ) -> Optional[Competition]:
-        return self._competition_repo.try_get_with_requests_for_serialization(
-            competition_id, params.status, params.fields
-        )
-
-    def exists(self, competition_id: int) -> bool:
+    def exists_competition(self, competition_id: int) -> bool:
         return self._competition_repo.exists(competition_id)
 
-    def delete(self, competition_id: int) -> bool:
+    def delete_competition(self, competition_id: int) -> bool:
         return self._competition_repo.delete(competition_id)
 
     @atomic
@@ -108,9 +93,6 @@ class CompetitionService:
     def update_request_template(self, competition_id: int, data: RequestTemplateIn) -> bool:
         return self._competition_repo.update(competition_id, request_template=data.request_template)
 
-    def has_access(self, competition_id: int, user: User) -> bool:
-        return user.permission == Permissions.SUPER_ADMIN or self._competition_repo.is_admin(competition_id, user.id)
-
     def get_form_details(self, competition_id: int) -> List[FieldDetailsOut]:
         fields = self._competition_repo.get_form(competition_id)
 
@@ -142,50 +124,5 @@ class CompetitionService:
 
         return len(unique) > 0 and len(unique) == len(ids) and self._field_repo.exist_all(unique)
 
-    def is_registration_over(self, competition: Competition) -> bool:
-        return now() >= competition.registration_end
-
-    def is_started(self, competition: Competition) -> bool:
-        return now() >= competition.started_at
-
-    def is_registration_started(self, competition: Competition) -> bool:
-        return now() >= competition.registration_start
-
-
-class CompetitionSerializer:
-    REQUEST_HEADERS = ["id", "owner_id", "team_name", "status", "created_at"]
-
-    def requests_to_xlsx(self, competition_with_sorted_fields: Competition, has_headers: bool = False) -> BytesIO:
-        return serialize_to_xlsx(self._get_rows(competition_with_sorted_fields, has_headers))
-
-    def requests_to_csv(self, competition_with_sorted_fields: Competition, has_headers: bool = False) -> BytesIO:
-        return serialize_to_csv(self._get_rows(competition_with_sorted_fields, has_headers))
-
-    def _get_rows(self, competition: Competition, has_headers: bool) -> List[List[str]]:
-        max_participants_amount = max(map(lambda r: r.participation.count(), competition.requests.all()))
-        fields = [field.id for field in competition.fields.all()]
-        headers = self.REQUEST_HEADERS + ["participant_id", *fields] * max_participants_amount
-
-        rows = [headers] if has_headers else []
-
-        for request in competition.requests.all():
-            row = [
-                request.id,
-                request.owner_id,
-                request.team_name,
-                request.status,
-                request.created_at.strftime("%Y-%m-%d %H-%M-%S"),
-            ]
-
-            for participation in request.participation.all():
-                user_fields = dict((form_value.field_id, form_value.value) for form_value in participation.form.all())
-
-                row += [participation.user_id, *[user_fields.get(expected) or "-" for expected in fields]]
-
-            rows.append(row + ["-"] * (len(headers) - len(row)))
-
-        return rows
-
-
-competition_service = CompetitionService(competition_repo, user_repo, field_repo)
-competition_serializer = CompetitionSerializer()
+    def is_competition_admin(self, user: User, competition_id: int):
+        return self._competition_repo.is_admin(competition_id, user.id)

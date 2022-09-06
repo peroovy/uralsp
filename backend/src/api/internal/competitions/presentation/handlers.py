@@ -1,10 +1,8 @@
-from io import BytesIO
-from typing import Callable, List
+from typing import List
 from uuid import UUID
 
 from django.conf import settings
-from django.http import FileResponse, HttpRequest
-from django.utils.timezone import now
+from django.http import HttpRequest
 from loguru import logger
 from ninja import Body, Query
 
@@ -12,23 +10,19 @@ from api.internal.base import HandlersMetaclass
 from api.internal.competitions.domain.entities import (
     AdminsIn,
     CompetitionDetailsOut,
+    CompetitionFilters,
     CompetitionIn,
     CompetitionOut,
     FieldDetailsOut,
-    Filters,
     FormIn,
-    RequestOut,
-    RequestsSerializationIn,
     RequestTemplateIn,
 )
-from api.internal.competitions.domain.services import CompetitionSerializer, CompetitionService
-from api.internal.db.models import Competition, User
+from api.internal.competitions.domain.services import CompetitionsService
+from api.internal.competitions.requests.presentation.handlers import CompetitionRequestsHandlers
+from api.internal.db.models import User
 from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException
-from api.internal.fields.domain.services import FieldService
 from api.internal.logging import log
-from api.internal.requests.domain.services import RequestService
 from api.internal.responses import SuccessResponse
-from api.internal.users.domain.services import UserService
 
 STARTING = "Starting"
 PROCESSING = "Processing"
@@ -41,7 +35,7 @@ OPERATION_IS_OVER__INVALID_PERSONS_AMOUNT = f"{OPERATION_IS_OVER} (invalid amoun
 OPERATION_IS_OVER__INVALID_DATES = f"{OPERATION_IS_OVER} (invalid dates)"
 
 
-class CompetitionHandlers(metaclass=HandlersMetaclass):
+class CompetitionsHandlers(metaclass=HandlersMetaclass):
     VALIDATION_DATES_ERROR = "Values must be next: now < registration_start < registration_end < started_at"
     VALIDATION_PERSONS_AMOUNT_ERROR = f"persons_amount must be >= {settings.MIN_PARTICIPANTS_AMOUNT}"
     VALIDATION_FIELDS_ERROR = "Validation fields error"
@@ -53,38 +47,33 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
     BAD_DATES = "bad dates"
     BAD_PERSONS_AMOUNT = "bad persons_amount"
 
-    def __init__(
-        self,
-        competition_service: CompetitionService,
-        request_service: RequestService,
-        field_service: FieldService,
-        user_service: UserService,
-        competition_serializer: CompetitionSerializer,
-    ):
-        self._competition_service = competition_service
-        self._request_service = request_service
-        self._field_service = field_service
-        self._user_service = user_service
-        self._competition_serializer = competition_serializer
+    def __init__(self, competitions_service: CompetitionsService, requests_handlers: CompetitionRequestsHandlers):
+        self._competitions_service = competitions_service
+
+        self._requests_handlers = requests_handlers
+
+    @property
+    def requests(self) -> CompetitionRequestsHandlers:
+        return self._requests_handlers
 
     def get_competitions(
-        self, request: HttpRequest, _operation_id: UUID, filters: Filters = Query(...)
+        self, request: HttpRequest, _operation_id: UUID, filters: CompetitionFilters = Query(...)
     ) -> List[CompetitionOut]:
-        competitions = self._competition_service.get_filtered(filters)
+        competitions = self._competitions_service.get_competitions_by_filters(filters)
 
         return [CompetitionOut.from_orm(competition) for competition in competitions]
 
     def get_competition(self, request: HttpRequest, _operation_id: UUID, competition_id: int) -> CompetitionDetailsOut:
-        if not (competition := self._competition_service.get(competition_id)):
+        if not (competition := self._competitions_service.get_competition(competition_id)):
             raise NotFoundException(self.COMPETITION)
 
         return CompetitionDetailsOut.from_orm(competition)
 
     def get_form(self, request: HttpRequest, _operation_id: UUID, competition_id: int) -> List[FieldDetailsOut]:
-        if not self._competition_service.exists(competition_id):
+        if not self._competitions_service.exists_competition(competition_id):
             raise NotFoundException(self.COMPETITION)
 
-        return self._competition_service.get_form_details(competition_id)
+        return self._competitions_service.get_form_details(competition_id)
 
     def create_competition(
         self, request: HttpRequest, _operation_id: UUID, data: CompetitionIn = Body(...)
@@ -105,7 +94,7 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
         self._assert_competition_in(data, _operation_id)
 
         logger.info(log(_operation_id, PROCESSING))
-        self._competition_service.create(data)
+        self._competitions_service.create(data)
 
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
@@ -121,10 +110,10 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
             "bad fields" - field ids must be unique and exist, amount > 0
         """
 
-        if not self._competition_service.exists(competition_id):
+        if not self._competitions_service.exists_competition(competition_id):
             raise NotFoundException(self.COMPETITION)
 
-        updater = request.user
+        updater: User = request.user
         log_kwargs = {
             "updater_id": updater.id,
             "permission": updater.permission,
@@ -133,78 +122,23 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
 
         logger.info(log(_operation_id, STARTING, **log_kwargs))
 
-        if not self._competition_service.has_access(competition_id, updater):
+        if not self._competitions_service.is_competition_admin(updater, competition_id):
             logger.success(log(_operation_id, OPERATION_IS_OVER__PERMISSION_DENIED))
             raise ForbiddenException()
 
         self._assert_competition_in(data, _operation_id)
 
         logger.info(log(_operation_id, PROCESSING))
-        self._competition_service.update(competition_id, data)
+        self._competitions_service.update(competition_id, data)
 
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
 
     def delete_competition(self, request: HttpRequest, _operation_id: UUID, competition_id: int) -> SuccessResponse:
-        if not self._competition_service.delete(competition_id):
+        if not self._competitions_service.delete_competition(competition_id):
             raise NotFoundException(self.COMPETITION)
 
         return SuccessResponse()
-
-    def get_requests_for_competition(
-        self, request: HttpRequest, _operation_id: UUID, competition_id: int
-    ) -> List[RequestOut]:
-        if not (competition := self._competition_service.get_with_requests(competition_id)):
-            raise NotFoundException(self.COMPETITION)
-
-        if not self._competition_service.has_access(competition_id, request.user):
-            raise ForbiddenException()
-
-        return [RequestOut.from_orm(user_request) for user_request in competition.requests.all()]
-
-    def get_requests_for_competition_in_xlsx(
-        self,
-        request: HttpRequest,
-        _operation_id: UUID,
-        competition_id: int,
-        params: RequestsSerializationIn = Query(...),
-    ) -> FileResponse:
-        return self._get_requests_for_competition_in_file(
-            request, competition_id, params, self._competition_serializer.requests_to_xlsx, extension="xlsx"
-        )
-
-    def get_requests_for_competition_in_csv(
-        self,
-        request: HttpRequest,
-        _operation_id: UUID,
-        competition_id: int,
-        params: RequestsSerializationIn = Query(...),
-    ) -> FileResponse:
-        return self._get_requests_for_competition_in_file(
-            request, competition_id, params, self._competition_serializer.requests_to_csv, extension="csv"
-        )
-
-    def _get_requests_for_competition_in_file(
-        self,
-        request: HttpRequest,
-        competition_id: int,
-        params: RequestsSerializationIn,
-        get_file: Callable[[Competition, bool], BytesIO],
-        extension: str,
-    ) -> FileResponse:
-        if not (competition := self._competition_service.get_with_requests_for_serialization(competition_id, params)):
-            raise NotFoundException(self.COMPETITION)
-
-        if not self._competition_service.has_access(competition_id, request.user):
-            raise ForbiddenException()
-
-        buffer = get_file(competition, params.has_headers)
-
-        return FileResponse(
-            buffer,
-            as_attachment=True,
-            filename=f"{now().strftime(settings.DATETIME_FORMAT)}_requests_on_competition_{competition_id}.{extension}",
-        )
 
     def update_form(
         self, request: HttpRequest, _operation_id: UUID, competition_id: int, data: FormIn = Body(...)
@@ -214,10 +148,10 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
             "bad fields" - field ids must be unique and exist, amount > 0
         """
 
-        if not self._competition_service.exists(competition_id):
+        if not self._competitions_service.exists_competition(competition_id):
             raise NotFoundException(self.COMPETITION)
 
-        updater = request.user
+        updater: User = request.user
         log_kwargs = {
             "updater_id": updater.id,
             "permission": updater.permission,
@@ -226,16 +160,16 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
 
         logger.info(log(_operation_id, STARTING, **log_kwargs))
 
-        if not self._competition_service.has_access(competition_id, updater):
+        if not self._competitions_service.is_competition_admin(updater, competition_id):
             logger.success(log(_operation_id, OPERATION_IS_OVER__PERMISSION_DENIED))
             raise ForbiddenException()
 
-        if not self._competition_service.validate_fields(data.fields):
+        if not self._competitions_service.validate_fields(data.fields):
             logger.success(log(_operation_id, OPERATION_IS_OVER__INVALID_FIELDS))
             raise UnprocessableEntityException(self.VALIDATION_FIELDS_ERROR, error=self.BAD_FIELDS)
 
         logger.info(log(_operation_id, PROCESSING))
-        self._competition_service.update_form(competition_id, data)
+        self._competitions_service.update_form(competition_id, data)
 
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
@@ -248,10 +182,10 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
             "bad admins" - admin ids must be unique and exist, amount >= 0
         """
 
-        if not self._competition_service.exists(competition_id):
+        if not self._competitions_service.exists_competition(competition_id):
             raise NotFoundException(self.COMPETITION)
 
-        updater = request.user
+        updater: User = request.user
         log_kwargs = {
             "updater_id": updater.id,
             "permission": updater.permission,
@@ -260,12 +194,12 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
 
         logger.info(log(_operation_id, STARTING, **log_kwargs))
 
-        if not self._competition_service.validate_admins(data.admins):
+        if not self._competitions_service.validate_admins(data.admins):
             logger.success(log(_operation_id, OPERATION_IS_OVER__INVALID_ADMINS))
             raise UnprocessableEntityException(self.VALIDATION_ADMINS_ERROR, error=self.BAD_ADMINS)
 
         logger.info(log(_operation_id, PROCESSING))
-        self._competition_service.update_admins(competition_id, data)
+        self._competitions_service.update_admins(competition_id, data)
 
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
@@ -273,18 +207,18 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
     def update_request_template(
         self, request: HttpRequest, _operation_id: UUID, competition_id: int, data: RequestTemplateIn = Body(...)
     ) -> SuccessResponse:
-        if not self._competition_service.exists(competition_id):
+        if not self._competitions_service.exists_competition(competition_id):
             raise NotFoundException(self.COMPETITION)
 
-        if not self._competition_service.has_access(competition_id, request.user):
+        if not self._competitions_service.is_competition_admin(request.user, competition_id):
             raise ForbiddenException()
 
-        self._competition_service.update_request_template(competition_id, data)
+        self._competitions_service.update_request_template(competition_id, data)
 
         return SuccessResponse()
 
     def _assert_competition_in(self, data: CompetitionIn, _operation_id: UUID) -> None:
-        if not self._competition_service.validate_persons_amount(data):
+        if not self._competitions_service.validate_persons_amount(data):
             logger.success(
                 log(
                     _operation_id,
@@ -293,7 +227,7 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
             )
             raise UnprocessableEntityException(self.VALIDATION_PERSONS_AMOUNT_ERROR, error=self.BAD_PERSONS_AMOUNT)
 
-        if not self._competition_service.validate_dates(data):
+        if not self._competitions_service.validate_dates(data):
             logger.success(
                 log(
                     _operation_id,
@@ -302,10 +236,10 @@ class CompetitionHandlers(metaclass=HandlersMetaclass):
             )
             raise UnprocessableEntityException(self.VALIDATION_DATES_ERROR, error=self.BAD_DATES)
 
-        if not self._competition_service.validate_admins(data.admins):
+        if not self._competitions_service.validate_admins(data.admins):
             logger.success(log(_operation_id, OPERATION_IS_OVER__INVALID_ADMINS))
             raise UnprocessableEntityException(self.VALIDATION_ADMINS_ERROR, error=self.BAD_ADMINS)
 
-        if not self._competition_service.validate_fields(data.fields):
+        if not self._competitions_service.validate_fields(data.fields):
             logger.success(log(_operation_id, OPERATION_IS_OVER__INVALID_FIELDS))
             raise UnprocessableEntityException(self.VALIDATION_FIELDS_ERROR, error=self.BAD_FIELDS)

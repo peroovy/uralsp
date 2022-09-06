@@ -12,7 +12,7 @@ from api.internal.utils import get_strip_filters
 
 class ICompetitionRepository(ABC):
     @abstractmethod
-    def try_get(self, competition_id: int) -> Optional[Competition]:
+    def get(self, competition_id: int) -> Optional[Competition]:
         ...
 
     @abstractmethod
@@ -59,11 +59,11 @@ class ICompetitionRepository(ABC):
         ...
 
     @abstractmethod
-    def try_get_with_requests(self, competition_id: int) -> Optional[Competition]:
+    def get_with_requests(self, competition_id: int) -> Optional[Competition]:
         ...
 
     @abstractmethod
-    def try_get_with_requests_for_serialization(
+    def get_with_requests_for_serialization(
         self, competition_id: int, status: RequestStatus = None, fields: Set[str] = None
     ) -> Optional[Competition]:
         ...
@@ -78,13 +78,13 @@ class ICompetitionRepository(ABC):
 
 
 class CompetitionRepository(ICompetitionRepository):
-    def try_get(self, competition_id: int) -> Optional[Competition]:
+    def get(self, competition_id: int) -> Optional[Competition]:
         return Competition.objects.filter(id=competition_id).first()
 
     def get_for_update(self, competition_id: int) -> Competition:
         return Competition.objects.select_for_update().get(id=competition_id)
 
-    def try_get_with_requests(self, competition_id: int) -> Optional[Competition]:
+    def get_with_requests(self, competition_id: int) -> Optional[Competition]:
         return (
             Competition.objects.filter(id=competition_id).prefetch_related("requests", "requests__participants").first()
         )
@@ -144,7 +144,7 @@ class CompetitionRepository(ICompetitionRepository):
     def get_form(self, competition_id: int) -> QuerySet[Field]:
         return Competition.objects.prefetch_related("fields__default_values").get(id=competition_id).fields.all()
 
-    def try_get_with_requests_for_serialization(
+    def get_with_requests_for_serialization(
         self, competition_id: int, status: RequestStatus = None, fields: Set[str] = None
     ) -> Optional[Competition]:
         queryset = Competition.objects.filter(id=competition_id).prefetch_related(

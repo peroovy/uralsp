@@ -7,13 +7,12 @@ from loguru import logger
 from ninja import Body
 
 from api.internal.base import HandlersMetaclass
-from api.internal.competitions.domain.services import CompetitionService
 from api.internal.db.models import User
 from api.internal.db.models.user import Permissions
 from api.internal.exceptions import ForbiddenException, NotFoundException, UnprocessableEntityException
 from api.internal.logging import log
 from api.internal.requests.domain.entities import FormsIn, ProcessIn, RequestDetailsOut, RequestIn, RequestOut
-from api.internal.requests.domain.services import RequestService
+from api.internal.requests.domain.services import RequestCompetitionService, RequestsService
 from api.internal.responses import SuccessResponse
 
 STARTING = "starting"
@@ -30,47 +29,37 @@ OPERATION_IS_OVER__PERMISSION_DENIED = f"{OPERATION_IS_OVER} (permission denied)
 OPERATION_IS_OVER__COMPETITION_STARTED = f"{OPERATION_IS_OVER} (competition started)"
 
 
-class RequestHandlers(metaclass=HandlersMetaclass):
+class RequestsHandlers(metaclass=HandlersMetaclass):
     REGISTRATION_IS_OVER = "Registration is over"
     INVALID_TEAM = "Team validation error"
     INVALID_FORMS = "Forms validation error"
-    COMPETITION_HAS_ALREADY_STARTED = "The competition has already started"
     UNKNOWN_COMPETITION = "Unknown competition"
     REQUEST_HAS_ALREADY_CREATED = "Request has already created"
     REGISTRATION_HAS_NOT_STARTED_YET = "Registration has not started yet"
 
     REQUEST = "request"
     COMPETITION = "competition"
-    STARTED_COMPETITION = "started competition"
     BAD_USERS = "bad users"
     BAD_FORMS = "bad forms"
     REGISTRATION_END = "registration end"
     REGISTRATION_START = "registration start"
 
-    def __init__(self, request_service: RequestService, competition_service: CompetitionService):
-        self._request_service = request_service
+    def __init__(self, requests_service: RequestsService, competition_service: RequestCompetitionService):
+        self._requests_service = requests_service
         self._competition_service = competition_service
 
-    def get_requests(self, request: HttpRequest, _operation_id: UUID) -> List[RequestOut]:
-        requests = self._request_service.get_requests(request.user)
-
-        return [RequestOut.from_orm(user_request) for user_request in requests]
+    def get_all_requests(self, request: HttpRequest, _operation_id: UUID) -> List[RequestOut]:
+        return [RequestOut.from_orm(user_request) for user_request in self._requests_service.get_requests()]
 
     def get_request(self, request: HttpRequest, _operation_id: UUID, request_id: int) -> RequestDetailsOut:
-        if not (user_request := self._request_service.get_request_with_participation_and_forms(request_id)):
+        if not (user_request := self._requests_service.get_request_with_participation_and_forms(request_id)):
             raise NotFoundException(self.REQUEST)
 
-        if not self._request_service.has_access(request.user, user_request):
-            raise ForbiddenException()
-
-        return self._request_service.get_request_details(user_request)
+        return self._requests_service.get_request_details(user_request)
 
     def delete_request(self, request: HttpRequest, _operation_id: UUID, request_id: int) -> SuccessResponse:
-        if not (user_request := self._request_service.get_request(request_id)):
+        if not (user_request := self._requests_service.get_request(request_id)):
             raise NotFoundException(self.REQUEST)
-
-        if not self._request_service.has_access(request.user, user_request, only_admin=True):
-            raise ForbiddenException()
 
         user_request.delete()
 
@@ -96,7 +85,7 @@ class RequestHandlers(metaclass=HandlersMetaclass):
 
         logger.info(log(_operation_id, STARTING, **log_kwargs))
 
-        if not (competition := self._competition_service.get(data.competition)):
+        if not (competition := self._competition_service.get_competition(data.competition)):
             logger.success(
                 log(
                     _operation_id,
@@ -106,7 +95,7 @@ class RequestHandlers(metaclass=HandlersMetaclass):
             )
             raise UnprocessableEntityException(self.UNKNOWN_COMPETITION, error=self.COMPETITION)
 
-        if user.permission == Permissions.DEFAULT and self._request_service.exists_request_for_competition(
+        if user.permission == Permissions.DEFAULT and self._requests_service.exists_request_for_competition(
             user.id, data.competition
         ):
             logger.success(
@@ -140,16 +129,16 @@ class RequestHandlers(metaclass=HandlersMetaclass):
             )
             raise UnprocessableEntityException(self.REGISTRATION_IS_OVER, error=self.REGISTRATION_END)
 
-        if not self._request_service.validate_users(competition, data):
+        if not self._requests_service.validate_users(competition, data):
             logger.success(log(_operation_id, OPERATION_IS_OVER__INVALID_USERS))
             raise UnprocessableEntityException(self.INVALID_TEAM, error=self.BAD_USERS)
 
-        if not self._request_service.validate_forms(data):
+        if not self._requests_service.validate_forms(data):
             logger.success(log(_operation_id, OPERATION_IS_OVER__INVALID_FORMS))
             raise UnprocessableEntityException(self.INVALID_FORMS, error=self.BAD_FORMS)
 
         logger.info(log(_operation_id, PROCESSING))
-        self._request_service.create(request.user, data)
+        self._requests_service.create_request(request.user, data)
 
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
@@ -171,7 +160,7 @@ class RequestHandlers(metaclass=HandlersMetaclass):
             "bad forms" - all required fields must be in any forms, any fields in form must be unique
         """
 
-        if not (user_request := self._request_service.get_request(request_id)):
+        if not (user_request := self._requests_service.get_request(request_id)):
             raise NotFoundException(self.REQUEST)
 
         updater: User = request.user
@@ -184,7 +173,7 @@ class RequestHandlers(metaclass=HandlersMetaclass):
 
         logger.info(log(_operation_id, STARTING, **log_kwargs))
 
-        if not self._request_service.has_access(updater, user_request):
+        if not self._requests_service.is_owner_or_competition_admin(updater, user_request):
             logger.info(log(_operation_id, OPERATION_IS_OVER__PERMISSION_DENIED))
             raise ForbiddenException()
 
@@ -199,57 +188,17 @@ class RequestHandlers(metaclass=HandlersMetaclass):
             )
             raise UnprocessableEntityException(self.REGISTRATION_IS_OVER, error=self.REGISTRATION_END)
 
-        if not self._request_service.validate_users(user_request.competition, data):
+        if not self._requests_service.validate_users(user_request.competition, data):
             logger.success(log(_operation_id, OPERATION_IS_OVER__INVALID_USERS))
             raise UnprocessableEntityException(self.INVALID_TEAM, error=self.BAD_USERS)
 
         request_in = RequestIn(competition=user_request.competition_id, team_name=data.team_name, team=data.team)
-        if not self._request_service.validate_forms(request_in):
+        if not self._requests_service.validate_forms(request_in):
             logger.success(log(_operation_id, OPERATION_IS_OVER__INVALID_FORMS))
             raise UnprocessableEntityException(self.INVALID_FORMS, error=self.BAD_FORMS)
 
         logger.info(log(_operation_id, PROCESSING))
-        self._request_service.update(user_request, request_in)
-
-        logger.success(log(_operation_id, OPERATION_IS_OVER))
-        return SuccessResponse()
-
-    def cancel_request(self, request: HttpRequest, _operation_id: UUID, request_id: int) -> SuccessResponse:
-        """
-        422 error codes:\n
-            "started competition" - the competition has already started
-        """
-        if not (user_request := self._request_service.get_request(request_id)):
-            raise NotFoundException(self.REQUEST)
-
-        updater: User = request.user
-        log_kwargs = {
-            "updater_id": updater.id,
-            "updater_permission": updater.permission,
-            "request_id": user_request.id,
-            "owner_id": user_request.owner_id,
-            "prev_status": user_request.status,
-        }
-
-        logger.info(log(_operation_id, STARTING, **log_kwargs))
-
-        if not self._request_service.has_access(updater, user_request):
-            logger.success(log(_operation_id, OPERATION_IS_OVER__PERMISSION_DENIED))
-            raise ForbiddenException()
-
-        if self._competition_service.is_started(competition := user_request.competition):
-            logger.success(
-                log(
-                    _operation_id,
-                    OPERATION_IS_OVER__COMPETITION_STARTED,
-                    competition_id=competition.id,
-                    started_at=competition.started_at.strftime(settings.DATETIME_FORMAT),
-                )
-            )
-            raise UnprocessableEntityException(self.COMPETITION_HAS_ALREADY_STARTED, error=self.STARTED_COMPETITION)
-
-        logger.info(log(_operation_id, PROCESSING))
-        self._request_service.cancel(user_request)
+        self._requests_service.update_request(user_request, request_in)
 
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
@@ -257,7 +206,7 @@ class RequestHandlers(metaclass=HandlersMetaclass):
     def process_request(
         self, request: HttpRequest, _operation_id: UUID, request_id: int, data: ProcessIn
     ) -> SuccessResponse:
-        if not (user_request := self._request_service.get_request(request_id)):
+        if not (user_request := self._requests_service.get_request(request_id)):
             raise NotFoundException(self.REQUEST)
 
         updater: User = request.user
@@ -272,12 +221,12 @@ class RequestHandlers(metaclass=HandlersMetaclass):
 
         logger.info(log(_operation_id, STARTING, **log_kwargs))
 
-        if not self._request_service.has_access(updater, user_request, only_admin=True):
+        if not self._requests_service.is_owner_or_competition_admin(updater, user_request, only_admin=True):
             logger.success(log(_operation_id, OPERATION_IS_OVER__PERMISSION_DENIED))
             raise ForbiddenException()
 
         logger.info(log(_operation_id, PROCESSING))
-        self._request_service.process(user_request, data)
+        self._requests_service.process_request(user_request, data)
 
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return SuccessResponse()

@@ -1,4 +1,3 @@
-from collections import namedtuple
 from io import BytesIO
 from typing import Iterable, List, Optional, Set, Union
 
@@ -7,7 +6,6 @@ from django.forms import model_to_dict
 
 from api.internal.db.models import FormValue, User
 from api.internal.db.models.user import Permissions
-from api.internal.db.repositories import competition_repo, form_value_repo, participation_repo, request_repo, user_repo
 from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.form_value import IFormValueRepository
 from api.internal.db.repositories.participation import IParticipationRepository
@@ -35,9 +33,8 @@ class UserService:
         self._user_repo = user_repo
         self._form_value_repo = form_value_repo
         self._competition_repo = competition_repo
-        self._request_repo = request_repo
 
-    def get_filtered(self, filters: Filters) -> List[User]:
+    def get_users_by_filters(self, filters: Filters) -> List[User]:
         return list(
             self._user_repo.get_filtered(
                 filters.permission,
@@ -160,8 +157,3 @@ class UserSerializer:
             user.google_id,
             user.telegram_id,
         ]
-
-
-user_service = UserService(user_repo, form_value_repo, competition_repo)
-merging_service = MergingService(user_repo, request_repo, participation_repo)
-user_serializer = UserSerializer()

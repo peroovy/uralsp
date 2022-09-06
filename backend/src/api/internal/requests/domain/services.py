@@ -3,11 +3,12 @@ from typing import Iterable, List, Optional
 from django.db.transaction import atomic
 from django.utils.timezone import now
 
+from api.internal.competitions.domain.services import CompetitionsService
 from api.internal.db.models import Competition, Request, User
 from api.internal.db.models.request import RequestStatus
 from api.internal.db.models.user import Permissions
-from api.internal.db.repositories import competition_repo, form_value_repo, participation_repo, request_repo, user_repo
 from api.internal.db.repositories.competition import ICompetitionRepository
+from api.internal.db.repositories.field import IFieldRepository
 from api.internal.db.repositories.form_value import FieldValue, IFormValueRepository
 from api.internal.db.repositories.participation import IParticipationRepository
 from api.internal.db.repositories.request import IRequestRepository
@@ -22,7 +23,7 @@ from api.internal.requests.domain.entities import (
 )
 
 
-class RequestService:
+class RequestsService:
     def __init__(
         self,
         request_repo: IRequestRepository,
@@ -37,38 +38,38 @@ class RequestService:
         self._participation_repo = participation_repo
         self._form_value_repo = form_value_repo
 
-    def get_requests(self, owner: User) -> List[Request]:
-        return list(self._request_repo.get_requests(owner.id))
+    def get_requests(self) -> List[Request]:
+        return list(self._request_repo.get_requests())
 
     def get_request(self, request_id: int) -> Optional[Request]:
-        return self._request_repo.try_get_request(request_id)
+        return self._request_repo.get_request(request_id)
 
     def get_request_with_participation_and_forms(self, request_id: int) -> Optional[Request]:
-        return self._request_repo.try_get_request_with_participation_and_forms(request_id)
+        return self._request_repo.get_request_with_participation_and_forms(request_id, owner_id=None)
 
     def exists(self, owner: User, request_id: int) -> bool:
         return self._request_repo.exists(owner.id, request_id)
 
     @atomic
-    def create(self, owner: User, data: RequestIn) -> Request:
+    def create_request(self, owner: User, data: RequestIn) -> Request:
         request = self._request_repo.create(owner.id, data.competition, data.team_name)
         self._create_participation_and_fill_form(request.id, data.competition, data.team)
 
         return request
 
     @atomic
-    def update(self, request: Request, data: RequestIn) -> None:
+    def update_request(self, request: Request, data: RequestIn) -> None:
         self._request_repo.update(request.id, team_name=data.team_name, status=RequestStatus.AWAITED, description=None)
         self._participation_repo.delete_all(request.id)
 
         self._create_participation_and_fill_form(request.id, data.competition, data.team)
 
     @atomic
-    def cancel(self, request: Request) -> None:
+    def cancel_request(self, request: Request) -> None:
         self._request_repo.update(request.id, status=RequestStatus.CANCELED)
 
     @atomic
-    def process(self, request: Request, data: ProcessIn) -> None:
+    def process_request(self, request: Request, data: ProcessIn) -> None:
         self._request_repo.update(
             request.id,
             team_name=request.team_name,
@@ -76,16 +77,16 @@ class RequestService:
             description=data.description,
         )
 
-    def has_access(self, user: User, request: Request, only_admin=False) -> bool:
+    def is_owner_or_competition_admin(self, user: User, request: Request, only_admin=False) -> bool:
         return (
             user.id == request.owner_id
             and not only_admin
             or user.permission == Permissions.SUPER_ADMIN
-            or self._competition_repo.is_admin(request.competition_id, user.id)
+            or self._competition_repo.is_admin(int(request.competition_id), user.id)
         )
 
     def exists_request_for_competition(self, owner_id: int, competition_id: int) -> bool:
-        return self._request_repo.exists_request_on_competition(owner_id, competition_id)
+        return self._request_repo.exists_request_for_competition(owner_id, competition_id)
 
     def validate_users(self, competition: Competition, data: FormsIn) -> bool:
         if len(data.team) != competition.persons_amount:
@@ -157,4 +158,17 @@ class RequestService:
             )
 
 
-request_service = RequestService(request_repo, competition_repo, user_repo, participation_repo, form_value_repo)
+class RequestCompetitionService(CompetitionsService):
+    def __init__(
+        self, competition_repo: ICompetitionRepository, user_repo: IUserRepository, field_repo: IFieldRepository
+    ):
+        super(RequestCompetitionService, self).__init__(competition_repo, user_repo, field_repo)
+
+    def is_registration_over(self, competition: Competition) -> bool:
+        return now() >= competition.registration_end
+
+    def is_started(self, competition: Competition) -> bool:
+        return now() >= competition.started_at
+
+    def is_registration_started(self, competition: Competition) -> bool:
+        return now() >= competition.registration_start

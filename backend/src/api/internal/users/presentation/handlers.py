@@ -33,6 +33,7 @@ from api.internal.users.domain.entities import (
     ProfileOut,
 )
 from api.internal.users.domain.services import MergingService, UserSerializer, UserService
+from api.internal.users.requests.presentation.handlers import CurrentUserRequestsHandlers
 
 STARTING = "Starting"
 PROCESSING = "Processing"
@@ -48,40 +49,39 @@ OPERATION_IS_OVER__COMPETITION_ADMIN = f"{OPERATION_IS_OVER} (user is competitio
 OPERATION_IS_OVER__PERMISSIONS_COMPARISON = f"{OPERATION_IS_OVER} (permissions comparison)"
 
 
-class UserHandlers(metaclass=HandlersMetaclass):
+class UsersHandlers(metaclass=HandlersMetaclass):
     INTERSECTION_REQUESTS = "Exists intersection of requests"
     INTERSECTION_PARTICIPANTS = "Exists intersection of participants"
     NOT_EQUAL_PERMISSIONS = "Permissions must be equal"
     EMAIL_ALREADY_EXISTS = "The email already exists"
     UPDATING_SELF_IS_NOT_ALLOWED = "Updating self is not allowed"
-    PERMISSION_CANNOT_BE_UPDATED = "The permission cannot be updated"
     MERGING_SELF_IS_NOT_ALLOWED = "Merging self is not allowed"
     SOME_COMPETITION_HAS_THIS_ADMIN = "Some competition has this admin"
     PERMISSION_MUST_BE_LTE_THAN_UPDATER_PERMISSION = "Permission must be lte than the updater permission"
 
     UPDATING_SELF = "updating self"
-    BAD_USERS = "bad users"
     ANY_USERS = "any users"
     BAD_PERMISSIONS = "bad permissions"
-    BAD_PERMISSION = "bad permission"
     BAD_EMAIL = "bad email"
     COMPETITION_ADMIN = "competition admin"
     PERMISSIONS_COMPARISON = "permissions comparison"
 
-    USERS = "users"
     USER = "user"
-    PERMISSION = "permission"
     REQUESTS = "requests"
     PARTICIPANTS = "participants"
 
-    def __init__(self, user_service: UserService, merging_service: MergingService, document_service: UserSerializer):
+    USERS_FILENAME = "{date}_users.{extensions}"
+    XLSX = "xlsx"
+    CSV = "csv"
+
+    def __init__(self, user_service: UserService, merging_service: MergingService, user_serializer: UserSerializer):
         self._user_service = user_service
         self._merging_service = merging_service
-        self._user_serializer = document_service
+        self._user_serializer = user_serializer
 
     @paginate(LimitOffsetPagination)
     def get_users(self, request: HttpRequest, _operation_id: UUID, filters: Filters = Query(...)) -> List[ProfileOut]:
-        return [ProfileOut.from_orm(user) for user in self._user_service.get_filtered(filters)]
+        return [ProfileOut.from_orm(user) for user in self._user_service.get_users_by_filters(filters)]
 
     def get_user(self, request: HttpRequest, _operation_id: UUID, user_id: int) -> FullProfileOut:
         if not (user := self._user_service.get_user(user_id)):
@@ -144,11 +144,11 @@ class UserHandlers(metaclass=HandlersMetaclass):
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
 
-    def get_users_xlsx(self, request: HttpRequest, filters: Filters = Query(...)) -> FileResponse:
-        return self._get_users_in_file(filters, self._user_serializer.to_xlsx, extension="xlsx")
+    def get_users_in_xlsx(self, request: HttpRequest, filters: Filters = Query(...)) -> FileResponse:
+        return self._get_users_in_file(filters, self._user_serializer.to_xlsx, extension=self.XLSX)
 
-    def get_users_csv(self, request: HttpRequest, filters: Filters = Query(...)) -> FileResponse:
-        return self._get_users_in_file(filters, self._user_serializer.to_csv, extension="csv")
+    def get_users_in_csv(self, request: HttpRequest, filters: Filters = Query(...)) -> FileResponse:
+        return self._get_users_in_file(filters, self._user_serializer.to_csv, extension=self.CSV)
 
     def merge_users(
         self, request: HttpRequest, data: MergingIn = Body(...), _operation_id: UUID = None
@@ -207,13 +207,13 @@ class UserHandlers(metaclass=HandlersMetaclass):
     def _get_users_in_file(
         self, filters: Filters, get_file: Callable[[List[User]], BytesIO], extension: str
     ) -> FileResponse:
-        users = self._user_service.get_filtered(filters)
+        users = self._user_service.get_users_by_filters(filters)
         buffer = get_file(users)
 
         return FileResponse(
             buffer,
             as_attachment=True,
-            filename=f"{now().strftime(settings.DATETIME_FORMAT)}_users.{extension}",
+            filename=self.USERS_FILENAME.format(date=now().strftime(settings.DATETIME_FORMAT), extension=extension),
         )
 
 
@@ -221,9 +221,7 @@ class CurrentUserHandlers(metaclass=HandlersMetaclass):
     EMAIL_ALREADY_EXISTS = "The email already exists"
     INVALID_CREDENTIALS = "Invalid credentials"
 
-    SOCIAL_CONNECTING = "Failed to get user information"
     MIN_AMOUNT_SOCIALS = f"Min amount of socials is {settings.MIN_SOCIALS_AMOUNT}"
-    NOT_FOUND_ANY_FIELD_IDS = "Any field ids were not found"
     SOCIAL_ID_ALREADY_EXISTS = "Social id already exists"
 
     SOCIALS_AMOUNT = "socials amount"
@@ -231,8 +229,14 @@ class CurrentUserHandlers(metaclass=HandlersMetaclass):
     BAD_SOCIAL_ID = "bad social id"
     BAD_EMAIL = "bad email"
 
-    def __init__(self, user_service: UserService):
+    def __init__(self, user_service: UserService, requests_handlers: CurrentUserRequestsHandlers):
         self._user_service = user_service
+
+        self._requests_handlers = requests_handlers
+
+    @property
+    def requests(self) -> CurrentUserRequestsHandlers:
+        return self._requests_handlers
 
     def get_profile(self, request: HttpRequest, _operation_id: UUID) -> FullProfileOut:
         return FullProfileOut.from_orm(request.user)
@@ -244,6 +248,7 @@ class CurrentUserHandlers(metaclass=HandlersMetaclass):
         422 error codes:\n
             "bad email" - some user has this email. 'null' value can set for all users
         """
+
         user: User = request.user
         log_kwargs = {"user_id": user.id} | data.dict()
 
@@ -281,6 +286,7 @@ class CurrentUserHandlers(metaclass=HandlersMetaclass):
             "bad credentials" - invalid social credentials
             "bad social id" - this social id already exists
         """
+
         return self._link_social(request, VKAuth(credentials, vk_repo))
 
     def link_google(
@@ -291,6 +297,7 @@ class CurrentUserHandlers(metaclass=HandlersMetaclass):
             "bad credentials" - invalid social credentials
             "bad social id" - this social id already exists
         """
+
         return self._link_social(request, GoogleAuth(credentials, google_repo))
 
     def link_telegram(
@@ -301,6 +308,7 @@ class CurrentUserHandlers(metaclass=HandlersMetaclass):
             "bad credentials" - invalid social credentials
             "bad social id" - this social id already exists
         """
+
         return self._link_social(request, TelegramAuth(credentials, telegram_repo))
 
     def unlink_vkontakte(self, request: HttpRequest, _operation_id: UUID) -> SuccessResponse:
@@ -308,6 +316,7 @@ class CurrentUserHandlers(metaclass=HandlersMetaclass):
         422 error codes:\n
             "socials amount" - at least one social network must be linked
         """
+
         return self._unlink_social(request, VKAuth(None, vk_repo))
 
     def unlink_google(self, request: HttpRequest, _operation_id: UUID) -> SuccessResponse:
@@ -315,6 +324,7 @@ class CurrentUserHandlers(metaclass=HandlersMetaclass):
         422 error codes:\n
             "socials amount" - at least one social network must be linked
         """
+
         return self._unlink_social(request, GoogleAuth(None, google_repo))
 
     def unlink_telegram(self, request: HttpRequest, _operation_id: UUID) -> SuccessResponse:
@@ -322,6 +332,7 @@ class CurrentUserHandlers(metaclass=HandlersMetaclass):
         422 error codes:\n
             "socials amount" - at least one social network must be linked
         """
+
         return self._unlink_social(request, TelegramAuth(None, telegram_repo))
 
     def _link_social(self, request: HttpRequest, social: SocialBase) -> SuccessResponse:
