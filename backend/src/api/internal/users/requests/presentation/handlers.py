@@ -86,6 +86,12 @@ class CurrentUserRequestsHandlers(metaclass=HandlersMetaclass):
     def renew_request_from_user(
         self, request: HttpRequest, _operation_id: UUID, request_id: int = Path(...)
     ) -> SuccessResponse:
+        """
+        422 error codes:\n
+            "bad status" - attempt to update not-canceled status
+            "registration end" - registration for the competition is over
+        """
+
         if not (user_request := self._requests_service.get_request_from_user(request.user, request_id)):
             raise NotFoundException(self.REQUEST)
 
