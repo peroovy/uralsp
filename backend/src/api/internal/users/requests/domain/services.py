@@ -1,6 +1,9 @@
 from typing import List, Optional
 
+from django.db.transaction import atomic
+
 from api.internal.db.models import Request, User
+from api.internal.db.models.request import RequestStatus
 from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.form_value import IFormValueRepository
 from api.internal.db.repositories.participation import IParticipationRepository
@@ -27,3 +30,11 @@ class CurrentUserRequestsService(RequestsService):
 
     def get_request_from_user(self, owner: User, request_id: int) -> Optional[Request]:
         return self._request_repo.get_request_from_user(owner.id, request_id)
+
+    @atomic
+    def cancel_request(self, request: Request) -> None:
+        self._request_repo.update(request.id, status=RequestStatus.CANCELED)
+
+    @atomic
+    def renew_request(self, request: Request) -> None:
+        self._request_repo.update(request.id, status=RequestStatus.AWAITED)

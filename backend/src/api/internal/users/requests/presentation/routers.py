@@ -35,4 +35,11 @@ def get_user_request_router(handlers: CurrentUserRequestsHandlers) -> Router:
         response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
     )
 
+    router.add_api_operation(
+        path="/renew",
+        methods=["PATCH"],
+        view_func=handlers.renew_request_from_user,
+        response={200: SuccessResponse, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
+    )
+
     return router

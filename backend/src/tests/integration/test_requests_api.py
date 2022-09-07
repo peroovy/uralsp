@@ -73,7 +73,7 @@ def test_creating__unknown_competition(client: Client, user_token: str) -> None:
 def test_creating__request_already_created(
     client: Client, competition: Competition, user: User, user_token: str
 ) -> None:
-    request = Request.objects.create(competition=competition, owner=user)
+    request = Request.objects.create(competition=competition, owner=user, status=RequestStatus.CANCELED)
     error, details = "request", "Request has already created"
     body = {"competition": competition.id, "team_name": "SUPER-PUPER TEAM", "team": []}
 

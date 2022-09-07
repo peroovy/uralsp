@@ -65,10 +65,6 @@ class RequestsService:
         self._create_participation_and_fill_form(request.id, data.competition, data.team)
 
     @atomic
-    def cancel_request(self, request: Request) -> None:
-        self._request_repo.update(request.id, status=RequestStatus.CANCELED)
-
-    @atomic
     def process_request(self, request: Request, data: ProcessIn) -> None:
         self._request_repo.update(
             request.id,
