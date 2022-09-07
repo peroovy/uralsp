@@ -11,12 +11,12 @@ from tests.integration.conftest import (
     EMAIL__IS_CORRECT,
     INSTITUTION__IS_CORRECT,
     PHONE__IS_CORRECT,
-    assert_200,
     assert_400,
     assert_404,
     assert_422,
     assert_access,
     assert_not_422_body,
+    assert_success_response,
     assert_validation_error,
     get,
     post,
@@ -269,7 +269,7 @@ def test_updating_user(
 ) -> None:
     body = get_body_for_updating()
 
-    assert_200(put(client, USER.format(id=user.id), super_admin_token, body))
+    assert_success_response(put(client, USER.format(id=user.id), super_admin_token, body))
     assert_updating(user, body)
 
 
@@ -333,7 +333,7 @@ def test_updating_permission(
     response = put(client, USER.format(id=user.id), super_admin_token, body)
 
     if is_correct:
-        assert_200(response)
+        assert_success_response(response)
         assert_updating(user, body)
     else:
         assert_validation_error(response)
@@ -390,7 +390,7 @@ def test_updating_institution_type(
     response = put(client, USER.format(id=user.id), super_admin_token, body)
 
     if is_correct:
-        assert_200(response)
+        assert_success_response(response)
         assert_updating(user, body)
     else:
         assert_validation_error(response)
@@ -412,7 +412,7 @@ def test_updating_email(
     response = put(client, USER.format(id=user.id), super_admin_token, body)
 
     if is_correct:
-        assert_200(response)
+        assert_success_response(response)
         assert_updating(user, body)
     else:
         assert_validation_error(response)
@@ -434,7 +434,7 @@ def test_updating_email__already_exists(client: Client, user: User, another: Use
     )
     assert_not_updating(user)
 
-    assert_200(put(client, USER.format(id=another.id), super_admin_token, body))
+    assert_success_response(put(client, USER.format(id=another.id), super_admin_token, body))
     assert_updating(another, body)
 
 
@@ -453,7 +453,7 @@ def test_updating_phone(
     response = put(client, USER.format(id=user.id), super_admin_token, body)
 
     if is_correct:
-        assert_200(response)
+        assert_success_response(response)
 
         actual = User.objects.get(pk=user.pk).phone
         assert len(actual) == 12
@@ -567,7 +567,7 @@ def assert_merging_teacher_or_gte(
     to_req = Request.objects.create(owner=to_user, competition=competition)
     to_req__part = Participation.objects.create(request=to_req, user=from_user)
 
-    assert_200(post(client, MERGE, super_admin_token, get_body_for_merging(from_user.id, to_user.id)))
+    assert_success_response(post(client, MERGE, super_admin_token, get_body_for_merging(from_user.id, to_user.id)))
 
     assert Request.objects.filter(pk=from_req_1.pk, owner=to_user).exists()
     assert Request.objects.filter(pk=from_req_2.pk, owner=to_user).exists()
@@ -598,7 +598,7 @@ def assert_merging_default_users(
     user_form_value = FormValue.objects.create(participation=from_participation, field=field, value="123")
 
     response = post(client, MERGE, token, get_body_for_merging(from_user.id, to_user.id))
-    assert_200(response)
+    assert_success_response(response)
 
     to_user.refresh_from_db()
     from_request.refresh_from_db()

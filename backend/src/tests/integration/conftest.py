@@ -120,7 +120,7 @@ def assert_not_422_body(response, error: str, details: str) -> None:
     assert response.json() != {"error": error, "details": details}
 
 
-def assert_200(response) -> None:
+def assert_success_response(response) -> None:
     assert response.status_code == 200 and response.json() == {"details": "Success"}
 
 
@@ -129,15 +129,17 @@ def assert_not_200(response) -> None:
 
 
 def assert_access(
-    method: Callable[[str], Response], tokens_access: Iterable[str], token_not_access: Iterable[str]
+    method: Callable[[str], Response], tokens_access: Iterable[Optional[str]], token_not_access: Iterable[Optional[str]]
 ) -> None:
+    bad_statuses = [401, 403]
+
     for token in tokens_access:
         response = method(token)
-        assert response.status_code not in [403, 404]
+        assert response.status_code not in bad_statuses
 
     for token in token_not_access:
         response = method(token)
-        assert_403(response)
+        assert response.status_code in bad_statuses
 
 
 def get(client: Client, uri: str, token: str = None) -> Response:

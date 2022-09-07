@@ -14,12 +14,12 @@ from api.internal.db.models.request import RequestStatus
 from api.internal.db.models.user import Permissions
 from tests.conftest import AFTER_NOW, BEFORE_NOW, datetime_to_string
 from tests.integration.conftest import (
-    assert_200,
     assert_404,
     assert_422,
     assert_access,
     assert_not_200,
     assert_not_422_body,
+    assert_success_response,
     assert_validation_error,
     delete,
     get,
@@ -29,62 +29,35 @@ from tests.integration.conftest import (
 )
 
 REQUESTS = "/requests"
-REQUEST = "/requests/{id}"
-CANCEL = REQUEST + "/cancel"
-PROCESS = REQUEST + "/process"
+REQUEST = "/requests/{request_id}"
+PROCESS_REQUEST = REQUEST + "/process"
 
 
 @pytest.mark.integration
 @pytest.mark.django_db
-def test_access_getting_requests(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
-    assert_access(lambda token: get(client, REQUESTS, token), [user_token, admin_token, super_admin_token], [])
+def test_access_getting_all_requests(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
+    assert_access(lambda token: get(client, REQUESTS, token), [super_admin_token], [user_token, admin_token, None])
 
 
 @pytest.mark.integration
 @pytest.mark.django_db
 @freezegun.freeze_time(now())
-def test_getting_requests(
-    client,
-    user: User,
-    user_token: str,
-    admin_token: str,
-    user_request: Request,
-    another_user_request: Request,
-    participation: Participation,
+def test_getting_all_requests(
+    client: Client, user: User, admin: User, super_admin: User, competition: Competition, super_admin_token: str
 ) -> None:
-    response = get(client, REQUESTS, user_token)
+    requests = Request.objects.bulk_create(
+        Request(owner=usr, competition=competition) for usr in [user, admin, super_admin]
+    )
+
+    response = get(client, REQUESTS, super_admin_token)
     assert response.status_code == 200
-
-    actual = response.json()
-    for out in actual:
-        out["participants"] = sorted(out["participants"])
-
-    expected = sorted(map(get_request_out, [user_request, another_user_request]), key=lambda x: x["id"])
-    actual = sorted(actual, key=lambda x: x["id"])
-    assert actual == expected
-
-    response = get(client, REQUESTS, admin_token)
-    assert response.status_code == 200
-    assert response.json() == []
-
-
-def get_request_out(request: Request) -> dict:
-    return {
-        "id": request.id,
-        "owner": request.owner_id,
-        "competition": request.competition_id,
-        "team_name": request.team_name,
-        "status": str(request.status),
-        "description": request.description,
-        "created_at": datetime_to_string(request.created_at),
-        "participants": sorted(request.participants.values_list("id", flat=True)),
-    }
+    assert sorted(response.json(), key=lambda d: d["id"]) == [get_request_out(request) for request in requests]
 
 
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_access_creating(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
-    assert_access(lambda token: post(client, REQUESTS, token), [user_token, admin_token, super_admin_token], [])
+    assert_access(lambda token: post(client, REQUESTS, token), [user_token, admin_token, super_admin_token], [None])
 
 
 @pytest.mark.integration
@@ -199,7 +172,7 @@ def test_creating(
     }
 
     expected_amount = 1
-    assert_200(post(client, REQUESTS, user_token, body))
+    assert_success_response(post(client, REQUESTS, user_token, body))
     assert Request.objects.filter(owner=user, competition=competition).count() == expected_amount
     assert_creating_request(body, user, another, field, another_field)
 
@@ -209,7 +182,7 @@ def test_creating(
         expected_amount += 1
         user.permission = permission
         user.save(update_fields=["permission"])
-        assert_200(post(client, REQUESTS, user_token, body))
+        assert_success_response(post(client, REQUESTS, user_token, body))
         assert Request.objects.filter(owner=user, competition=competition).count() == expected_amount
         assert_creating_request(body, user, another, field, another_field)
 
@@ -244,36 +217,67 @@ def assert_creating_request(body: dict, user: User, another: User, field: Field,
 
 @pytest.mark.integration
 @pytest.mark.django_db
-def test_access_getting_user(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
+def test_access_getting_request(
+    client: Client,
+    user: User,
+    user_request: Request,
+    admin: User,
+    competition: Competition,
+    user_token: str,
+    admin_token: str,
+    super_admin_token: str,
+) -> None:
     assert_access(
-        lambda token: post(client, REQUEST.format(id=0), token), [user_token, admin_token, super_admin_token], []
+        lambda token: get(client, REQUEST.format(request_id=user_request.id), token),
+        [user_token, super_admin_token],
+        [admin_token, None],
+    )
+
+    competition.admins.add(admin)
+    assert_access(
+        lambda token: get(client, REQUEST.format(request_id=user_request.id), token),
+        [user_token, admin_token, super_admin_token],
+        [None],
     )
 
 
 @pytest.mark.integration
 @pytest.mark.django_db
-def test_getting_user(client: Client, user_request: Request, another: User, field: Field, user_token: str) -> None:
-    assert_404(get(client, REQUEST.format(id=0), user_token), what="request")
+def test_getting_request(
+    client: Client,
+    user_request: Request,
+    another: User,
+    admin: User,
+    super_admin: User,
+    field: Field,
+    competition: Competition,
+    super_admin_token: str,
+) -> None:
+    assert_404(get(client, REQUEST.format(request_id=0), super_admin_token), what="request")
 
-    form_value = FormValue.objects.create(
-        participation=Participation.objects.create(request=user_request, user=another), field=field, value="123"
-    )
-    expected = {
-        "id": user_request.id,
-        "owner": user_request.owner_id,
-        "competition": user_request.competition_id,
-        "team_name": user_request.team_name,
-        "status": str(user_request.status),
-        "description": user_request.description,
-        "created_at": datetime_to_string(user_request.created_at),
-        "participants": [
-            {"user_id": another.id, "form": [{"field_id": form_value.field_id, "value": form_value.value}]}
-        ],
-    }
+    for request in [
+        user_request,
+        *Request.objects.bulk_create(Request(owner=usr, competition=competition) for usr in [admin, super_admin]),
+    ]:
+        form_value = FormValue.objects.create(
+            participation=Participation.objects.create(request=request, user=another), field=field, value="123"
+        )
+        expected = {
+            "id": request.id,
+            "owner": request.owner_id,
+            "competition": request.competition_id,
+            "team_name": request.team_name,
+            "status": str(request.status),
+            "description": request.description,
+            "created_at": datetime_to_string(request.created_at),
+            "participants": [
+                {"user_id": another.id, "form": [{"field_id": form_value.field_id, "value": form_value.value}]}
+            ],
+        }
 
-    response = get(client, REQUEST.format(id=user_request.id), user_token)
-    assert response.status_code == 200
-    assert response.json() == expected
+        response = get(client, REQUEST.format(request_id=request.id), super_admin_token)
+        assert response.status_code == 200
+        assert response.json() == expected
 
 
 @pytest.mark.integration
@@ -287,29 +291,24 @@ def test_access_updating(
     admin_token: str,
     super_admin_token: str,
 ) -> None:
-    assert_access(
-        lambda token: put(client, REQUEST.format(id=0), token), [user_token, admin_token, super_admin_token], []
-    )
-
     body = get_body_for_updating()
 
     assert_access(
-        lambda token: put(client, REQUEST.format(id=user_request.id), token, body),
+        lambda token: put(client, REQUEST.format(request_id=user_request.id), token, body),
         [user_token, super_admin_token],
-        [admin_token],
+        [admin_token, None],
     )
 
     user_request.competition.admins.add(admin)
-
     assert_access(
-        lambda token: put(client, REQUEST.format(id=user_request.id), token, body),
+        lambda token: put(client, REQUEST.format(request_id=user_request.id), token, body),
         [user_token, admin_token, super_admin_token],
-        [],
+        [None],
     )
 
     request = Request.objects.create(competition=user_request.competition, owner=another)
     assert_access(
-        lambda token: put(client, REQUEST.format(id=request.id), token, body),
+        lambda token: put(client, REQUEST.format(request_id=request.id), token, body),
         [admin_token, super_admin_token],
         [user_token],
     )
@@ -331,7 +330,7 @@ def test_updating__invalid_users(
     form_value = FormValue.objects.create(participation=participation, field=field, value="123")
 
     _test_invalid_users(
-        lambda body: put(client, REQUEST.format(id=user_request.id), user_token, body),
+        lambda body: put(client, REQUEST.format(request_id=user_request.id), user_token, body),
         user_request.competition,
         user,
         admin,
@@ -355,7 +354,7 @@ def test_updating__invalid_forms(
     user_token: str,
 ) -> None:
     _test_invalid_forms(
-        lambda body: put(client, REQUEST.format(id=user_request.id), user_token, body),
+        lambda body: put(client, REQUEST.format(request_id=user_request.id), user_token, body),
         user,
         competition,
         field,
@@ -380,7 +379,7 @@ def test_updating__competition_registration_is_over(
     user_request.competition.save(update_fields=["registration_end"])
 
     assert_422(
-        put(client, REQUEST.format(id=user_request.id), user_token, body),
+        put(client, REQUEST.format(request_id=user_request.id), user_token, body),
         error="registration end",
         details="Registration is over",
     )
@@ -437,53 +436,6 @@ def get_body_for_updating() -> dict:
 
 @pytest.mark.integration
 @pytest.mark.django_db
-def test_access_canceling(
-    client: Client, admin: User, user_request: Request, user_token: str, admin_token: str, super_admin_token: str
-) -> None:
-    assert_access(
-        lambda token: patch(client, CANCEL.format(id=user_request.id), token),
-        [user_token, super_admin_token],
-        [admin_token],
-    )
-
-    user_request.competition.admins.add(admin)
-    assert_access(
-        lambda token: patch(client, CANCEL.format(id=user_request.id), token),
-        [user_token, admin_token, super_admin_token],
-        [],
-    )
-
-
-@pytest.mark.integration
-@pytest.mark.django_db
-def test_canceling(client: Client, user_request: Request, user_token: str) -> None:
-    assert_404(patch(client, CANCEL.format(id=0), user_token), what="request")
-
-    for _ in range(2):
-        assert_200(patch(client, CANCEL.format(id=user_request.id), user_token))
-        assert Request.objects.get(pk=user_request.pk).status == RequestStatus.CANCELED
-
-
-@pytest.mark.integration
-@pytest.mark.django_db
-@pytest.mark.parametrize("delta", BEFORE_NOW + [timedelta(0)])
-@freezegun.freeze_time(now())
-def test_canceling__competition_has_already_started(
-    client: Client, user_request: Request, user_token: str, delta: timedelta
-) -> None:
-    user_request.competition.started_at = now() + delta
-    user_request.competition.save(update_fields=["started_at"])
-
-    assert_422(
-        patch(client, CANCEL.format(id=user_request.id), user_token),
-        error="started competition",
-        details="The competition has already started",
-    )
-    assert Request.objects.get(pk=user_request.pk).status == user_request.status
-
-
-@pytest.mark.integration
-@pytest.mark.django_db
 def test_access_processing(
     client: Client, admin: User, user_request: Request, user_token: str, admin_token: str, super_admin_token: str
 ) -> None:
@@ -493,16 +445,16 @@ def test_access_processing(
     }
 
     assert_access(
-        lambda token: patch(client, PROCESS.format(id=user_request.id), token, body),
+        lambda token: patch(client, PROCESS_REQUEST.format(request_id=user_request.id), token, body),
         [super_admin_token],
-        [user_token, admin_token],
+        [user_token, admin_token, None],
     )
 
     user_request.competition.admins.add(admin)
     assert_access(
-        lambda token: patch(client, PROCESS.format(id=user_request.id), token, body),
+        lambda token: patch(client, PROCESS_REQUEST.format(request_id=user_request.id), token, body),
         [admin_token, super_admin_token],
-        [user_token],
+        [user_token, None],
     )
 
 
@@ -512,7 +464,9 @@ def test_processing(client: Client, user_request: Request, super_admin_token: st
     statuses = ["canceled", "awaited", "rejected", "accepted"]
     for status, description in product(statuses, [None, "", " ", "asdfasdf", "123"]):
         body = {"status": status, "description": description}
-        assert_200(patch(client, PROCESS.format(id=user_request.id), super_admin_token, body))
+        assert_success_response(
+            patch(client, PROCESS_REQUEST.format(request_id=user_request.id), super_admin_token, body)
+        )
 
         actual = Request.objects.get(pk=user_request.pk)
         assert actual.status == RequestStatus(status)
@@ -523,7 +477,9 @@ def test_processing(client: Client, user_request: Request, super_admin_token: st
         [None, "", " ", "123", 123, "unknown", *map(lambda x: x + " ", statuses), *map(lambda x: " " + x, statuses)], []
     ):
         body = {"status": status, "description": description}
-        assert_validation_error(patch(client, PROCESS.format(id=user_request.id), super_admin_token, body))
+        assert_validation_error(
+            patch(client, PROCESS_REQUEST.format(request_id=user_request.id), super_admin_token, body)
+        )
         assert Request.objects.get(pk=user_request.pk) == user_request
 
 
@@ -540,17 +496,15 @@ def test_access_deleting(
 ) -> None:
     method = delete_method(client, user, competition)
 
-    assert_access(method, [super_admin_token], [user_token, admin_token])
-
     competition.admins.add(admin)
-    assert_access(method, [admin_token, super_admin_token], [user_token])
+    assert_access(method, [super_admin_token], [user_token, admin_token, None])
 
 
 def delete_method(client: Client, user: User, competition: Competition) -> Callable:
     def wrapper(token: str):
         request = Request.objects.create(owner=user, competition=competition)
 
-        return delete(client, REQUEST.format(id=request.id), token)
+        return delete(client, REQUEST.format(request_id=request.id), token)
 
     return wrapper
 
@@ -562,9 +516,22 @@ def test_deleting(
 ) -> None:
     value = FormValue.objects.create(participation=participation, field=field, value="123")
 
-    assert_200(delete(client, REQUEST.format(id=user_request.id), super_admin_token))
+    assert_success_response(delete(client, REQUEST.format(request_id=user_request.id), super_admin_token))
     assert not Request.objects.filter(pk=user_request.pk).exists()
     assert not Participation.objects.filter(pk=participation.pk).exists()
     assert not FormValue.objects.filter(pk=value.pk).exists()
 
-    assert_404(delete(client, REQUEST.format(id=user_request.id), super_admin_token), "request")
+    assert_404(delete(client, REQUEST.format(request_id=user_request.id), super_admin_token), "request")
+
+
+def get_request_out(request: Request) -> dict:
+    return {
+        "id": request.id,
+        "owner": request.owner_id,
+        "competition": request.competition_id,
+        "team_name": request.team_name,
+        "status": str(request.status),
+        "description": request.description,
+        "created_at": datetime_to_string(request.created_at),
+        "participants": sorted(request.participants.values_list("id", flat=True)),
+    }

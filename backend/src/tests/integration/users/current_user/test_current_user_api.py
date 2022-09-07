@@ -16,10 +16,10 @@ from tests.integration.conftest import (
     EMAIL__IS_CORRECT,
     INSTITUTION__IS_CORRECT,
     PHONE__IS_CORRECT,
-    assert_200,
     assert_401,
     assert_422,
     assert_access,
+    assert_success_response,
     assert_validation_error,
     get,
     patch,
@@ -81,7 +81,7 @@ def test_updating_profile(
     body["email"] = None
 
     response = put(client, PROFILE, user_token, body)
-    assert_200(response)
+    assert_success_response(response)
     assert_updating(user, body)
 
     for key in list(body.keys()):
@@ -108,7 +108,7 @@ def test_updating_email(client: Client, user: User, user_token: str, value: Opti
     response = put(client, PROFILE, user_token, body)
 
     if is_correct:
-        assert_200(response)
+        assert_success_response(response)
         assert_updating(user, body)
     else:
         assert_validation_error(response)
@@ -132,7 +132,7 @@ def test_updating_email__already_exists(
     )
     assert_not_updating(user)
 
-    assert_200(put(client, PROFILE, admin_token, body))
+    assert_success_response(put(client, PROFILE, admin_token, body))
     assert_updating(admin, body)
 
 
@@ -149,7 +149,7 @@ def test_updating_phone(client: Client, user: User, user_token: str, value: Opti
     response = put(client, PROFILE, user_token, body)
 
     if is_correct:
-        assert_200(response)
+        assert_success_response(response)
 
         actual = User.objects.get(pk=user.pk).phone
         assert len(actual) == 12
@@ -174,7 +174,7 @@ def test_updating_institution_type(
     response = put(client, PROFILE, user_token, body)
 
     if is_correct:
-        assert_200(response)
+        assert_success_response(response)
         assert_updating(user, body)
     else:
         assert_validation_error(response)
@@ -346,7 +346,7 @@ def assert_linking_social(
     assert_validation_error(patch(client, uri, user_token, {}))
 
     for _ in range(2):
-        assert_200(patch(client, uri, user_token, body))
+        assert_success_response(patch(client, uri, user_token, body))
         actual = User.objects.get(pk=user.pk)
         assert model_to_dict(actual, exclude=[social_field]) == model_to_dict(user, exclude=[social_field])
         assert model_to_dict(actual, fields=[social_field])[social_field] == str(social_id)
@@ -387,7 +387,7 @@ def assert_unlinking_social(client: Client, uri: str, social_field: str, user: U
     user.telegram_id = "448"
     user.save(update_fields=["vkontakte_id", "google_id", "telegram_id"])
     for _ in range(2):
-        assert_200(patch(client, uri, user_token))
+        assert_success_response(patch(client, uri, user_token))
 
         actual = User.objects.get(pk=user.pk)
         assert model_to_dict(actual, exclude=[social_field]) == model_to_dict(user, exclude=[social_field])

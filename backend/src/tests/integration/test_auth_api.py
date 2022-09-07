@@ -16,7 +16,7 @@ from api.internal.db.models import RefreshToken, User
 from api.internal.db.models.user import Permissions
 from tests.conftest import AFTER_NOW, BEFORE_NOW
 from tests.integration.conftest import assert_401, assert_422, get, post
-from tests.integration.test_current_user_api import PROFILE
+from tests.integration.users.current_user.test_current_user_api import PROFILE
 
 AUTH = "/auth"
 REFRESH = AUTH + "/refresh"

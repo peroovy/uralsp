@@ -6,7 +6,7 @@ from django.conf import settings
 from django.http import FileResponse, HttpRequest
 from django.utils.timezone import now
 from loguru import logger
-from ninja import Body, Query
+from ninja import Body, Path, Query
 from ninja.pagination import LimitOffsetPagination, paginate
 
 from api.internal.auth.domain.socials.entities import GoogleCredentialsIn, TelegramCredentialsIn, VKCredentialsIn
@@ -83,14 +83,14 @@ class UsersHandlers(metaclass=HandlersMetaclass):
     def get_users(self, request: HttpRequest, _operation_id: UUID, filters: Filters = Query(...)) -> List[ProfileOut]:
         return [ProfileOut.from_orm(user) for user in self._user_service.get_users_by_filters(filters)]
 
-    def get_user(self, request: HttpRequest, _operation_id: UUID, user_id: int) -> FullProfileOut:
+    def get_user(self, request: HttpRequest, _operation_id: UUID, user_id: int = Path(...)) -> FullProfileOut:
         if not (user := self._user_service.get_user(user_id)):
             raise NotFoundException(self.USER)
 
         return FullProfileOut.from_orm(user)
 
     def update_user(
-        self, request: HttpRequest, _operation_id: UUID, user_id: int, data: ProfileIn = Body(...)
+        self, request: HttpRequest, _operation_id: UUID, user_id: int = Path(...), data: ProfileIn = Body(...)
     ) -> SuccessResponse:
         """
         422 error codes:\n
@@ -144,15 +144,17 @@ class UsersHandlers(metaclass=HandlersMetaclass):
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
 
-    def get_users_in_xlsx(self, request: HttpRequest, filters: Filters = Query(...)) -> FileResponse:
+    def get_users_in_xlsx(
+        self, request: HttpRequest, _operation_id: UUID, filters: Filters = Query(...)
+    ) -> FileResponse:
         return self._get_users_in_file(filters, self._user_serializer.to_xlsx, extension=self.XLSX)
 
-    def get_users_in_csv(self, request: HttpRequest, filters: Filters = Query(...)) -> FileResponse:
+    def get_users_in_csv(
+        self, request: HttpRequest, _operation_id: UUID, filters: Filters = Query(...)
+    ) -> FileResponse:
         return self._get_users_in_file(filters, self._user_serializer.to_csv, extension=self.CSV)
 
-    def merge_users(
-        self, request: HttpRequest, data: MergingIn = Body(...), _operation_id: UUID = None
-    ) -> SuccessResponse:
+    def merge_users(self, request: HttpRequest, _operation_id: UUID, data: MergingIn = Body(...)) -> SuccessResponse:
         """
         422 error codes:\n
             "bad permissions" - permissions are not equal

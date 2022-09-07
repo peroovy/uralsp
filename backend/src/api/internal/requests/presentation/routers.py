@@ -40,7 +40,7 @@ def get_request_router(handlers: RequestsHandlers) -> Router:
     router.add_api_operation(
         path="",
         methods=["GET"],
-        auth=[OnlySuperAdmin()],
+        auth=[AnyUser()],
         view_func=handlers.get_request,
         response={200: RequestDetailsOut, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
     )

@@ -2,7 +2,7 @@ from typing import List
 from uuid import UUID
 
 from django.http import HttpRequest
-from ninja import Body, Query
+from ninja import Body, Path, Query
 
 from api.internal.base import HandlersMetaclass
 from api.internal.exceptions import NotFoundException, UnprocessableEntityException
@@ -29,7 +29,7 @@ class FieldsHandlers(metaclass=HandlersMetaclass):
             self._fields_service.get_field_out(field) for field in self._fields_service.get_fields_by_filters(filters)
         ]
 
-    def get_field(self, request: HttpRequest, _operation_id: UUID, field_id: str) -> FieldSchema:
+    def get_field(self, request: HttpRequest, _operation_id: UUID, field_id: str = Path(...)) -> FieldSchema:
         if not (field := self._fields_service.get_field(field_id)):
             raise NotFoundException(self.FIELD)
 
@@ -49,7 +49,7 @@ class FieldsHandlers(metaclass=HandlersMetaclass):
         return SuccessResponse()
 
     def update_field(
-        self, request: HttpRequest, _operation_id: UUID, field_id: str, data: FieldUpdatingIn = Body(...)
+        self, request: HttpRequest, _operation_id: UUID, field_id: str = Path(...), data: FieldUpdatingIn = Body(...)
     ) -> SuccessResponse:
         if not (field := self._fields_service.get_field(field_id)):
             raise NotFoundException(self.FIELD)
@@ -58,7 +58,7 @@ class FieldsHandlers(metaclass=HandlersMetaclass):
 
         return SuccessResponse()
 
-    def delete_field(self, request: HttpRequest, _operation_id: UUID, field_id: str) -> SuccessResponse:
+    def delete_field(self, request: HttpRequest, _operation_id: UUID, field_id: str = Path(...)) -> SuccessResponse:
         """
         422 error codes:\n
             "form" - the field is used in some form

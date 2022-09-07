@@ -5,7 +5,7 @@ from uuid import UUID
 from django.conf import settings
 from django.http import FileResponse, HttpRequest
 from django.utils.timezone import now
-from ninja import Query
+from ninja import Path, Query
 
 from api.internal.base import HandlersMetaclass
 from api.internal.competitions.requests.domain.entities import CompetitionRequestOut, SerializerParams
@@ -17,7 +17,7 @@ from api.internal.exceptions import ForbiddenException, NotFoundException
 class CompetitionRequestsHandlers(metaclass=HandlersMetaclass):
     COMPETITION = "competition"
 
-    REQUESTS_FILENAME = "{date}_{name}_competition_requests.{extension}"
+    REQUESTS_FILENAME = "{date}_{name}.{extension}"
     XLSX = "xlsx"
     CSV = "csv"
 
@@ -28,7 +28,7 @@ class CompetitionRequestsHandlers(metaclass=HandlersMetaclass):
         self._requests_serializer = requests_serializer
 
     def get_requests_for_competition(
-        self, request: HttpRequest, _operation_id: UUID, competition_id: int
+        self, request: HttpRequest, _operation_id: UUID, competition_id: int = Path(...)
     ) -> List[CompetitionRequestOut]:
         if not (competition := self._competition_service.get_competition_with_requests(competition_id)):
             raise NotFoundException(self.COMPETITION)
@@ -42,7 +42,7 @@ class CompetitionRequestsHandlers(metaclass=HandlersMetaclass):
         self,
         request: HttpRequest,
         _operation_id: UUID,
-        competition_id: int,
+        competition_id: int = Path(...),
         params: SerializerParams = Query(...),
     ) -> FileResponse:
         return self._get_requests_for_competition_in_file(
@@ -53,7 +53,7 @@ class CompetitionRequestsHandlers(metaclass=HandlersMetaclass):
         self,
         request: HttpRequest,
         _operation_id: UUID,
-        competition_id: int,
+        competition_id: int = Path(...),
         params: SerializerParams = Query(...),
     ) -> FileResponse:
         return self._get_requests_for_competition_in_file(

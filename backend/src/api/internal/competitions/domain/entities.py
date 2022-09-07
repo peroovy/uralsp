@@ -20,13 +20,22 @@ class CompetitionOut(ModelSchema):
         model_exclude = ["fields", "admins"]
 
 
-class CompetitionIn(ModelSchema):
+class NewCompetitionIn(ModelSchema):
     fields: List[str]
     admins: List[int]
 
     class Config:
         model = Competition
         model_exclude = ["id", "fields", "admins"]
+
+
+class CompetitionIn(ModelSchema):
+    fields: List[str]
+    admins: List[int]
+
+    class Config:
+        model = Competition
+        model_exclude = ["id", "persons_amount", "fields", "admins"]
 
 
 class CompetitionFieldOut(ModelSchema):

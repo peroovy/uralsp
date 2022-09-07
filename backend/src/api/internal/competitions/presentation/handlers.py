@@ -4,7 +4,7 @@ from uuid import UUID
 from django.conf import settings
 from django.http import HttpRequest
 from loguru import logger
-from ninja import Body, Query
+from ninja import Body, Path, Query
 
 from api.internal.base import HandlersMetaclass
 from api.internal.competitions.domain.entities import (
@@ -15,6 +15,7 @@ from api.internal.competitions.domain.entities import (
     CompetitionOut,
     FieldDetailsOut,
     FormIn,
+    NewCompetitionIn,
     RequestTemplateIn,
 )
 from api.internal.competitions.domain.services import CompetitionsService
@@ -63,20 +64,24 @@ class CompetitionsHandlers(metaclass=HandlersMetaclass):
 
         return [CompetitionOut.from_orm(competition) for competition in competitions]
 
-    def get_competition(self, request: HttpRequest, _operation_id: UUID, competition_id: int) -> CompetitionDetailsOut:
+    def get_competition(
+        self, request: HttpRequest, _operation_id: UUID, competition_id: int = Path(...)
+    ) -> CompetitionDetailsOut:
         if not (competition := self._competitions_service.get_competition(competition_id)):
             raise NotFoundException(self.COMPETITION)
 
         return CompetitionDetailsOut.from_orm(competition)
 
-    def get_form(self, request: HttpRequest, _operation_id: UUID, competition_id: int) -> List[FieldDetailsOut]:
+    def get_form(
+        self, request: HttpRequest, _operation_id: UUID, competition_id: int = Path(...)
+    ) -> List[FieldDetailsOut]:
         if not self._competitions_service.exists_competition(competition_id):
             raise NotFoundException(self.COMPETITION)
 
         return self._competitions_service.get_form_details(competition_id)
 
     def create_competition(
-        self, request: HttpRequest, _operation_id: UUID, data: CompetitionIn = Body(...)
+        self, request: HttpRequest, _operation_id: UUID, data: NewCompetitionIn = Body(...)
     ) -> SuccessResponse:
         """
         422 error codes:\n
@@ -91,20 +96,32 @@ class CompetitionsHandlers(metaclass=HandlersMetaclass):
 
         logger.info(log(_operation_id, STARTING, **log_kwargs))
 
-        self._assert_competition_in(data, _operation_id)
+        if not self._competitions_service.validate_persons_amount(data):
+            logger.success(
+                log(
+                    _operation_id,
+                    OPERATION_IS_OVER__INVALID_PERSONS_AMOUNT,
+                )
+            )
+            raise UnprocessableEntityException(self.VALIDATION_PERSONS_AMOUNT_ERROR, error=self.BAD_PERSONS_AMOUNT)
+
+        self._assert_competition_in(CompetitionIn(**data.dict()), _operation_id)
 
         logger.info(log(_operation_id, PROCESSING))
-        self._competitions_service.create(data)
+        self._competitions_service.create_competitions(data)
 
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
 
     def update_competition(
-        self, request: HttpRequest, _operation_id: UUID, competition_id: int, data: CompetitionIn = Body(...)
+        self,
+        request: HttpRequest,
+        _operation_id: UUID,
+        competition_id: int = Path(...),
+        data: CompetitionIn = Body(...),
     ) -> SuccessResponse:
         """
         422 error codes:\n
-            "bad persons_amount" - persons_amount must be >= 1
             "bad dates" - dates must be next: now < registration_start < registration_end < started_at
             "bad admins" - admin ids must be unique and exist, amount >= 0
             "bad fields" - field ids must be unique and exist, amount > 0
@@ -129,19 +146,21 @@ class CompetitionsHandlers(metaclass=HandlersMetaclass):
         self._assert_competition_in(data, _operation_id)
 
         logger.info(log(_operation_id, PROCESSING))
-        self._competitions_service.update(competition_id, data)
+        self._competitions_service.update_competition(competition_id, data)
 
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
 
-    def delete_competition(self, request: HttpRequest, _operation_id: UUID, competition_id: int) -> SuccessResponse:
+    def delete_competition(
+        self, request: HttpRequest, _operation_id: UUID, competition_id: int = Path(...)
+    ) -> SuccessResponse:
         if not self._competitions_service.delete_competition(competition_id):
             raise NotFoundException(self.COMPETITION)
 
         return SuccessResponse()
 
     def update_form(
-        self, request: HttpRequest, _operation_id: UUID, competition_id: int, data: FormIn = Body(...)
+        self, request: HttpRequest, _operation_id: UUID, competition_id: int = Path(...), data: FormIn = Body(...)
     ) -> SuccessResponse:
         """
         422 error codes:\n
@@ -175,7 +194,7 @@ class CompetitionsHandlers(metaclass=HandlersMetaclass):
         return SuccessResponse()
 
     def update_admins(
-        self, request: HttpRequest, _operation_id: UUID, competition_id: int, data: AdminsIn = Body(...)
+        self, request: HttpRequest, _operation_id: UUID, competition_id: int = Path(...), data: AdminsIn = Body(...)
     ) -> SuccessResponse:
         """
         422 error codes:\n
@@ -205,7 +224,11 @@ class CompetitionsHandlers(metaclass=HandlersMetaclass):
         return SuccessResponse()
 
     def update_request_template(
-        self, request: HttpRequest, _operation_id: UUID, competition_id: int, data: RequestTemplateIn = Body(...)
+        self,
+        request: HttpRequest,
+        _operation_id: UUID,
+        competition_id: int = Path(...),
+        data: RequestTemplateIn = Body(...),
     ) -> SuccessResponse:
         if not self._competitions_service.exists_competition(competition_id):
             raise NotFoundException(self.COMPETITION)
@@ -218,15 +241,6 @@ class CompetitionsHandlers(metaclass=HandlersMetaclass):
         return SuccessResponse()
 
     def _assert_competition_in(self, data: CompetitionIn, _operation_id: UUID) -> None:
-        if not self._competitions_service.validate_persons_amount(data):
-            logger.success(
-                log(
-                    _operation_id,
-                    OPERATION_IS_OVER__INVALID_PERSONS_AMOUNT,
-                )
-            )
-            raise UnprocessableEntityException(self.VALIDATION_PERSONS_AMOUNT_ERROR, error=self.BAD_PERSONS_AMOUNT)
-
         if not self._competitions_service.validate_dates(data):
             logger.success(
                 log(

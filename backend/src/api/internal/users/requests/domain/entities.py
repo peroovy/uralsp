@@ -1,9 +1,5 @@
-from api.internal.requests.domain.entities import RequestDetailsOut, RequestOut
+from api.internal.requests.domain.entities import RequestOut
 
 
 class CurrentUserRequestOut(RequestOut):
-    pass
-
-
-class CurrentUserRequestDetailsOut(RequestDetailsOut):
     pass

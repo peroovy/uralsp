@@ -5,7 +5,16 @@ from django.forms import model_to_dict
 from django.test import Client
 
 from api.internal.db.models import Competition, DefaultValue, Field, FormValue, Participation
-from tests.integration.conftest import assert_200, assert_404, assert_422, assert_access, delete, get, post, put
+from tests.integration.conftest import (
+    assert_404,
+    assert_422,
+    assert_access,
+    assert_success_response,
+    delete,
+    get,
+    post,
+    put,
+)
 
 FIELDS = "/fields"
 FIELD = "/fields/{id}"
@@ -67,7 +76,7 @@ def test_filtering(client: Client, search: Optional[str], is_found: bool) -> Non
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_access_creating(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
-    assert_access(lambda token: post(client, FIELDS, token), [super_admin_token], [user_token, admin_token])
+    assert_access(lambda token: post(client, FIELDS, token), [super_admin_token], [user_token, admin_token, None])
 
 
 @pytest.mark.integration
@@ -82,7 +91,7 @@ def test_creating(client: Client, super_admin_token: str) -> None:
         "default_values": ["1", "2", "3"],
     }
 
-    assert_200(post(client, FIELDS, super_admin_token, body))
+    assert_success_response(post(client, FIELDS, super_admin_token, body))
     assert Field.objects.filter(
         id=body["id"],
         name=body["name"],
@@ -137,7 +146,9 @@ def test_access_updating(
     client: Client, field: Field, user_token: str, admin_token: str, super_admin_token: str
 ) -> None:
     assert_access(
-        lambda token: put(client, FIELD.format(id=field.id), token), [super_admin_token], [user_token, admin_token]
+        lambda token: put(client, FIELD.format(id=field.id), token),
+        [super_admin_token],
+        [user_token, admin_token, None],
     )
 
 
@@ -151,7 +162,7 @@ def test_updating(client: Client, field: Field, super_admin_token: str) -> None:
 
     for _ in range(2):
         body["default_values"] = ["1", "2"]
-        assert_200(put(client, FIELD.format(id=field.id), super_admin_token, body))
+        assert_success_response(put(client, FIELD.format(id=field.id), super_admin_token, body))
         field.refresh_from_db()
 
         assert not DefaultValue.objects.filter(pk=value.pk).exists()
@@ -162,7 +173,7 @@ def test_updating(client: Client, field: Field, super_admin_token: str) -> None:
         assert model_to_dict(field, exclude=["id", "default_values"]) == body
 
     body["default_values"] = []
-    assert_200(put(client, FIELD.format(id=field.id), super_admin_token, body))
+    assert_success_response(put(client, FIELD.format(id=field.id), super_admin_token, body))
     assert not DefaultValue.objects.filter(field=field).exists()
 
 
@@ -172,7 +183,9 @@ def test_access_deleting(
     client: Client, field: Field, user_token: str, admin_token: str, super_admin_token: str
 ) -> None:
     assert_access(
-        lambda token: delete(client, FIELD.format(id=field.id), token), [super_admin_token], [user_token, admin_token]
+        lambda token: delete(client, FIELD.format(id=field.id), token),
+        [super_admin_token],
+        [user_token, admin_token, None],
     )
 
 
@@ -197,7 +210,7 @@ def test_deleting(
     assert_422(delete(client, FIELD.format(id=field.id), super_admin_token), error="value", details="Form value exists")
 
     FormValue.objects.all().delete()
-    assert_200(delete(client, FIELD.format(id=field.id), super_admin_token))
+    assert_success_response(delete(client, FIELD.format(id=field.id), super_admin_token))
     assert not Field.objects.filter(pk=field.pk).exists()
     assert not DefaultValue.objects.filter(field=field).exists()
 

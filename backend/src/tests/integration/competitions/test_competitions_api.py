@@ -1,6 +1,6 @@
 from datetime import timedelta
 from itertools import combinations_with_replacement, product
-from typing import Callable, List
+from typing import Callable
 
 import freezegun
 import pytest
@@ -12,11 +12,11 @@ from ninja.responses import Response
 from api.internal.db.models import Competition, DefaultValue, Field, FormValue, Participation, Request, User
 from tests.conftest import AFTER_NOW, BEFORE_NOW, datetime_to_string
 from tests.integration.conftest import (
-    assert_200,
     assert_404,
     assert_422,
     assert_access,
     assert_not_422_body,
+    assert_success_response,
     assert_validation_error,
     delete,
     get,
@@ -30,7 +30,6 @@ COMPETITION = COMPETITIONS + "/{id}"
 REQUEST_TEMPLATE = COMPETITION + "/request-template"
 ADMINS = COMPETITION + "/admins"
 FORM = COMPETITION + "/form"
-REQUESTS = COMPETITION + "/requests"
 
 
 DATE_DELTAS = [
@@ -200,7 +199,7 @@ def get_expected_for_filtering(competition: Competition) -> dict:
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_access_creating(client: Client, user_token: str, admin_token: str, super_admin_token: str) -> None:
-    assert_access(lambda token: post(client, COMPETITIONS, token), [super_admin_token], [user_token, admin_token])
+    assert_access(lambda token: post(client, COMPETITIONS, token), [super_admin_token], [user_token, admin_token, None])
 
 
 @pytest.mark.integration
@@ -269,7 +268,7 @@ def test_creating__validation_admins(
 
 
 @pytest.mark.integration
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 @freezegun.freeze_time(now())
 def test_creating(
     client: Client, field: Field, another_field: Field, admin: User, another_admin: User, super_admin_token: str
@@ -282,7 +281,7 @@ def test_creating(
     field.save(update_fields=["is_required"])
     another_field.save(update_fields=["is_required"])
 
-    assert_200(post(client, COMPETITIONS, super_admin_token, body))
+    assert_success_response(post(client, COMPETITIONS, super_admin_token, body))
     assert_creating_or_updating(Competition.objects.first(), body)
 
 
@@ -350,14 +349,14 @@ def test_access_updating(
     assert_access(
         lambda token: put(client, COMPETITION.format(id=competition.id), token, body),
         [super_admin_token],
-        [user_token, admin_token],
+        [user_token, admin_token, None],
     )
 
     competition.admins.add(admin)
     assert_access(
         lambda token: put(client, COMPETITION.format(id=competition.id), token, body),
         [admin_token, super_admin_token],
-        [user_token],
+        [user_token, None],
     )
 
 
@@ -386,27 +385,6 @@ def test_updating__validation_dates(
         registration_end_delta,
         start_delta,
         is_correct,
-    )
-
-    assert_not_updating_after_bad_validation(is_correct, competition, field, admin)
-
-
-@pytest.mark.integration
-@pytest.mark.django_db
-@pytest.mark.parametrize(["amount", "is_correct"], PERSONS_AMOUNTS)
-def test_updating__validation_persons_amount(
-    client: Client,
-    competition: Competition,
-    admin: User,
-    field: Field,
-    super_admin_token: str,
-    amount: int,
-    is_correct: bool,
-) -> None:
-    init_competition_for_validation_in_updating(competition, field, admin)
-
-    _test_validation_persons_amount(
-        lambda body: put(client, COMPETITION.format(id=competition.id), super_admin_token, body), amount, is_correct
     )
 
     assert_not_updating_after_bad_validation(is_correct, competition, field, admin)
@@ -540,18 +518,21 @@ def test_updating(
     another_field: Field,
     super_admin_token: str,
 ) -> None:
+    body = get_body_for_creating_or_updating()
+    competition.persons_amount = body["persons_amount"]
+    competition.save()
+
     competition.fields.add(field, another_field)
     value = FormValue.objects.create(participation=participation, field=another_field, value="123")
 
     competition.admins.add(admin, another_admin)
 
-    body = get_body_for_creating_or_updating()
     assert_404(put(client, COMPETITION.format(id=0), super_admin_token, body), what="competition")
     assert Competition.objects.get(pk=competition.pk) == competition
 
     for _ in range(2):
         body["fields"], body["admins"] = [field.id], [admin.id]
-        assert_200(put(client, COMPETITION.format(id=competition.id), super_admin_token, body))
+        assert_success_response(put(client, COMPETITION.format(id=competition.id), super_admin_token, body))
         assert_creating_or_updating(Competition.objects.get(pk=competition.pk), body)
         assert FormValue.objects.filter(pk=value.pk).exists()
 
@@ -593,7 +574,7 @@ def test_access_deleting(
     assert_access(
         lambda token: delete(client, COMPETITION.format(id=competition.id), token),
         [super_admin_token],
-        [user_token, admin_token],
+        [user_token, admin_token, None],
     )
 
 
@@ -616,7 +597,7 @@ def test_deleting(
 
     value = FormValue.objects.create(participation=participation, field=field, value="123")
 
-    assert_200(delete(client, COMPETITION.format(id=competition.id), super_admin_token))
+    assert_success_response(delete(client, COMPETITION.format(id=competition.id), super_admin_token))
     assert not Competition.objects.filter(id=competition.id).exists()
     assert not Request.objects.filter(pk=user_request.pk).exists()
     assert not Participation.objects.filter(pk=participation.pk).exists()
@@ -635,14 +616,14 @@ def test_access_updating_request_template(
     assert_access(
         lambda token: patch(client, REQUEST_TEMPLATE.format(id=competition.id), token, body),
         [super_admin_token],
-        [user_token, admin_token],
+        [user_token, admin_token, None],
     )
 
     competition.admins.add(admin)
     assert_access(
         lambda token: patch(client, REQUEST_TEMPLATE.format(id=competition.id), token, body),
         [admin_token, super_admin_token],
-        [user_token],
+        [user_token, None],
     )
 
 
@@ -657,7 +638,7 @@ def test_updating_request_template(
 
     assert_404(patch(client, REQUEST_TEMPLATE.format(id=0), super_admin_token, body), what="competition")
 
-    assert_200(patch(client, REQUEST_TEMPLATE.format(id=competition.id), super_admin_token, body))
+    assert_success_response(patch(client, REQUEST_TEMPLATE.format(id=competition.id), super_admin_token, body))
     assert Competition.objects.get(pk=competition.pk).request_template == body["request_template"]
 
 
@@ -677,7 +658,7 @@ def test_access_updating_admins(
     assert_access(
         lambda token: put(client, ADMINS.format(id=competition.id), token, body),
         [super_admin_token],
-        [user_token, admin_token],
+        [user_token, admin_token, None],
     )
 
 
@@ -712,7 +693,7 @@ def test_updating_admins(
     for admins in get_correct_admin_ids(admin, another_admin):
         body["admins"] = admins
 
-        assert_200(put(client, ADMINS.format(id=competition.id), super_admin_token, body))
+        assert_success_response(put(client, ADMINS.format(id=competition.id), super_admin_token, body))
         assert sorted(map(lambda usr: usr.id, competition.admins.all())) == sorted(admins)
 
 
@@ -769,14 +750,14 @@ def test_access_updating_form(
     assert_access(
         lambda token: put(client, FORM.format(id=competition.id), token, body),
         [super_admin_token],
-        [user_token, admin_token],
+        [user_token, admin_token, None],
     )
 
     competition.admins.add(admin)
     assert_access(
         lambda token: put(client, FORM.format(id=competition.id), token, body),
         [admin_token, super_admin_token],
-        [user_token],
+        [user_token, None],
     )
 
 
@@ -813,7 +794,7 @@ def test_updating_form(
     for ids in get_correct_field_ids(field, another_field):
         body["fields"] = ids
 
-        assert_200(put(client, FORM.format(id=competition.id), super_admin_token, body))
+        assert_success_response(put(client, FORM.format(id=competition.id), super_admin_token, body))
         assert sorted(map(lambda f: f.id, competition.fields.all())) == sorted(ids)
         assert FormValue.objects.filter(pk=value.pk).exists()
 
@@ -828,57 +809,3 @@ def get_bad_field_ids(field: Field) -> list:
 
 def get_correct_field_ids(field: Field, another_field: Field) -> list:
     return [[field.id], [another_field.id], [field.id, another_field.id]]
-
-
-@pytest.mark.integration
-@pytest.mark.django_db
-def test_access_getting_requests(
-    client: Client, competition: Competition, admin: User, user_token: str, admin_token: str, super_admin_token: str
-) -> None:
-    assert_access(
-        lambda token: get(client, REQUESTS.format(id=competition.id), token),
-        [super_admin_token],
-        [user_token, admin_token],
-    )
-
-    competition.admins.add(admin)
-    assert_access(
-        lambda token: get(client, REQUESTS.format(id=competition.id), token),
-        [admin_token, super_admin_token],
-        [user_token],
-    )
-
-
-@pytest.mark.integration
-@pytest.mark.django_db
-def test_getting_requests(
-    client: Client,
-    competition: Competition,
-    another_competition: Competition,
-    user: User,
-    another: User,
-    super_admin_token: str,
-) -> None:
-    requests = Request.objects.bulk_create(Request(owner=usr, competition=competition) for usr in [user, another])
-    Request.objects.create(owner=user, competition=another_competition)
-
-    assert_404(get(client, REQUESTS.format(id=0), super_admin_token), what="competition")
-
-    response = get(client, REQUESTS.format(id=competition.id), super_admin_token)
-    expected = sorted(
-        [
-            {
-                "id": request.id,
-                "owner": request.owner_id,
-                "status": str(request.status),
-                "description": request.description,
-                "created_at": datetime_to_string(request.created_at),
-                "participants": list(request.participants.values_list("id", flat=True)),
-            }
-            for request in requests
-        ],
-        key=lambda x: x["id"],
-    )
-
-    assert response.status_code == 200
-    assert sorted(response.json(), key=lambda x: x["id"]) == expected

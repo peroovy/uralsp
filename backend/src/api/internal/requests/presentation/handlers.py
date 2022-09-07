@@ -4,7 +4,7 @@ from uuid import UUID
 from django.conf import settings
 from django.http import HttpRequest
 from loguru import logger
-from ninja import Body
+from ninja import Body, Path
 
 from api.internal.base import HandlersMetaclass
 from api.internal.db.models import User
@@ -51,13 +51,16 @@ class RequestsHandlers(metaclass=HandlersMetaclass):
     def get_all_requests(self, request: HttpRequest, _operation_id: UUID) -> List[RequestOut]:
         return [RequestOut.from_orm(user_request) for user_request in self._requests_service.get_requests()]
 
-    def get_request(self, request: HttpRequest, _operation_id: UUID, request_id: int) -> RequestDetailsOut:
+    def get_request(self, request: HttpRequest, _operation_id: UUID, request_id: int = Path(...)) -> RequestDetailsOut:
         if not (user_request := self._requests_service.get_request_with_participation_and_forms(request_id)):
             raise NotFoundException(self.REQUEST)
 
+        if not self._requests_service.is_owner_or_competition_admin(request.user, user_request):
+            raise ForbiddenException()
+
         return self._requests_service.get_request_details(user_request)
 
-    def delete_request(self, request: HttpRequest, _operation_id: UUID, request_id: int) -> SuccessResponse:
+    def delete_request(self, request: HttpRequest, _operation_id: UUID, request_id: int = Path(...)) -> SuccessResponse:
         if not (user_request := self._requests_service.get_request(request_id)):
             raise NotFoundException(self.REQUEST)
 
@@ -144,7 +147,7 @@ class RequestsHandlers(metaclass=HandlersMetaclass):
         return SuccessResponse()
 
     def update_request(
-        self, request: HttpRequest, _operation_id: UUID, request_id: int, data: FormsIn = Body(...)
+        self, request: HttpRequest, _operation_id: UUID, request_id: int = Path(...), data: FormsIn = Body(...)
     ) -> SuccessResponse:
         """
         Note:\n
@@ -204,7 +207,7 @@ class RequestsHandlers(metaclass=HandlersMetaclass):
         return SuccessResponse()
 
     def process_request(
-        self, request: HttpRequest, _operation_id: UUID, request_id: int, data: ProcessIn
+        self, request: HttpRequest, _operation_id: UUID, request_id: int = Path(...), data: ProcessIn = Body(...)
     ) -> SuccessResponse:
         if not (user_request := self._requests_service.get_request(request_id)):
             raise NotFoundException(self.REQUEST)

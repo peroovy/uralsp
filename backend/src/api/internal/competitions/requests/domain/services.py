@@ -37,9 +37,8 @@ class CompetitionRequestsSerializer:
         return serialize_to_csv(self._get_rows(competition_with_sorted_fields, has_headers))
 
     def _get_rows(self, competition: Competition, has_headers: bool) -> List[List[str]]:
-        max_participants_amount = max(map(lambda r: r.participation.count(), competition.requests.all()))
         fields = [field.id for field in competition.fields.all()]
-        headers = self.REQUEST_HEADERS + ["participant_id", *fields] * max_participants_amount
+        headers = self.REQUEST_HEADERS + ["participant_id", *fields] * competition.persons_amount
 
         rows = [headers] if has_headers else []
 
@@ -56,7 +55,5 @@ class CompetitionRequestsSerializer:
                 user_fields = dict((form_value.field_id, form_value.value) for form_value in participation.form.all())
 
                 row += [participation.user_id, *[user_fields.get(expected) or "-" for expected in fields]]
-
-            rows.append(row + ["-"] * (len(headers) - len(row)))
 
         return rows

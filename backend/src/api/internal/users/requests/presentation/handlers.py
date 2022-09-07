@@ -4,6 +4,7 @@ from uuid import UUID
 from django.conf import settings
 from django.http import HttpRequest
 from loguru import logger
+from ninja import Path
 
 from api.internal.base import HandlersMetaclass
 from api.internal.db.models import User
@@ -11,7 +12,7 @@ from api.internal.exceptions import NotFoundException, UnprocessableEntityExcept
 from api.internal.logging import log
 from api.internal.requests.domain.services import RequestCompetitionService
 from api.internal.responses import SuccessResponse
-from api.internal.users.requests.domain.entities import CurrentUserRequestDetailsOut, CurrentUserRequestOut
+from api.internal.users.requests.domain.entities import CurrentUserRequestOut
 from api.internal.users.requests.domain.services import CurrentUserRequestsService
 
 STARTING = "starting"
@@ -36,19 +37,9 @@ class CurrentUserRequestsHandlers(metaclass=HandlersMetaclass):
 
         return [CurrentUserRequestOut.from_orm(user_request) for user_request in requests]
 
-    def get_request_from_user(
-        self, request: HttpRequest, _operation_id: UUID, request_id: int
-    ) -> CurrentUserRequestDetailsOut:
-        if not (
-            user_request := self._requests_service.get_request_with_participation_and_forms_from_user(
-                request_id, request.user
-            )
-        ):
-            raise NotFoundException(self.REQUEST)
-
-        return self._requests_service.get_request_details(user_request)
-
-    def cancel_request_from_user(self, request: HttpRequest, _operation_id: UUID, request_id: int) -> SuccessResponse:
+    def cancel_request_from_user(
+        self, request: HttpRequest, _operation_id: UUID, request_id: int = Path(...)
+    ) -> SuccessResponse:
         """
         422 error codes:\n
             "started competition" - the competition has already started

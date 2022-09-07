@@ -1,15 +1,13 @@
 from typing import Set
 
-from ninja import ModelSchema, Schema
+from ninja import Schema
 
-from api.internal.db.models import Request
 from api.internal.db.models.request import RequestStatus
+from api.internal.requests.domain.entities import RequestOut
 
 
-class CompetitionRequestOut(ModelSchema):
-    class Config:
-        model = Request
-        model_fields = ["id", "owner", "status", "description", "created_at", "participants"]
+class CompetitionRequestOut(RequestOut):
+    pass
 
 
 class SerializerParams(Schema):
