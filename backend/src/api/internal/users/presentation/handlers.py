@@ -70,7 +70,7 @@ class UsersHandlers(metaclass=HandlersMetaclass):
     REQUESTS = "requests"
     PARTICIPANTS = "participants"
 
-    USERS_FILENAME = "{date}_users.{extensions}"
+    USERS_FILENAME = "{date}_users.{extension}"
     XLSX = "xlsx"
     CSV = "csv"
 

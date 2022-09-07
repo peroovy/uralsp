@@ -158,7 +158,8 @@ LOGGING_TELEGRAM_BOT_TOKEN = env("LOGGING_TELEGRAM_BOT_TOKEN", str)
 LOGGING_TELEGRAM_CHAT_ID = env("LOGGING_TELEGRAM_CHAT_ID", str)
 TELEGRAM_CHARACTERS_LIMIT = 4096
 
-logger.remove()
+if not DEBUG:
+    logger.remove()
 
 logger.add(
     LOGS_PATH,

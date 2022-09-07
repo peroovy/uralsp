@@ -2,6 +2,7 @@ from io import BytesIO
 from typing import List, Optional
 
 from django.conf import settings
+from loguru import logger
 
 from api.internal.competitions.domain.services import CompetitionsService
 from api.internal.competitions.requests.domain.entities import SerializerParams
@@ -55,5 +56,7 @@ class CompetitionRequestsSerializer:
                 user_fields = dict((form_value.field_id, form_value.value) for form_value in participation.form.all())
 
                 row += [participation.user_id, *[user_fields.get(expected) or "-" for expected in fields]]
+
+            rows.append(row)
 
         return rows

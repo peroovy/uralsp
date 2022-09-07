@@ -24,14 +24,12 @@ def get_competition_requests_router(handlers: CompetitionRequestsHandlers) -> Ro
         path="/xlsx",
         methods=["GET"],
         view_func=handlers.get_requests_for_competition_in_xlsx,
-        response={401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
     )
 
     router.add_api_operation(
         path="/csv",
         methods=["GET"],
         view_func=handlers.get_requests_for_competition_in_csv,
-        response={401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse},
     )
 
     return router
