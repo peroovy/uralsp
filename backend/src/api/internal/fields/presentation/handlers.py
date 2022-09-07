@@ -6,7 +6,7 @@ from ninja import Body, Path, Query
 
 from api.internal.base import HandlersMetaclass
 from api.internal.exceptions import NotFoundException, UnprocessableEntityException
-from api.internal.fields.domain.entities import FieldSchema, FieldUpdatingIn, Filters
+from api.internal.fields.domain.entities import FieldSchema, FieldsFilters, FieldUpdatingIn
 from api.internal.fields.domain.services import FieldsService
 from api.internal.responses import SuccessResponse
 
@@ -24,7 +24,9 @@ class FieldsHandlers(metaclass=HandlersMetaclass):
     def __init__(self, fields_service: FieldsService):
         self._fields_service = fields_service
 
-    def get_fields(self, request: HttpRequest, _operation_id: UUID, filters: Filters = Query(...)) -> List[FieldSchema]:
+    def get_fields(
+        self, request: HttpRequest, _operation_id: UUID, filters: FieldsFilters = Query(...)
+    ) -> List[FieldSchema]:
         return [
             self._fields_service.get_field_out(field) for field in self._fields_service.get_fields_by_filters(filters)
         ]

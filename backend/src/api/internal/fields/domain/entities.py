@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from ninja import ModelSchema, Schema
+from ninja import Field as F, ModelSchema, Schema
 
 from api.internal.db.models import Field
 
@@ -21,5 +21,5 @@ class FieldUpdatingIn(ModelSchema):
         model_exclude = ["id"]
 
 
-class Filters(Schema):
-    search: Optional[str] = None
+class FieldsFilters(Schema):
+    search: Optional[str] = F(None, description="a search by id and name")

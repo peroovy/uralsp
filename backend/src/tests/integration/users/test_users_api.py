@@ -98,7 +98,7 @@ def test_getting_users_by_email(client: Client, user: User, another: User) -> No
 
 @pytest.mark.integration
 @pytest.mark.django_db
-def test_getting_users_by_fcs(client: Client, user: User, another: User) -> None:
+def test_getting_users_by_search(client: Client, user: User, another: User) -> None:
     user.surname, user.name, user.patronymic = "Petrov", "Pety", "Petrovich"
     user.save(update_fields=["surname", "name", "patronymic"])
 
@@ -107,7 +107,7 @@ def test_getting_users_by_fcs(client: Client, user: User, another: User) -> None
 
     assert_getting_users_by_filter(
         client,
-        "fcs",
+        "search",
         False,
         {
             "P": user,

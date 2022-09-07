@@ -43,11 +43,11 @@ class CurrentProfileIn(ModelSchema):
         model_exclude = ["id", "permission", "vkontakte_id", "google_id", "telegram_id"]
 
 
-class Filters(Schema):
+class UsersFilters(Schema):
     permission: Optional[Permissions] = None
     region: Optional[str] = None
     email: Optional[str] = None
-    fcs: Optional[str] = None
+    search: Optional[str] = Field(None, description="a search by surname, patronymic, name")
     institution_type: Optional[Institution] = None
     institution_name: Optional[str] = None
     institution_faculty: Optional[str] = None

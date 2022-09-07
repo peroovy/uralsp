@@ -11,7 +11,7 @@ from api.internal.db.repositories.form_value import IFormValueRepository
 from api.internal.db.repositories.participation import IParticipationRepository
 from api.internal.db.repositories.request import IRequestRepository
 from api.internal.db.repositories.user import IUserRepository
-from api.internal.users.domain.entities import CurrentProfileIn, Filters, MergingIn, ProfileIn
+from api.internal.users.domain.entities import CurrentProfileIn, MergingIn, ProfileIn, UsersFilters
 from api.internal.utils import serialize_to_csv, serialize_to_xlsx
 
 
@@ -34,9 +34,9 @@ class UserService:
         self._form_value_repo = form_value_repo
         self._competition_repo = competition_repo
 
-    def get_users_by_filters(self, filters: Filters) -> List[User]:
+    def get_users_by_filters(self, filters: UsersFilters) -> List[User]:
         return list(
-            self._user_repo.get_filtered(
+            self._user_repo.get_users_by_filters(
                 filters.permission,
                 filters.institution_type,
                 filters.institution_name,
@@ -44,7 +44,7 @@ class UserService:
                 filters.institution_course,
                 filters.region,
                 filters.email,
-                filters.fcs,
+                filters.search,
             )
         )
 

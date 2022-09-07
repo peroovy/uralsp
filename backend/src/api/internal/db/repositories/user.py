@@ -15,7 +15,7 @@ class IUserRepository(ABC):
         ...
 
     @abstractmethod
-    def get_filtered(
+    def get_users_by_filters(
         self,
         permission: Optional[Permissions],
         institution_type: Optional[Institution],
@@ -24,7 +24,7 @@ class IUserRepository(ABC):
         institution_course: Optional[str],
         region: Optional[str],
         email: Optional[str],
-        fcs: Optional[str],
+        search: Optional[str],
     ) -> QuerySet[User]:
         ...
 
@@ -61,7 +61,7 @@ class UserRepository(IUserRepository):
     def try_get(self, user_id: int) -> Optional[User]:
         return User.objects.filter(id=user_id).first()
 
-    def get_filtered(
+    def get_users_by_filters(
         self,
         permission: Optional[Permissions],
         institution_type: Optional[Institution],
@@ -70,7 +70,7 @@ class UserRepository(IUserRepository):
         institution_course: Optional[str],
         region: Optional[str],
         email: Optional[str],
-        fcs: Optional[str],
+        search: Optional[str],
     ) -> QuerySet[User]:
         filters = get_strip_filters(
             institution_name__istartswith=institution_name,
@@ -80,8 +80,8 @@ class UserRepository(IUserRepository):
             email__startswith=email,
         )
 
-        if fcs is not None:
-            filters["full_name__icontains"] = fcs.replace(" ", "")
+        if search is not None:
+            filters["full_name__icontains"] = search.replace(" ", "")
 
         if permission is not None:
             filters["permission"] = permission

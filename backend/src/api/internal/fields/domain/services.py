@@ -8,7 +8,7 @@ from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.default import IDefaultRepository
 from api.internal.db.repositories.field import IFieldRepository
 from api.internal.db.repositories.form_value import IFormValueRepository
-from api.internal.fields.domain.entities import FieldSchema, FieldUpdatingIn, Filters
+from api.internal.fields.domain.entities import FieldSchema, FieldsFilters, FieldUpdatingIn
 
 
 class FieldsService:
@@ -27,7 +27,7 @@ class FieldsService:
     def get_field(self, field_id) -> Optional[Field]:
         return self._field_repo.try_get(field_id)
 
-    def get_fields_by_filters(self, filters: Filters) -> List[Field]:
+    def get_fields_by_filters(self, filters: FieldsFilters) -> List[Field]:
         return list(self._field_repo.get_filtered_by_id_and_name(filters.search))
 
     def exists_field(self, field_id: str) -> bool:

@@ -25,7 +25,7 @@ from api.internal.logging import log
 from api.internal.responses import SuccessResponse
 from api.internal.users.domain.entities import (
     CurrentProfileIn,
-    Filters,
+    UsersFilters,
     FormValueOut,
     FullProfileOut,
     MergingIn,
@@ -80,7 +80,9 @@ class UsersHandlers(metaclass=HandlersMetaclass):
         self._user_serializer = user_serializer
 
     @paginate(LimitOffsetPagination)
-    def get_users(self, request: HttpRequest, _operation_id: UUID, filters: Filters = Query(...)) -> List[ProfileOut]:
+    def get_users(
+        self, request: HttpRequest, _operation_id: UUID, filters: UsersFilters = Query(...)
+    ) -> List[ProfileOut]:
         return [ProfileOut.from_orm(user) for user in self._user_service.get_users_by_filters(filters)]
 
     def get_user(self, request: HttpRequest, _operation_id: UUID, user_id: int = Path(...)) -> FullProfileOut:
@@ -145,12 +147,12 @@ class UsersHandlers(metaclass=HandlersMetaclass):
         return SuccessResponse()
 
     def get_users_in_xlsx(
-        self, request: HttpRequest, _operation_id: UUID, filters: Filters = Query(...)
+        self, request: HttpRequest, _operation_id: UUID, filters: UsersFilters = Query(...)
     ) -> FileResponse:
         return self._get_users_in_file(filters, self._user_serializer.to_xlsx, extension=self.XLSX)
 
     def get_users_in_csv(
-        self, request: HttpRequest, _operation_id: UUID, filters: Filters = Query(...)
+        self, request: HttpRequest, _operation_id: UUID, filters: UsersFilters = Query(...)
     ) -> FileResponse:
         return self._get_users_in_file(filters, self._user_serializer.to_csv, extension=self.CSV)
 
@@ -207,7 +209,7 @@ class UsersHandlers(metaclass=HandlersMetaclass):
         return SuccessResponse()
 
     def _get_users_in_file(
-        self, filters: Filters, get_file: Callable[[List[User]], BytesIO], extension: str
+        self, filters: UsersFilters, get_file: Callable[[List[User]], BytesIO], extension: str
     ) -> FileResponse:
         users = self._user_service.get_users_by_filters(filters)
         buffer = get_file(users)
