@@ -48,7 +48,7 @@
 				'Content-Type': 'application/json',
 			},
 		});
-		let requests = await fetch(`http://localhost:8000/requests`, {
+		let requests = await fetch(`http://localhost:8000/users/current/requests`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -78,8 +78,7 @@
 	import src from '$lib/Assets/imgs/logo.png';
 	import tempPhoto from '$lib/Assets/imgs/temp-photo.png';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
-	import type { Requests, Competitions, ContestType, UserData } from '$lib/types';
-	import { goto } from '$app/navigation';
+	import type { Requests, Competitions, Competition, UserData } from '$lib/types';
 	import { onMount } from 'svelte';
 
 	import lottieNotFoundSrc from '$lib/Assets/animations/lottie-notfound2.json?url';
@@ -92,7 +91,7 @@
 		userId = userInfo.id;
 		paricipantName = `${userInfo.name}  ${userInfo.surname}`;
 	});
-	let contestObject: ContestType = [
+	let contestObject: Competitions = [
 		{
 			id: 0,
 			name: 'string',
@@ -101,7 +100,8 @@
 			started_at: '2022-08-08T17:48:45.367Z',
 			persons_amount: 0,
 			request_template: 'string',
-			link: 'string'
+			link: 'string',
+			admins: []
 		}
 	];
 	let showContest = () => {
@@ -148,7 +148,7 @@
 	function signout(): void {
 		// clear local storage
 		localStorage.clear();
-		goto(base + '/');
+		window.location.href = base + '/';
 	}
 </script>
 

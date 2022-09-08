@@ -10,27 +10,53 @@
 			let token = localStorage.getItem('access_token');
 			if (token != null) {
 				let payload = parsePayload(token);
+				let permission = payload.permission;
 				let real_id = payload.user_id;
 				// if the user is not the same as the participant, redirect to the home page
 				if (real_id != id) {
+					if (permission != 'admin' && permission != 'super_admin') {
+						return {
+							status: 300,
+							redirect: '/'
+						};
+					}
+				}
+				let userInfo;
+				if (real_id == id) {
+					// Request the user's information
+					let response = await fetch(`http://localhost:8000/users/current/profile`, {
+						method: 'GET',
+						headers: {
+							'Content-Type': 'application/json',
+							Authorization: `Bearer ${token}`
+						}
+					});
+					userInfo = await response.json();
+				} else {
+					let respond = await fetch(`http://localhost:8000/users/${id}`, {
+						method: 'GET',
+						headers: {
+							'Content-Type': 'application/json',
+							Authorization: 'Bearer ' + token
+						}
+					});
+					userInfo = await respond.json();
+				}
+				console.log(userInfo);
+				// If admin requests super admin data, redirect to home page
+				if (
+					real_id != id &&
+					((permission == 'admin' && userInfo.permission == 'super_admin') || (permission == 'admin' && userInfo.permission == 'admin'))
+				) {
 					return {
 						status: 300,
 						redirect: '/'
 					};
 				}
-				let userInfo = await fetch(`http://localhost:8000/users/current/profile`, {
-					method: 'GET',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: 'Bearer ' + token
-					}
-				}).then((res) => {
-					let userData = res.json();
-					return userData;
-				});
-
 				return {
 					props: {
+						real_id,
+						real_permission: permission,
 						userInfo
 					}
 				};
@@ -50,7 +76,6 @@
 	import { republics } from '$lib/Assets/republics.json';
 	import type { UserData } from '$lib/types';
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
 	import { Login } from 'sveltegram';
 	import { sessionDuration } from '$lib/sessionDuration';
 	sessionDuration();
@@ -89,21 +114,26 @@
 		patronymic: '',
 		permission: 0
 	};
+	export let real_id: number, real_permission: string;
 
-	console.log(userInfo);
 	let id = userInfo.id;
 	let google = '' as unknown as HTMLElement;
-
+	let userPermission: string | undefined;
+	let permissionsArr = ['default', 'teacher', 'admin', 'super_admin'];
 	onMount(() => {
 		if (browser) window.location.reload;
-		educationType = userInfo.institution_type.charAt(0).toUpperCase() + userInfo.institution_type.slice(1);
-		console.log(educationType);
+		let instType = userInfo.institution_type;
+		educationType = instType ? instType.charAt(0).toUpperCase() + userInfo.institution_type.slice(1) : 'Choose ...';
 		ids.google = userInfo.google_id;
 		ids.tele = userInfo.telegram_id;
 		ids.vk = userInfo.vkontakte_id;
 		instName = userInfo.institution_name;
 		instYear = userInfo.institution_course;
 		instFacultyName = userInfo.institution_faculty;
+		userPermission = userInfo.permission;
+		if (real_permission == 'admin') {
+			permissionsArr = ['default', 'teacher'];
+		}
 		if (browser) {
 			// @ts-ignore
 			window.google.accounts.id.initialize({
@@ -119,6 +149,13 @@
 			// @ts-ignore
 			VK.Widgets.Auth('vk_auth', {
 				onAuth: async function (data: { uid: string; hash: string; first_name: string; last_name: string }) {
+					if (real_id != userInfo.id) {
+						alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+								<strong> You can't link social networks fom other users! </strong>
+								<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+							</div>`;
+						return;
+					}
 					let uid = data.uid;
 					let hash = data.hash;
 					let fn = data.first_name;
@@ -174,22 +211,16 @@
 		'4th year undergraduate/specialist',
 		'5 course specialist',
 		'6 (specialty)',
-		'1st Master\'s course',
-		'2nd year master\'s degree',
+		"1st Master's course",
+		"2nd year master's degree",
 		'Graduate student'
 	];
-	let collegeYear = [
-		'1 course',
-		'2 course',
-		'3 course',
-		'4 course',
-		'5 course'
-	]
+	let collegeYear = ['1 course', '2 course', '3 course', '4 course', '5 course'];
+
 	async function updateUserInfo() {
 		userInfo.institution_type = educationType.charAt(0).toLowerCase() + educationType.slice(1);
 		userInfo.institution_name = instName;
 		userInfo.institution_course = instYear;
-		console.log(instFacultyName)
 		userInfo.institution_faculty = instFacultyName;
 		const phoneValidation = /^\+7[0-9]{10}/;
 		if (!phoneValidation.test(userInfo.phone)) {
@@ -210,45 +241,86 @@
 			institution_type: userInfo.institution_type,
 			institution_name: userInfo.institution_name,
 			institution_course: userInfo.institution_course,
-			institution_faculty: userInfo.institution_faculty,
+			institution_faculty: userInfo.institution_faculty
 		};
 		// TODO: make a server request to update user info
 		if (browser) {
-			await fetch(`http://localhost:8000/users/current/profile`, {
-				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: 'Bearer ' + localStorage.getItem('access_token')
-				},
-				body: JSON.stringify(update)
-			})
-				.then((res) =>
-					res.json().then((res) => {
-						if (res.detail[0].msg === 'value is not a valid email address') {
-							alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <strong> Invalid email address! </strong> Please, try again with valid email address!
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>`;
-							return;
+			if (real_id == userInfo.id) {
+				await fetch(`http://localhost:8000/users/current/profile`, {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: 'Bearer ' + localStorage.getItem('access_token')
+					},
+					body: JSON.stringify(update)
+				})
+					.then((res) => {
+						if (res.status === 200) {
+							alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+									<strong> Success! </strong>
+									<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+								</div>`;
+							// Reload
+							window.location.reload();
+						} else {
+							res.json().then((data) => {
+								alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+									<strong> ${data.error} </strong>
+									<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+								</div>`;
+							});
 						}
 					})
-				)
-				.catch(() => {
-					alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <strong> Email address already exists! </strong> Please, try again with unique email address!
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>`;
-					return;
-				});
-			alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
-                <strong> Success! </strong>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>`;
-			return;
+					.catch(() => {
+						alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+							<strong> Email address already exists! </strong> Please, try again with unique email address!
+							<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+						</div>`;
+					});
+			} else {
+				await fetch(`http://localhost:8000/users/${userInfo.id}`, {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: 'Bearer ' + localStorage.getItem('access_token')
+					},
+					body: JSON.stringify(update)
+				})
+					.then((res) => {
+						if (res.status === 200) {
+							alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+									<strong> Success! </strong>
+									<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+								</div>`;
+							// Reload
+							window.location.reload();
+						} else {
+							res.json().then((data) => {
+								alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+									<strong> ${data.error} </strong>
+									<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+								</div>`;
+							});
+						}
+					})
+					.catch(() => {
+						alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+							<strong> Email address already exists! </strong> Please, try again with unique email address!
+							<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+						</div>`;
+					});
+			}
 		}
 	}
 
 	async function unlink(socailID: string) {
+		if (real_id != userInfo.id) {
+			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+					<strong> You can't unlink social networks from other users! </strong>
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>`;
+			return;
+		}
 		let linkedNum = 0;
 		for (let key in ids) {
 			//@ts-ignore
@@ -276,16 +348,16 @@
 				if (status === 'Success') {
 					userInfo.google_id = '';
 					alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    <strong> Success! </strong>
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                </div>`;
+									<strong> Success! </strong>
+									<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+								</div>`;
 					// Reload
 					window.location.reload();
 				} else {
 					alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                                        <strong> Google account already exists! </strong>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                                    </div>`;
+														<strong> Google account already exists! </strong>
+														<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+													</div>`;
 				}
 			});
 		});
@@ -315,6 +387,13 @@
 			auth_date: user.detail.auth_date,
 			hash: user.detail.hash
 		};
+		if (real_id != userInfo.id) {
+			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+					<strong> You can't link social networks fom other users! </strong>
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>`;
+			return;
+		}
 		await fetch('http://localhost:8000/users/current/link-telegram', {
 			method: 'PATCH',
 			headers: {
@@ -357,7 +436,13 @@
 
 	async function handleCredentialResponse(response: googleRespond) {
 		let credential = response.credential;
-
+		if (real_id != userInfo.id) {
+			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+					<strong> You can't link social networks fom other users! </strong>
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>`;
+			return;
+		}
 		let data = {
 			id_token: credential
 		};
@@ -569,6 +654,21 @@
 						</div>
 					{/if}
 				</div>
+				{#if real_id != userInfo.id}
+				<h5 class="card-title m-4 mt-2">
+					<i class="fa-solid fa-lock" />
+					Permission
+				</h5>
+				<div class="card-body ms-4 mt-0">
+					<label for="region">Permission</label>
+					<select class="form-select form-select-sm" aria-label="Default select example" bind:value={userPermission}>
+						<option selected>Choose...</option>
+						{#each permissionsArr as per}
+							<option>{per}</option>
+						{/each}
+					</select>
+				</div>
+				{/if}
 				<h5 class="card-title m-4 mt-0 me-0 pe-0">
 					<i class="fa-solid fa-share-nodes" />
 					Social Media

@@ -55,7 +55,6 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import * as XLSX from 'xlsx';
 
@@ -66,13 +65,12 @@
 	import lottie from '$lib/Assets/animations/lottie-search?url';
 	import lottieSelect from '$lib/Assets/animations/lottie-select.gif';
 	import { republics } from '$lib/Assets/republics.json';
-	import { searchparams } from '$lib/stores';
 	const { utils } = XLSX;
 	export let userInfo, competitionsInfo, access_token: string;
 	export let permission: string;
 	export let real_id: number;
 	import { sessionDuration } from '$lib/sessionDuration';
-	// sessionDuration();
+	sessionDuration();
 
 	// Dummy data
 	let adminName = '';
@@ -91,6 +89,7 @@
 	let alertCont = '' as unknown as HTMLElement;
 	let sliderCont = '' as unknown as HTMLElement;
 	let formCont = '' as unknown as HTMLElement;
+	let compResults = '' as unknown as HTMLElement;
 	let compsBinds = [] as HTMLElement[];
 
 	// Component slider
@@ -125,34 +124,38 @@
 
 	// User controls
 	let email: string, name: string, region: string | undefined, eduType: string | undefined, institute: string, year: string;
+	let userPermission : string | undefined;
 	eduType = 'Choose...';
 	interface searchParams {
-		email: string;
-		name: string;
+		email: string | undefined;
+		search: string | undefined;
 		region: string | undefined;
-		eduType: string | undefined;
-		institute: string;
-		year: string;
+		institution_type: string | undefined;
+		institution_name: string| undefined;
+		institution_course: string| undefined;
+		permission: string | undefined;
 	}
 	let searchParams: searchParams = {
 		email: '',
-		name: '',
+		search: '',
 		region: '',
-		eduType: '',
-		institute: '',
-		year: ''
+		institution_type: '',
+		institution_name: '',
+		institution_course: '',
+		permission: ''
 	};
 	function queryParams() {
 		searchParams.email = email;
-		searchParams.name = name;
-		searchParams.region = region === 'Choose...' ? undefined : region;
-		searchParams.eduType = region === 'Choose...' ? undefined : eduType;
-		searchParams.institute = institute;
-		searchParams.year = year;
+		searchParams.search = name;
+		searchParams.region = region;
+		searchParams.institution_type = eduType;
+		searchParams.institution_name = institute;
+		searchParams.institution_course = year;
+		searchParams.permission = userPermission;
 
 		// form validation
-		let arrValues = [searchParams.email, searchParams.name, searchParams.region, searchParams.eduType, searchParams.institute, searchParams.year];
-		let check = arrValues.every((item) => item === undefined);
+		let check = Object.values(searchParams).every((item) => item === undefined);
+
 		if (check) {
 			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
 										<strong>Error!</strong> Please fill at least one field.
@@ -160,15 +163,18 @@
 									</div>`;
 			return;
 		}
+
+		for(let key in searchParams) {
+			if(searchParams[key] === "" || searchParams[key] == "Choose..." || searchParams[key] == null) searchParams[key] = undefined;
+		}
+		
 		alertCont.innerHTML = '';
 
-		// saving search params to store
-		searchparams.set(JSON.stringify(searchParams));
-		// removing the undefinded values from the search params
+		// Removing the undefinded values from the search params
 		searchParams = JSON.parse(JSON.stringify(searchParams));
 		//@ts-ignore
 		const myURL = new URLSearchParams(searchParams);
-		goto(`${base}/admin/${real_id}/${myURL.toString()}`);
+		window.location.href = `${base}/admin/${real_id}/users/${myURL.toString()}`;
 	}
 	function onKeyDown(event: KeyboardEvent) {
 		if (event.key === 'Enter') {
@@ -283,60 +289,61 @@
 	$: selectedCompContestantsPerTeam = 0;
 	$: request_template = '';
 	$: selectedCompMonitors = [];
+
+	let collegeYear = ['1 course', '2 course', '3 course', '4 course', '5 course'];
 	async function editComp(id: number) {
 		let comp;
-	 	await fetch(`http://localhost:8000/competitions/${id}`,{
+		await fetch(`http://localhost:8000/competitions/${id}`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${access_token}`
-			},
-		}).then((res) => res.json())
-		  .then((data) => {
-			comp = data;
-		  })
-		  console.log(comp);
-		  let reg_s_date = comp.registration_start.replace("Z", '').trim().split('T');
-		let reg_e_date = comp.registration_end.replace("Z", '').trim().split('T');
-		let start_date = comp.started_at.replace("Z", '').trim().split('T');
+				Authorization: `Bearer ${access_token}`
+			}
+		})
+			.then((res) => res.json())
+			.then((data) => {
+				comp = data;
+			});
+		let reg_s_date = comp.registration_start.replace('Z', '').trim().split('T');
+		let reg_e_date = comp.registration_end.replace('Z', '').trim().split('T');
+		let start_date = comp.started_at.replace('Z', '').trim().split('T');
 		selectedCompID = comp.id;
 		selectedCompName = comp.name;
-		selectedCompRegDate = reg_s_date[0]+ ", at: " + reg_s_date[1] + ' : ' +reg_e_date[0]+ ", at: " + reg_e_date[1];
-		selectedCompStart = start_date[0]+ ", at: " + start_date[1];
+		selectedCompRegDate = reg_s_date[0] + ', at: ' + reg_s_date[1] + ' : ' + reg_e_date[0] + ', at: ' + reg_e_date[1];
+		selectedCompStart = start_date[0] + ', at: ' + start_date[1];
 		selectedCompLink = comp.link;
 		selectedCompContestantsPerTeam = comp.persons_amount;
 		request_template = comp.request_template;
 		selectedCompMonitors = comp.admins;
 		let requests = [];
-		await fetch(`http://localhost:8000/competitions/${comp.id}/requests`,{
+
+		// stretched is for design purposes
+		let stretched = compResults.classList.contains('align-items-stretch');
+		if (!selectedCompMonitors.includes(real_id)) {
+			selectedComp = '';
+			alert('You are not a monitor for this competition!');
+			!stretched ? compResults.classList.add('align-items-stretch') : '';
+			return;
+		}
+
+		stretched ? compResults.classList.remove('align-items-stretch') : compResults.classList.add('align-items-start');
+		await fetch(`http://localhost:8000/competitions/${comp.id}/requests`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
-				'Authorization': 'Bearer ' + access_token
+				Authorization: 'Bearer ' + access_token
 			}
-		}).then((res) => res.json())
+		})
+			.then((res) => res.json())
 			.then((data) => {
-				req = data;
-				console.log(req);
+				requests = data;
 				appLength = data.length;
-			}).catch((err) => {
-				console.error(err);
-			}).finally(() => {
-				selectedComp = 'comp';
-				selectedCompItem(selectedComp);
-			}
-			);
-			appLength = requests.length;
-		if (requests.error != undefined) {
-			alert(requests.error);
-			requests = [];
-			appLength = 0;
+			})
+			.catch((err) => {
+				alert(err);
+			});
 
-		}
-		selectedComp = comp.name;
-		setTimeout(() => {
-			applicationPage(0);
-		}, 0);
+		selectedComp = 'comp';
 	}
 
 	// Select and download Application
@@ -432,38 +439,40 @@
 	});
 
 	// Delete Competition
-	async function deleteComp(id :number): Promise<void> {
-		if(isNaN(id)){
+	async function deleteComp(id: number): Promise<void> {
+		if (isNaN(id)) {
 			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
 										<strong>Error!</strong> Something went wrong.
 										<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 									</div>`;
 			return;
 		}
-		await fetch(`http://localhost:8000/competitions/${id}`,{
+		await fetch(`http://localhost:8000/competitions/${id}`, {
 			method: 'DELETE',
 			headers: {
 				'Content-Type': 'application/json',
-				'Authorization': 'Bearer ' + access_token
+				Authorization: 'Bearer ' + access_token
 			}
-		}).then((res) => res.json())
+		})
+			.then((res) => res.json())
 			.then((data) => {
 				alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
 											<strong>Success!</strong> ${data.message}
 											<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 										</div>`;
-			}).catch((err) => {
+			})
+			.catch((err) => {
 				console.error(err);
-			}).finally(() => {
+			})
+			.finally(() => {
 				window.location.reload();
-			}
-		);
+			});
 	}
 	// Signout
 	function signout(): void {
 		// clear local storage
 		localStorage.clear();
-		goto(base + '/');
+		window.location.href = base + '/';
 	}
 
 	// super admin redirect
@@ -506,7 +515,7 @@
 						<span class="nav-link" id="Competitions" on:click={() => slider('Competitions')}> Competitions control </span>
 					</li>
 					{#if per === 'super_admin'}
-						<li class="nav-item" on:click={() => goto('./contests/create-competition')}>
+						<li class="nav-item" on:click={() => window.location.href = './contests/create-competition'}>
 							<span class="nav-link" style:color="rgba(0,0,0,.55)"> Create Competitions </span>
 						</li>
 					{/if}
@@ -517,7 +526,7 @@
 						</div>
 						<ul class="dropdown-menu mt-2 ms-3 rounded-0">
 							<li class:active={$page.url.pathname === '/info'}>
-								<a sveltekit:prefetch href="{base}/info/{1}" content="Home" class="dropdown-item nav-link">
+								<a sveltekit:prefetch href="{base}/info/{real_id}" content="Home" class="dropdown-item nav-link">
 									<span class="fa fa-gears" />
 									Settings
 								</a>
@@ -554,8 +563,17 @@
 							/>
 						</div>
 						<div class="mb-3">
-							<label for="fullName" class="form-label">Full Name</label>
-							<input type="text" class="form-control" id="fullName" placeholder="Enter the user full name" bind:value={name} />
+							<label for="fullName" class="form-label mb-0">First name, surname or patronymic</label>
+							<input type="text" class="form-control" id="fullName" placeholder="Enter the user name" bind:value={name} />
+						</div>
+						<div class="mb-3">
+							<label for="region">Permission</label>
+							<select class="form-select form-select-sm" aria-label="Default select example" bind:value={userPermission}>
+								<option selected>Choose...</option>
+								{#each ['default', 'teacher', 'admin', 'super_admin'] as per}
+									<option>{per}</option>
+								{/each}
+							</select>
 						</div>
 						<div class="mb-3">
 							<label for="region">Region</label>
@@ -573,6 +591,7 @@
 									<option selected>Choose...</option>
 									<option>School</option>
 									<option>University</option>
+									<option>College</option>
 								</select>
 							</div>
 							{#if eduType === 'School'}
@@ -615,6 +634,26 @@
 									</div>
 								</div>
 							{/if}
+							{#if eduType === 'College'}
+								<div class="d-flex justify-content-between p-0">
+									<div class="row">
+										<div class="form-group col-md-8">
+											<label for="College">College Name</label>
+											<input type="text" class="form-control" id="College" placeholder="Enter your College name" bind:value={institute} />
+										</div>
+										<!--College  Year-->
+										<div class="form-group col-md-4">
+											<label for="College Year">College Year</label>
+											<select class="form-select form-select" aria-label="Default select example" bind:value={year}>
+												<option selected>Choose...</option>
+												{#each collegeYear as grade}
+													<option>{grade}</option>
+												{/each}
+											</select>
+										</div>
+									</div>
+								</div>
+							{/if}
 						</div>
 						<button class="btn" on:click={queryParams}>Search</button>
 					</div>
@@ -637,8 +676,8 @@
 				<button class="btn btn-light rounded-0" on:click={filter}> Filter </button>
 			</div>
 			<div class="container col-12 p-0 d-flex align-items-center justify-content-center mt-5">
-				<div class="row p-0 m-0 col-md-8 gap-3 justify-content-between align-items-start">
-					<div class="card col-md comps compt-holder p-0 col-sm-6 shadow mt-0" style="max-width: max-content; min-width:min-content">
+				<div class="row p-0 m-0 col-md gap-3 justify-content-center align-items-stretch" bind:this={compResults}>
+					<div class="card col-md-5 comps compt-holder p-0 col-sm-6 shadow mt-0" style="max-width:500px; min-width:min-content">
 						<h4 class="card-header" style:padding-right="100px">
 							<span class="fa fa-book" />
 							Competitions
@@ -681,7 +720,7 @@
 						</div>
 					</div>
 					{#if selectedComp === ''}
-						<div class="card p-0 col-md">
+						<div class="card p-0 col-md-5" style="max-width:500px">
 							<div class="card-body p-0 pt-1 shadow">
 								<div class="noComp">
 									<img src={lottieSelect} alt="" class="gif" />
@@ -690,7 +729,7 @@
 							</div>
 						</div>
 					{:else}
-						<div class="card col-md p-0" style="min-width: fit-content">
+						<div class="card col-md-5 p-0" style="min-width: fit-content">
 							<div class="card-header" data-bs-toggle="collapse" href="#info" role="button" aria-expanded="false" aria-controls="info">
 								<span class="fa fa-info-circle" />
 								Information
@@ -743,7 +782,7 @@
 								<span class="fa-solid fa-tasks" />
 								Form
 							</div>
-							<div class="card-body collapse" id="form" >
+							<div class="card-body collapse" id="form">
 								{@html request_template}
 							</div>
 							<div
@@ -816,8 +855,16 @@
 								</div>
 							</div>
 							<div class="btn-group stickyBottom">
-								<button class="btn btn-primary rounded-0" style="background-color:#3490dc; border: none" on:click={()=>goto(base+"contests/"+selectedCompID)}> <i class="fa fa-edit" /> Edit</button>
-								<button class="btn btn-danger rounded-0" on:click={() => deleteComp(parseInt(selectedCompID))}> <i class="fa fa-trash" /> Delete</button>
+								<button
+									class="btn btn-primary rounded-0"
+									style="background-color:#3490dc; border: none"
+									on:click={() => window.location.href = base + 'contests/' + selectedCompID}
+								>
+									<i class="fa fa-edit" /> Edit</button
+								>
+								<button class="btn btn-danger rounded-0" on:click={() => deleteComp(parseInt(selectedCompID))}>
+									<i class="fa fa-trash" /> Delete</button
+								>
 							</div>
 						</div>
 					{/if}

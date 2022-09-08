@@ -1,10 +1,55 @@
 <script context="module">
+	import { parsePayload } from '$lib/parse';
+	import { browser } from '$app/env';
 	//@ts-ignore
 	export async function load({ params }) {
+		if (!browser) return;
+		let searchQueries = params.q;
+		let adminId = params.adminId;
+		// @ts-ignore
+		let token = localStorage.getItem('access_token');
+		if (token == null) {
+			return {
+				status: 301,
+				redirect: '/'
+			};
+		}
+		let payload = parsePayload(token);
+		let real_id = payload.user_id;
+		let permission = payload.permission;
+		// if the user is not the same as the participant, redirect to the home page
+		if (real_id != adminId) {
+			return {
+				status: 301,
+				redirect: '/'
+			};
+		}
+		// if the user is not an admin, redirect to the home page
+		if(permission != 'admin' && permission != 'super_admin'){
+			return {
+				status: 301,
+				redirect: '/'
+			};
+		}
+		// Request data from the server...
+		let usersOrErr;
+		await fetch(`http://localhost:8000/users?${searchQueries}`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+			}
+		}).then((res) => {
+			return res.json();
+		}).then((data) => {
+			usersOrErr = data;
+		})
 		return {
 			props: {
-				adminId: params.adminId,
-				searchQueries: params.q
+				adminId,
+				searchQueries: params.q,
+				usersOrErr,
+				token,
+				real_id
 			}
 		};
 	}
@@ -12,7 +57,6 @@
 
 <script lang="ts">
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
-	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
 	import lottieNotfound from '$lib/Assets/animations/lottie-notFound.json?url';
 	import { onMount, onDestroy } from 'svelte';
@@ -20,14 +64,13 @@
 	import { republics } from '$lib/Assets/republics.json';
 	import { searchparams } from '$lib/stores';
 
-	export let searchQueries, adminId: string;
-
+	export let searchQueries: string = '', adminId: number = 0, usersOrErr: any = [];
+	export let token: string = '', real_id: number = 0;
 	const { utils } = XLSX;
 	let userCont = '' as unknown as HTMLElement;
 	let toolbar = '' as unknown as HTMLElement;
 	let alertCont = '' as unknown as HTMLElement;
 	$: itemPerpage = 5;
-
 	// filter data
 	let InstituteYear = [
 		'1 (bachelor / specialty)',
@@ -39,48 +82,46 @@
 		'1 (master)',
 		'2 (master)'
 	];
+	let collegeYear = ['1 course', '2 course', '3 course', '4 course', '5 course'];
+
 	let formCont = '' as unknown as HTMLElement;
-	let email: string,
-		name: string,
+	let email: string | undefined,
+		name: string | undefined,
 		region: string | undefined,
 		eduType: string | undefined,
-		institute: string,
-		year: string;
+		institute: string | undefined,
+		year: string | undefined;
+	let userPermission : string | undefined;
 	eduType = 'Choose...';
 	interface searchParams {
-		email: string;
-		name: string;
+		email: string | undefined;
+		search: string | undefined;
 		region: string | undefined;
-		eduType: string | undefined;
-		institute: string;
-		year: string;
+		institution_type: string | undefined;
+		institution_name: string| undefined;
+		institution_course: string| undefined;
+		permission: string | undefined;
 	}
 	let searchParams: searchParams = {
 		email: '',
-		name: '',
+		search: '',
 		region: '',
-		eduType: '',
-		institute: '',
-		year: ''
+		institution_type: '',
+		institution_name: '',
+		institution_course: '',
+		permission: ''
 	};
 	function queryParams() {
 		searchParams.email = email;
-		searchParams.name = name;
-		searchParams.region = region === 'Choose...' ? undefined : region;
-		searchParams.eduType = region === 'Choose...' ? undefined : eduType;
-		searchParams.institute = institute;
-		searchParams.year = year;
+		searchParams.search = name;
+		searchParams.region = region;
+		searchParams.institution_type = eduType;
+		searchParams.institution_name = institute;
+		searchParams.institution_course = year;
+		searchParams.permission = userPermission;
 
 		// form validation
-		let arrValues = [
-			searchParams.email,
-			searchParams.name,
-			searchParams.region,
-			searchParams.eduType,
-			searchParams.institute,
-			searchParams.year
-		];
-		let check = arrValues.every((item) => item === undefined);
+		let check = Object.values(searchParams).every((item) => (item === undefined || item === null));
 		if (check) {
 			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
 										<strong>Error!</strong> Please fill at least one field.
@@ -88,15 +129,19 @@
 									</div>`;
 			return;
 		}
+
+		for(let key in searchParams) {
+			if(searchParams[key] === "" || searchParams[key] == "Choose..." || searchParams[key] == null) searchParams[key] = undefined;
+		}
+		
 		alertCont.innerHTML = '';
 
-		// saving search params to store
-		searchparams.set(JSON.stringify(searchParams));
-		// removing the undefinded values from the search params
+		// Removing the undefinded values from the search params
 		searchParams = JSON.parse(JSON.stringify(searchParams));
 		//@ts-ignore
 		const myURL = new URLSearchParams(searchParams);
-		goto(`${base}/admin/AdminID/${myURL.toString()}`);
+		// reload
+		window.location.href = `${base}/admin/${real_id}/users/${myURL.toString()}`;
 	}
 
 	let selectedIds = new Set<string>();
@@ -114,75 +159,44 @@
 			selectedIds.delete(id!);
 		}
 	}
-
-	let users = [
-		{
-			id: '1',
-			name: 'John Doe',
-			role: 'Participant'
-		},
-		{
-			id: '2',
-			name: 'Jane Doe',
-			role: 'Teacher'
-		},
-		{
-			id: '3',
-			name: 'Jack Doe',
-			role: 'Admin'
-		},
-		{
-			id: '4',
-			name: 'Jill Doe',
-			role: 'Participant'
-		},
-		{
-			id: '5',
-			name: 'Joe Doe',
-			role: 'Participant'
-		},
-		{
-			id: '6',
-			name: 'Jenny Doe',
-			role: 'Teacher'
-		},
-		{
-			id: '7',
-			name: 'Juan Doe',
-			role: 'Teacher'
-		},
-		{
-			id: '8',
-			name: 'Jenny Doe',
-			role: 'Participant'
-		},
-		{
-			id: '9',
-			name: 'Juan Doe',
-			role: 'Teacher'
-		},
-		{
-			id: '10',
-			name: 'Jenny Doe',
-			role: 'Teacher'
-		}
-	];
-
+	let users = [] as any;
+	
 	let headers = '';
-
+	let resultsNumber : number | undefined;
 	onMount(() => {
-		// Hide all the items except the first 5
-		for (let i = 0; i < itemPerpage; i++) {
-			//@ts-ignore
-			let e = userBinds[i].parentElement.parentElement.parentElement;
-			e!.classList.remove('hide');
+		if(usersOrErr.details === undefined && usersOrErr.detail === undefined){
+			users = usersOrErr.items;
+			resultsNumber = users.length;
+		} else {
+			users = [];
+			resultsNumber = 0;
 		}
+
+		// Handle the previous search params
+		if (searchQueries !== '') {
+			let searchParams = new URLSearchParams(searchQueries);
+			email = searchParams.get('email') ? searchParams.get('email')! : undefined;
+			name = searchParams.get('search') ? searchParams.get('search')! : undefined;
+			region = searchParams.get('region')? searchParams.get('region')! : undefined;
+			eduType = searchParams.get('institution_type')? searchParams.get('institution_type')! : undefined;
+			institute = searchParams.get('institution_name')? searchParams.get('institution_name')! : undefined;
+			year = searchParams.get('institution_course') ? searchParams.get('institution_course')! : undefined;
+			userPermission = searchParams.get('permission')? searchParams.get('permission')! : undefined;
+		}
+		// Intilize userBinds
+		userBinds = Array(resultsNumber).fill(document.createElement('div'));
 		Object.keys(users[0]).map((key) => (headers += `${key},`));
 		// remove last comma
 		headers = headers.slice(0, -1);
+		setTimeout(() => {
+			// Hide all the items except the first 5
+			for (let i = 0; i < itemPerpage; i++) {
+				//@ts-ignore
+				let e = userBinds[i].parentElement.parentElement.parentElement;
+				e!.classList.remove('hide');
+			}
+		}, 0);
 	});
-
-	let resultsNumber = users.length;
 
 	function toggleToolbar(): void {
 		let marginValue = toolbar.style.marginRight;
@@ -234,38 +248,91 @@
 	}
 
 	// Merge users
-	function merge() {
+	async function merge() {
 		let ids = Array.from(selectedIds);
-		if (ids.length < 2) {
+		if (ids.length < 2 || ids.length > 2) {
 			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
-										<strong>Error!</strong> Please sellect at least two users.
+										<strong>Error!</strong> Please sellect two users.
 										<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 									</div>`;
 			return;
 		}
 		alertCont.innerHTML = '';
+		let check = confirm(`Are you sure you want to merge these users-(${ids[0]}-${ids[1]})?`);
+		if(check){
+			// Send merge request
+			await fetch('http://localhost:8000/users/merge', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+				body: JSON.stringify({
+					from_id: ids[0],
+					to_id: ids[1],
+				}),
+			}).then((res) => {
+				if (res.status === 200) {
+					alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+												<strong>Success!</strong> Users merged successfully.
+												<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+											</div>`;
+					// Remove the merged users
+					for (let i in userBinds) {
+						let e = userBinds[i];
+						let id = e?.getAttribute('id');
+						if (id === ids[0] || id === ids[1]) {
+							//@ts-ignore
+							let e = userBinds[i].parentElement.parentElement.parentElement;
+							e!.classList.add('hide');
+						}
+					}
+				} else {
+					res.json().then((data) => {
+						alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+													<strong>Error!</strong> ${data.details}.
+													<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+												</div>`;
+					});
+				}
+			})
+		}
 	}
 
-	// Download data
-	let selectedUsersArray = new Set();
-	function updateSelected() {
-		selectedUsersArray = new Set();
-		for (let i = 0; i < users.length; i++) {
-			if (selectedIds.has(users[i].id)) {
-				selectedUsersArray.add(users[i]);
-			}
-		}
+	// Edit user
+	function editUser(userId : string) {
+		// Get user data
+		window.location.href = `${base}/info/${userId}`;
 	}
-	function downloadasCSV() {
-		updateSelected();
-		//check for empty set
-		if (selectedUsersArray.size === 0) {
-			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
-										<strong>Error!</strong> Please sellect at least one user.
+	let selectedUsersArray = [] as any;
+	async function getUsersData(){
+		for(let i = 0; i < Array.from(selectedIds).length ; i++){
+			let userId = Array.from(selectedIds)[i];
+			// Request user data
+			await fetch(`http://localhost:8000/users/${userId}`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`,
+				},
+			})  .then((res) => res.json())
+				.then((data) => {
+					if(data.error === undefined){
+						selectedUsersArray.push(data);
+						console.log(data);
+						
+					} else {
+						alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+										<strong>Error!</strong> ${data.error}.
 										<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 									</div>`;
-			return;
+					}
+				});
 		}
+	}
+	// Download data
+	async function downloadasCSV() {
+		await getUsersData();
 		alertCont.innerHTML = '';
 		let fileName = prompt('Enter file name:', 'users');
 		if (!fileName) {
@@ -278,16 +345,8 @@
 		XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
 		XLSX.writeFile(wb, `${fileName}.csv`);
 	}
-	function downloadasExcel() {
-		updateSelected();
-		//check for empty set
-		if (selectedUsersArray.size === 0) {
-			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
-										<strong>Error!</strong> Please sellect at least one user.
-										<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-									</div>`;
-			return;
-		}
+	async function downloadasExcel() {
+		await getUsersData();
 		alertCont.innerHTML = '';
 		let fileName = prompt('Enter file name:', 'users');
 		if (!fileName) {
@@ -308,7 +367,11 @@
 		src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 	<title>Search results</title>
 </svelte:head>
-{#if resultsNumber == 0}
+{#if resultsNumber == undefined}
+	<div class="loading">
+		<h1>Searching...</h1>
+	</div>
+{:else if resultsNumber == 0}
 	<section class="notfound">
 		<lottie-player
 			src={lottieNotfound}
@@ -322,13 +385,13 @@
 		<p>Try to search for something else.</p>
 		<button
 			class="btn btn-primary d-flex gap-3 align-items-center"
-			on:click={() => goto(`${base}/admin/${adminId}`)}
+			on:click={() => window.location.href = `${base}/admin/${adminId}`}
 		>
 			<i class="fa fa-arrow-left" />
 			Back
 		</button>
 	</section>
-{:else}
+{:else if resultsNumber > 0}
 	<section class="found">
 		<img class="d1" src={dotsSrc} alt="" />
 		<div class="d2" />
@@ -341,7 +404,7 @@
 				<div class="navbar-nav">
 					<button
 						class="btn d-flex gap-3 align-items-center"
-						on:click={() => goto(`${base}/admin/${adminId}`)}
+						on:click={() => window.location.href = `${base}/admin/${adminId}`}
 					>
 						<i class="fa fa-arrow-left" />
 						Back
@@ -349,9 +412,9 @@
 				</div>
 			</div>
 		</nav>
-		<div class="container-fluid p-5">
+		<div class="container-fluid">
 			<div class="row justify-content-center align-items-start">
-				<div class="card p-0 col-sm-5 shadow">
+				<div class="card filter p-0 col-sm shadow" style="max-width: 350px; min-width: max-content">
 					<h4 class="card-header">
 						<span class="fa fa-search" />
 						Filter
@@ -359,7 +422,7 @@
 					<div class="card-body p-3">
 						<div class="form p-4 m-0" bind:this={formCont}>
 							<div class="mb-3">
-								<label for="email" class="form-label">Email address</label>
+								<label for="email" class="form-label mb-0">Email address</label>
 								<input
 									type="email"
 									class="form-control"
@@ -370,22 +433,21 @@
 								/>
 							</div>
 							<div class="mb-3">
-								<label for="fullName" class="form-label">Full Name</label>
-								<input
-									type="text"
-									class="form-control"
-									id="fullName"
-									placeholder="Enter the user full name"
-									bind:value={name}
-								/>
+								<label for="fullName" class="form-label mb-0">First name, surname or patronymic</label>
+								<input type="text" class="form-control" id="fullName" placeholder="Enter the user name" bind:value={name} />
+							</div>
+							<div class="mb-3">
+								<label for="region">Permission</label>
+								<select class="form-select form-select-sm" aria-label="Default select example" bind:value={userPermission}>
+									<option selected>Choose...</option>
+									{#each ['default', 'teacher', 'admin', 'super_admin'] as per}
+										<option>{per}</option>
+									{/each}
+								</select>
 							</div>
 							<div class="mb-3">
 								<label for="region">Region</label>
-								<select
-									class="form-select form-select-sm"
-									aria-label="Default select example"
-									bind:value={region}
-								>
+								<select class="form-select form-select-sm" aria-label="Default select example" bind:value={region}>
 									<option selected>Choose...</option>
 									{#each republics as republic}
 										<option>{republic}</option>
@@ -395,14 +457,11 @@
 							<div class="mb-3">
 								<div class="form-group">
 									<label for="education">Education type</label>
-									<select
-										class="form-select form-select-sm"
-										aria-label="Default select example"
-										bind:value={eduType}
-									>
+									<select class="form-select form-select-sm" aria-label="Default select example" bind:value={eduType}>
 										<option selected>Choose...</option>
 										<option>School</option>
 										<option>University</option>
+										<option>College</option>
 									</select>
 								</div>
 								{#if eduType === 'School'}
@@ -410,22 +469,12 @@
 										<div class="row">
 											<div class="form-group col-md-8">
 												<label for="school">School Name</label>
-												<input
-													type="text"
-													class="form-control"
-													id="school"
-													placeholder="Enter your school name"
-													bind:value={institute}
-												/>
+												<input type="text" class="form-control" id="school" placeholder="Enter your school name" bind:value={institute} />
 											</div>
 											<!--School Year-->
 											<div class="form-group col-md-4">
 												<label for="schoolYear">School Year</label>
-												<select
-													class="form-select form-select"
-													aria-label="Default select example"
-													bind:value={year}
-												>
+												<select class="form-select form-select" aria-label="Default select example" bind:value={year}>
 													<option selected>Choose...</option>
 													{#each Array(11) as _, i}
 														<option>{i + 1}</option>
@@ -440,22 +489,12 @@
 										<div class="row">
 											<div class="form-group col-md-8">
 												<label for="Institute">Institute Name</label>
-												<input
-													type="text"
-													class="form-control"
-													id="Institute"
-													placeholder="Enter your Institute name"
-													bind:value={institute}
-												/>
+												<input type="text" class="form-control" id="Institute" placeholder="Enter your Institute name" bind:value={institute} />
 											</div>
 											<!--Institute  Year-->
 											<div class="form-group col-md-4">
 												<label for="Institute Year">Institute Year</label>
-												<select
-													class="form-select form-select"
-													aria-label="Default select example"
-													bind:value={year}
-												>
+												<select class="form-select form-select" aria-label="Default select example" bind:value={year}>
 													<option selected>Choose...</option>
 													{#each InstituteYear as grade}
 														<option>{grade}</option>
@@ -465,11 +504,30 @@
 										</div>
 									</div>
 								{/if}
+								{#if eduType === 'College'}
+									<div class="d-flex justify-content-between p-0">
+										<div class="row">
+											<div class="form-group col-md-8">
+												<label for="College">College Name</label>
+												<input type="text" class="form-control" id="College" placeholder="Enter your College name" bind:value={institute} />
+											</div>
+											<!--College  Year-->
+											<div class="form-group col-md-4">
+												<label for="College Year">College Year</label>
+												<select class="form-select form-select" aria-label="Default select example" bind:value={year}>
+													<option selected>Choose...</option>
+													{#each collegeYear as grade}
+														<option>{grade}</option>
+													{/each}
+												</select>
+											</div>
+										</div>
+									</div>
+								{/if}
 							</div>
-							<button class="btn" on:click={queryParams}>Search</button>
-						</div>
+							<button class="btn" on:click={queryParams}>Search</button>						</div>
 					</div>
-					<div class="managment">
+					<!-- <div class="managment" style="display: none">
 						<div class="card-header d-flex justify-content-left align-items-center">
 							<i class="fa fa-cogs me-3" style:font-size="20px" />
 							<h4 class="card-title mt-2">Management</h4>
@@ -524,15 +582,15 @@
 								</ul>
 							</div>
 						</div>
-					</div>
+					</div> -->
 				</div>
-				<div class="card results p-0 col-sm-5 shadow">
+				<div class="card results p-0 col-sm shadow" style="max-width: 350px; min-width: max-content">
 					<div class="card-body">
 						{#each users as user, i}
 							<div class="user hide d-flex flex-row align-items-stretch" bind:this={userCont}>
 								{#if i % 2 == 0}
-									<div class="userInfo even d-flex flex-row align-items-stretch">
-										<div class="selectBox m-1 me-4">
+									<div class="userInfo even d-flex flex-row align-items-center">
+										<div class="selectBox m-1 me-4 mb-0">
 											<i
 												class="select fa fa-square-o"
 												id={user.id}
@@ -541,18 +599,15 @@
 											/>
 										</div>
 										<div class="info">
-											<div class="d-flex justify-content-between">
-												<span class="d-inline">{user.name}</span>
-												<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc" />
+											<div class="d-flex justify-content-between align-items-center">
+												<span class="d-inline">{user.name + ' ' +user.surname}</span>
+												<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc" on:click={()=>editUser(user.id)}/>
 											</div>
-											<!-- <small class="d-block">
-											<span class="role">{user.role}</span>
-										</small> -->
 										</div>
 									</div>
 								{:else}
-									<div class="userInfo d-flex flex-row align-items-stretch">
-										<div class="selectBox m-1 me-4">
+									<div class="userInfo d-flex flex-row align-items-center">
+										<div class="selectBox m-1 me-4 mb-0">
 											<i
 												class="select fa fa-square-o"
 												id={user.id}
@@ -561,9 +616,9 @@
 											/>
 										</div>
 										<div class="info">
-											<div class="d-flex justify-content-between">
-												<span class="d-inline">{user.name}</span>
-												<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc" />
+											<div class="d-flex justify-content-between align-items-center">
+												<span class="d-inline">{user.name + ' ' +user.surname}</span>
+												<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc" on:click={()=>editUser(user.id)}/>
 											</div>
 										</div>
 									</div>
@@ -588,7 +643,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="toolbar d-flex flex-row align-items-stretch" bind:this={toolbar}>
+		<div class="toolbar shadow d-flex flex-row align-items-stretch" bind:this={toolbar}>
 			<i
 				class="fa fa-cogs me-3 d-flex justify-contnet-center align-items-center"
 				on:click={toggleToolbar}
@@ -650,13 +705,13 @@
 {/if}
 
 <style lang="scss">
-	@import '../../../lib/Assets/common.scss';
+	@import '../../../../lib/Assets/common.scss';
 	.notfound {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		min-height: calc(100vh - 40px);
+		min-height: calc(100vh - 38px);
 		font-family: 'Medium', sans-serif;
 		p {
 			font-family: 'Light', sans-serif;
@@ -726,7 +781,6 @@
 			border-radius: 0;
 			border: 0px;
 			border-bottom: 2px solid $secondary-color;
-			margin-bottom: 20px;
 			font-size: 15px;
 
 			&:focus {
@@ -755,6 +809,8 @@
 			transition: all 0.3s ease-in-out;
 			background-color: $secondary-color;
 			z-index: 6;
+			border: 1px solid rgba(74, 170, 235, 0.1);
+			border-radius: 0.5rem;
 			.fa-cogs {
 				padding: 10px;
 				padding-left: 20px;
@@ -814,40 +870,11 @@
 		bottom: 30px;
 		left: 30px;
 	}
-	@media screen and (max-width: 1350px) {
-		.managment {
-			display: none !important;
-			.btn-group {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				margin-top: 10px;
-				button {
-					background-color: $secondary-color;
-					border: none;
-				}
-			}
-		}
-		.toolbar {
-			display: fixed !important;
-		}
-	}
-	@media screen and (min-width: 1350px) {
-		.managment {
-			display: block !important;
-			.btn-group {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				margin-top: 10px;
-				button {
-					background-color: $secondary-color;
-					border: none;
-				}
-			}
-		}
-		.toolbar {
-			display: none !important;
+	@media screen and (max-width: 650px) {
+		.filter, .results{
+			max-width: 100% !important;
+			min-width: 100% !important;
+			width: 100% !important;
 		}
 	}
 </style>

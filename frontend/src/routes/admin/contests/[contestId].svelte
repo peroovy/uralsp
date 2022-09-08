@@ -85,7 +85,6 @@
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
 	import { sessionDuration } from '$lib/sessionDuration';
 	import { base } from '$app/paths';
-	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import lottieInfoSrc from '$lib/Assets/animations/lottie-info.json?url';
 	import lottieEmptySrc from '$lib/Assets/animations/lottie-empty.json?url';
@@ -814,7 +813,7 @@
 				<h4 class="p-0 m-0">Create new contest</h4>
 			</div>
 			<div class="navbar-nav">
-				<button class="btn d-flex gap-3 align-items-center" on:click={() => goto(`${base}/admin/${id}`)}>
+				<button class="btn d-flex gap-3 align-items-center" on:click={() => window.location.href = `${base}/admin/${id}`}>
 					<i class="fa fa-arrow-left" />
 					Back
 				</button>
@@ -883,16 +882,6 @@
 								</div>
 							</form>
 						</div>
-						<!-- <div class="btn-group btn-group-sm" role="group" aria-label="Basic example">
-							<button type="button" class="btn btn-primary" on:click={create}>
-								<i class="fa-solid fa-add me-1" />
-								Create
-							</button>
-							<button type="button" class="btn btn-secondary" on:click={() => goto(`${base}/admin/${id}`)}>
-								<i class="fa-solid fa-ban me-1" />
-								Cancel
-							</button>
-						</div> -->
 					</div>
 					<lottie-player
 						class="col-md lottie lottieInfo"

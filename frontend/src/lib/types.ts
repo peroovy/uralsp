@@ -36,7 +36,7 @@ export type UserData = {
 	name: string;
 	surname: string;
 	patronymic: string;
-	permission: number;
+	permission: string;
 	email: string;
 	phone: string;
 	city: string;

@@ -1,7 +1,6 @@
 <script lang="ts">
     import logoSrc from "$lib/Assets/imgs/logo.png";   
     import dotsSrc from "$lib/Assets/imgs/dots.png";
-    import { goto } from '$app/navigation';
     import { base } from '$app/paths';
     import { browser } from '$app/env';
     import { onMount } from "svelte";
@@ -12,9 +11,9 @@
 
     function redirct(per: string, user_id: string) {
         if(per === "super_admin" || per === "admin") {
-            goto(`${base}/admin/${user_id}`);
+            window.location.href = `${base}/admin/${user_id}`;
         } else {
-            goto(`${base}/participant/${user_id}`);
+            window.location.href = `${base}/participant/${user_id}`;
         }
     }
     onMount(() => {
@@ -124,7 +123,6 @@
             "auth_date": user.detail.auth_date,
             "hash": user.detail.hash
         };
-        console.log(data)
         fetch('http://127.0.01:8000/auth/signin-telegram', {
             method: 'POST',
             headers: {
