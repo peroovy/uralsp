@@ -319,7 +319,7 @@
 
 		// stretched is for design purposes
 		let stretched = compResults.classList.contains('align-items-stretch');
-		if (!selectedCompMonitors.includes(real_id)) {
+		if (!selectedCompMonitors.includes(real_id) && permission != 'super_admin') {
 			selectedComp = '';
 			alert('You are not a monitor for this competition!');
 			!stretched ? compResults.classList.add('align-items-stretch') : '';

@@ -303,7 +303,7 @@
 		selectedOldField = {
 			id: questionId,
 			name: questionTitle,
-			type: questionType!,
+			type: questionTypeNum!,
 			is_required: is_requiered,
 			is_visible: is_visible,
 			default_values: [default_value]
@@ -373,7 +373,6 @@
 	}
 	function addToPreview(): void {
 		formPreview.innerHTML = '';
-		console.log(formFields);
 		formFields.forEach((field) => {
 			let type = 'text';
 			if (field.type == 0) {
@@ -387,45 +386,45 @@
 			let newField = document.createElement('div');
 			newField.classList.add('form-field');
 			if (type == 'textarea') {
-				newField.innerHTML = `<div class="d-flex col-12 m-0 justify-content-between align-items-baseline data-id="${field.Id}">
-										<div class="col-md-6">
-											<label for="${field.id}">${field.name}</label>
-											${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
-										</div>
-										<div class="d-flex gap-2 align-items-center" style="font-size: 13px">
-											${field.is_visible ? '<span class="text-success">Visible</span>' : '<span class="text-danger">Hidden</span>'}
-											<div class="mb-1">
-												<li class="fa fa-edit me-1" data-click="update-${field.id}" style="cursor:pointer"/>
-												<li class="fa fa-trash" data-click="remove-${field.id}" style="cursor:pointer"/>
+				newField.innerHTML = `<div class="d-flex row col-12 m-0" data-id="${(field.id).trim()}">
+										<div class="d-flex col-12 justify-content-between align-items-baseline">
+											<div class="col-md-6">
+												<label for="${field.id}">${field.name}</label>
+												${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
+											</div>
+											<div class="d-flex gap-2 align-items-center" style="font-size: 13px">
+												${field.is_visible ? '<span class="text-success">Visible</span>' : '<span class="text-danger">Hidden</span>'}
+												<div class="mb-1">
+													<li class="fa fa-edit me-1" data-click="${field.id}" style="cursor:pointer"/>
+													<li class="fa fa-trash" data-click="${field.id}" style="cursor:pointer"/>
+												</div>
 											</div>
 										</div>
-									  </div>
-									 		<textarea class="form-control" id="${field.id}" rows="3" ${field.is_required ? 'required' : ''}>${field.default_values[0]}</textarea>
+									 	<textarea class="form-control" id="${field.id}" rows="3" ${field.is_required ? 'required' : ''}>${field.default_values[0]}</textarea>
 									  </div>`;
 			} else {
-				newField.innerHTML = `<div class="d-flex col-12 m-0 justify-content-between align-items-baseline" data-id="${field.Id}">
-										<div class="col-md-6">
-											<label for="${field.id}" class="mb-1">${field.name}</label>
-											${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
-										</div>
-										<div class="d-flex gap-2 align-items-center" style="font-size: 13px">
-											${field.is_visible ? '<span class="text-success">Visible</span>' : '<span class="text-danger">Hidden</span>'}
-											<div class="mb-1">
-												<li class="fa fa-edit me-1" data-click="${field.id}" class="editField" style="cursor:pointer"/>
-												<li class="fa fa-trash" data-click="${field.id}" class="rmField" style="cursor:pointer"/>
+				newField.innerHTML = `<div class="d-flex row col-12 m-0 justify-content-between align-items-baseline" data-id="${field.id}">
+										<div class="d-flex col-12 justify-content-between align-items-baseline">
+											<div class="col-md-6">
+												<label for="${field.id}" class="mb-1">${field.name}</label>
+												${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
+											</div>
+											<div class="d-flex gap-2 align-items-center" style="font-size: 13px">
+												${field.is_visible ? '<span class="text-success">Visible</span>' : '<span class="text-danger">Hidden</span>'}
+												<div class="mb-1">
+													<li class="fa fa-edit me-1" data-click="${field.id}" class="editField" style="cursor:pointer"/>
+													<li class="fa fa-trash" data-click="${field.id}" class="rmField" style="cursor:pointer"/>
+												</div>
 											</div>
 										</div>
-									</div>
-									<div class="form-field-input">
 										<input type="${type}" class="form-control" placeholder="Enter ${field.name}" value="${field.default_values[0]}" ${
 											field.is_required ? 'required' : ''
 										}">
-									</div> `;
+									</div>`;
 			}
-			console.log(newField)
 			formPreview.appendChild(newField);
-			let editBtn = newField.children[0].children[1].children[1].children[0] as HTMLElement;
-			let removeBtn = newField.children[0].children[1].children[1].children[1] as HTMLElement;
+			let editBtn = newField.children[0].children[0].children[1].children[1].children[0];
+			let removeBtn = newField.children[0].children[0].children[1].children[1].children[1];
 			editBtn.addEventListener('click', () => {
 				if (editBtn.dataset.click) {
 					let id = editBtn.dataset.click;
@@ -568,27 +567,27 @@
 			let newField = document.createElement('div');
 			newField.classList.add('form-field');
 			if (type == 'textarea') {
-				newField.innerHTML = `<div class="form-group">
-												<div class="d-flex col-12 m-0 justify-content-between align-items-baseline">
-												<div class="col-md-6">
-													<label for="${field.id}">${field.name}</label>
-													${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
-												</div>
+				newField.innerHTML = `<div class="d-flex row col-12 m-0" data-id="${(field.id).trim()}">
+										<div class="d-flex col-12 justify-content-between align-items-baseline">
+											<div class="col-md-6">
+												<label for="${field.id}">${field.name}</label>
+												${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
 											</div>
-												<textarea class="form-control ${field.is_visible? "hide": ""}" id="${field.id}" rows="3" ${field.is_required ? 'required' : ''}>${field.default_values[0]}</textarea>
-											</div>`;
-			} else {
-				newField.innerHTML = `<div class="d-flex col-12 m-0 justify-content-between align-items-baseline">
-										<div class="col-md-6">
-											<label for="${field.id}" class="mb-1">${field.name}</label>
-											${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
 										</div>
-									</div>
-									<div class="form-field-input">
-										<input type="${type}" class="form-control ${field.is_visible? "hide": ""}" placeholder="Enter ${field.name} " value="${field.default_values[0]}" ${
+									 	<textarea class="form-control" id="${field.id}" rows="3" ${field.is_required ? 'required' : ''}>${field.default_values[0]}</textarea>
+									  </div>`;
+			} else {
+				newField.innerHTML = `<div class="d-flex row col-12 m-0 justify-content-between align-items-baseline" data-id="${field.id}">
+										<div class="d-flex col-12 justify-content-between align-items-baseline">
+											<div class="col-md-6">
+												<label for="${field.id}" class="mb-1">${field.name}</label>
+												${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
+											</div>
+										</div>
+										<input type="${type}" class="form-control" placeholder="Enter ${field.name}" value="${field.default_values[0]}" ${
 											field.is_required ? 'required' : ''
 										}">
-									</div> `;
+									</div>`;
 			}
 			template += newField.innerHTML;
 		});
@@ -646,27 +645,27 @@
 			let newField = document.createElement('div');
 			newField.classList.add('form-field');
 			if (type == 'textarea') {
-				newField.innerHTML = `<div class="form-group">
-												<div class="d-flex col-12 m-0 justify-content-between align-items-baseline">
-												<div class="col-md-6">
-													<label for="${field.id}">${field.name}</label>
-													${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
-												</div>
+				newField.innerHTML = `<div class="d-flex row col-12 m-0" data-id="${(field.id).trim()}">
+										<div class="d-flex col-12 justify-content-between align-items-baseline">
+											<div class="col-md-6">
+												<label for="${field.id}">${field.name}</label>
+												${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
 											</div>
-												<textarea class="form-control ${field.is_visible? "hide": ""}" id="${field.id}" rows="3" ${field.is_required ? 'required' : ''}>${field.default_values[0]}</textarea>
-											</div>`;
-			} else {
-				newField.innerHTML = `<div class="d-flex col-12 m-0 justify-content-between align-items-baseline">
-										<div class="col-md-6">
-											<label for="${field.id}" class="mb-1">${field.name}</label>
-											${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
 										</div>
-									</div>
-									<div class="form-field-input">
-										<input type="${type}" class="form-control ${field.is_visible? "hide": ""}" placeholder="Enter ${field.name} " value="${field.default_values[0]}" ${
+									 	<textarea class="form-control" id="${field.id}" rows="3" ${field.is_required ? 'required' : ''}>${field.default_values[0]}</textarea>
+									  </div>`;
+			} else {
+				newField.innerHTML = `<div class="d-flex row col-12 m-0 justify-content-between align-items-baseline" data-id="${field.id}">
+										<div class="d-flex col-12 justify-content-between align-items-baseline">
+											<div class="col-md-6">
+												<label for="${field.id}" class="mb-1">${field.name}</label>
+												${field.is_required ? '<span class="text-danger" style="font-size:19px">*</span>' : ''}
+											</div>
+										</div>
+										<input type="${type}" class="form-control" placeholder="Enter ${field.name}" value="${field.default_values[0]}" ${
 											field.is_required ? 'required' : ''
 										}">
-									</div> `;
+									</div>`;
 			}
 			template += newField.innerHTML;
 		});
@@ -676,29 +675,101 @@
 			return field.id;
 		});
 		comp.admins = monitors;
-		console.log(comp);
-		await fetch(`http://localhost:8000/competitions/${contest?.id}`, {
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${access_token}`
-			},
-			body: JSON.stringify(comp)
-		}).then(res => {
-			if (res.status === 200) {
-				showMessage('Success', 'Competition created successfully.');
-			} else {
-				// show the error message
-				showMessage('Error', 'Something went wrong.');
-				res.json().then(data => {
-					console.log(data)
-					showMessage(res.statusText, (data.details !== undefined)? data.details: "Please fill the form correctly!");
-				});
-			}
-		}).catch(err => {
-			let error = '';
-			showMessage('Error', 'Something went wrong: ' + err);
-		});
+		let updateFormOnly = confirm("Do you want to update the form only?");
+		if(updateFormOnly){
+			// update the request template first
+			await fetch(`http://localhost:8000/competitions/${contest?.id}/request-template`, {
+				method: 'PATCH',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${access_token}`
+				},
+				body: JSON.stringify({ "request_template" : comp.request_template })
+			}).then(res => {
+				if (res.status === 200) {
+					showMessage('Success', 'Request template updated successfully.');
+				} else {
+					// show the error message
+					showMessage('Error', 'Something went wrong.');
+					res.json().then(data => {
+						console.log(data)
+						showMessage(res.statusText, (data.details !== undefined)? data.details: "Please fill the form correctly!");
+					});
+				}
+			}).catch(err => {
+				let error = '';
+				showMessage('Error', 'Something went wrong: ' + err);
+			});
+			// update the fields
+			await fetch(`http://localhost:8000/competitions/${contest?.id}/form`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${access_token}`
+				},
+				body: JSON.stringify({ "fields" :comp.fields })
+			}).then(res => {
+				if (res.status === 200) {
+					showMessage('Success', 'Form fields updated successfully.');
+				} else {
+					// show the error message
+					showMessage('Error', 'Something went wrong.');
+					res.json().then(data => {
+						console.log(data)
+						showMessage(res.statusText, (data.details !== undefined)? data.details: "Please fill the form correctly!");
+					});
+				}
+			}).catch(err => {
+				let error = '';
+				showMessage('Error', 'Something went wrong: ' + err);
+			});
+		} else if(confirm("Do you want to update the form monitors list only?")) {
+			await fetch(`http://localhost:8000/competitions/${contest?.id}/admins`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${access_token}`
+				},
+				body: JSON.stringify({ "admins" : comp.admins })
+			}).then(res => {
+				if (res.status === 200) {
+					showMessage('Success', "monitors' list updated successfully.");
+				} else {
+					// show the error message
+					showMessage('Error', 'Something went wrong.');
+					res.json().then(data => {
+						console.log(data)
+						showMessage(res.statusText, (data.details !== undefined)? data.details: "Please fill the form correctly!");
+					});
+				}
+			}).catch(err => {
+				let error = '';
+				showMessage('Error', 'Something went wrong: ' + err);
+			});
+		} else {
+			await fetch(`http://localhost:8000/competitions/${contest?.id}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${access_token}`
+				},
+				body: JSON.stringify(comp)
+			}).then(res => {
+				if (res.status === 200) {
+					showMessage('Success', 'competition updated successfully.');
+				} else {
+					// show the error message
+					showMessage('Error', 'Something went wrong.');
+					res.json().then(data => {
+						console.log(data)
+						showMessage(res.statusText, (data.details !== undefined)? data.details: "Please fill the form correctly!");
+					});
+				}
+			}).catch(err => {
+				let error = '';
+				showMessage('Error', 'Something went wrong: ' + err);
+			});
+		}
 	}
 	let slideContorls = `<div class="slideControls border-top">
 							<div class="btn-group gap-1 col-12 justify-content-center align-items-center p-0 m-0">

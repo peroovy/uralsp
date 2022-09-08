@@ -27,11 +27,11 @@
 			// Get the competition info
 			const contest = await fetch(`http://localhost:8000/competitions/${contestId}`);
 			// Get the user old requests
-			const oldRequests = await fetch(`http://localhost:8000/requests`, {
+			const oldRequests = await fetch(`http://localhost:8000/users/current/requests`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization: `Bearer ${accessToken}`
+					'Authorization': `Bearer ${accessToken}`
 				}
 			});
 			if (oldRequests.status != 200 || contest.status != 200) {
@@ -83,46 +83,99 @@
 		accessToken: string,
 		permissions: string;
 
-	let alertDiv: HTMLDivElement;
+	let alertCont: HTMLDivElement;
 
 	let everyThingIsOk = true;
 	if (Object.keys(contest).length == 0 || userId === undefined || accessToken == undefined || permissions == undefined) everyThingIsOk = false;
 
-	let team_name: string = '';
+	$: team_name = '';
 
 	let application: RequestsOut = {
-		team_name,
+		team_name: team_name,
 		team: [],
-		competition: 0
+		competition: contest.id
 	};
 
 	let requestTemplates: HTMLElement[] = [];
-
-	// Initialize the application object
-	for (let i = 0; i < contest.persons_amount; i++) {
-		requestTemplates.push(document.createElement('div'));
-		application.team.push({
-			user_id: 0,
-			form: []
-		});
+	function showMessage(msgTitle: string, msgbody: string): void {
+		if (msgTitle === 'Success') {
+			alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+										<strong>Success</strong> ${msgbody}
+										<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+									</div>`;
+		} else {
+			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+										<strong>Error</strong> ${msgbody}
+										<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+									</div>`;
+		}
+		setTimeout(() => {
+			alertCont.innerHTML = '';
+		}, 2000);
 	}
 
 	function saveApp(index: number): void {
 		let applicant_id = (requestTemplates[index].children[0].children[1] as HTMLInputElement ).value;
 		let template = requestTemplates[index].children[1].children;
 		let fieldIndex = 0;
+		let form = [];
 		for(let i = 0; i < template.length; i++) {
-			let field = contest.fields[fieldIndex];
-			console.log(template[i].childNodes);
-			// application.team[index].form.push({
-			// 	field: field.id,
-			// 	value: input.value
-			// });
+			let fieldId = template[i].dataset.id;
+			let fieldValue = (template[i].children[1] as HTMLInputElement).value;
+			let isRequired = contest.fields.find((field) => field.id == fieldId)!.is_required;
+			if(isRequired && fieldValue == '') {
+				alert('Please fill all the required fields');
+				alertDiv.style.display = 'block';
+				return;
+			}
+			form.push({
+				field_id: fieldId,
+				value: fieldValue
+			});
 		}
+		// check if the user saved this application before
+		for(let i = 0; i < application.team.length; i++) {
+			if(application.team[i].user_id == parseInt(applicant_id)) {
+				application.team[i].form = form;
+				return;
+			}
+		}
+		application.team.push({
+			user_id: parseInt(applicant_id),
+			form
+		});
+		showMessage('Success', 'Application saved successfully');
+	}
+	async function submitRequest(){
+		// Validate the application
+		if(application.team.length < contest.persons_amount) {
+			alert('Please add save all the applications first');
+			return;
+		}
+		if(application.team_name == '') {
+			alert('Please enter a team name');
+			return;
+		}
+		application.team_name = team_name
+		// send the request to the server and validate the response
+		const response = await fetch(`http://localhost:8000/requests`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${accessToken}`
+			},
+			body: JSON.stringify(application)
+		});
+		if(response.status == 200) {
+			showMessage('Success', 'Your request has been sent successfully');
+		}
+		else {
+			showMessage('Error', response.statusText);
+		}
+
 	}
 	onMount(() => {
 		if (!everyThingIsOk) goto(base + '/');
-		saveApp(0);
 	});
 </script>
 
@@ -135,7 +188,7 @@
 	<div class="d2" />
 
 	<div class="row col-12 m-0 p-0 justify-content-center">
-		<div class="card col-md-4 p-0" style:max-width="fit-content">
+		<div class="card col-md-5 p-0" style="max-width: 400px">
 			<nav class="navbar card-header">
 				<div class="container-fluid justify-content-left">
 					<div class="d-flex navbar-brand mb-0 justify-content-left align-items-center gap-3 p-3">
@@ -155,23 +208,33 @@
 					</button>
 					<div class="collapse navbar-collapse" id="compDetails">
 						<ul class="navbar-nav gap-2">
-							<li class="nav-item">
-								<i class="fa fa-calendar" />
-								Starts on:
-								{new Date(Date.parse(contest.started_at)).toDateString()}
-							</li>
-							<li class="nav-item">
-								<i class="fa fa-clock" />
-								Registration ends in:
-								{new Date(Date.parse(contest.registration_end) - Date.now()).getDay()} days,
-								{new Date(Date.parse(contest.registration_end) - Date.now()).getHours()} hours,
-								{new Date(Date.parse(contest.registration_end) - Date.now()).getMinutes()} minutes
-							</li>
-							<li class="nav-item">
-								<i class="fa fa-group" />
-								Number of contestants per team:
-								{contest.persons_amount}
-							</li>
+							<table class="table table-borderless">
+								<tr>
+									<td>								
+										<i class="fa fa-calendar" />
+										<strong>Starts on:</strong>
+									</td>
+								<td>{new Date(Date.parse(contest.started_at)).toDateString()}</td>
+								</tr>
+								<tr>
+									<td>
+										<i class="fa fa-clock" />
+										<strong>Ends in:</strong>
+									</td>
+									<td>
+										{new Date(Date.parse(contest.registration_end) - Date.now()).getDay()} days,
+										{new Date(Date.parse(contest.registration_end) - Date.now()).getHours()} hours,
+										{new Date(Date.parse(contest.registration_end) - Date.now()).getMinutes()} minutes
+									</td>
+								</tr>
+								<tr >
+									<td class="d-flex justify-content-center align-items-center">
+										<i class="fa fa-group" />
+										<strong>Contestants:</strong>
+									</td>
+									<td>{contest.persons_amount}</td>
+								</tr>
+							</table>
 						</ul>
 					</div>
 				</div>
@@ -214,15 +277,15 @@
 					{/each}
 				</div>
 				<div class="btn-group col-12 pt-3 ">
-					<button class="btn btn-block btn-primary rounded-0 border-0" style="background-color: #3490dc">
+					<button class="btn btn-block btn-primary rounded-0 border-0" style="background-color: #3490dc" on:click={submitRequest}>
 						<li class="fa fa-paper-plane me-1" />
-						Sumbit
+						Submit
 					</button>
 				</div>
 			</div>
 		</div>
 	</div>
-	<div class="alert" bind:this={alertDiv} />
+	<div class="alert" bind:this={alertCont} />
 </section>
 
 <style lang="scss">
