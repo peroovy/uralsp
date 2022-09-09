@@ -52,7 +52,7 @@ class UserService:
         return self._user_repo.try_get(user_id)
 
     @atomic
-    def update(self, user: User, data: Union[ProfileIn, CurrentProfileIn]) -> bool:
+    def update_user(self, user: User, data: Union[ProfileIn, CurrentProfileIn]) -> bool:
         return self._user_repo.update(user.id, **data.dict())
 
     def compare_permissions(self, a: Permissions, b: Permissions) -> int:
@@ -98,7 +98,7 @@ class MergingService:
         return self._participation_repo.exists_intersection(data.from_id, data.to_id)
 
     @atomic
-    def merge(self, data: MergingIn) -> None:
+    def merge_users(self, data: MergingIn) -> None:
         self._participation_repo.migrate(data.from_id, data.to_id)
         self._request_repo.migrate(data.from_id, data.to_id)
 
@@ -129,6 +129,8 @@ class UserSerializer:
         "telegram_id",
     ]
 
+    EMPTY_FIELD = "-"
+
     def to_xlsx(self, users: Iterable[User]) -> BytesIO:
         return serialize_to_xlsx(self._get_rows(users))
 
@@ -136,7 +138,9 @@ class UserSerializer:
         return serialize_to_csv(self._get_rows(users))
 
     def _get_rows(self, users: Iterable[User]) -> List[List[str]]:
-        return [self.USER_HEADERS] + [list(map(lambda s: s or "-", self._get_user_row(user))) for user in users]
+        users_rows = [list(map(lambda field: field or self.EMPTY_FIELD, self._get_user_row(user))) for user in users]
+
+        return [self.USER_HEADERS] + users_rows
 
     def _get_user_row(self, user: User) -> list:
         return [

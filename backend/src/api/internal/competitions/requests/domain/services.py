@@ -2,7 +2,7 @@ from io import BytesIO
 from typing import List, Optional
 
 from django.conf import settings
-from loguru import logger
+from collections import deque
 
 from api.internal.competitions.domain.services import CompetitionsService
 from api.internal.competitions.requests.domain.entities import SerializerParams
@@ -30,6 +30,9 @@ class CompetitionRequestsService(CompetitionsService):
 
 class CompetitionRequestsSerializer:
     REQUEST_HEADERS = ["id", "owner_id", "team_name", "status", "created_at"]
+    EMPTY_FIELD = "-"
+
+    PARTICIPANT_ID = "participant_id"
 
     def to_xlsx(self, competition_with_sorted_fields: Competition, has_headers: bool = False) -> BytesIO:
         return serialize_to_xlsx(self._get_rows(competition_with_sorted_fields, has_headers))
@@ -39,24 +42,27 @@ class CompetitionRequestsSerializer:
 
     def _get_rows(self, competition: Competition, has_headers: bool) -> List[List[str]]:
         fields = [field.id for field in competition.fields.all()]
-        headers = self.REQUEST_HEADERS + ["participant_id", *fields] * competition.persons_amount
+        headers = self.REQUEST_HEADERS + [self.PARTICIPANT_ID, *fields] * competition.persons_amount
 
         rows = [headers] if has_headers else []
 
         for request in competition.requests.all():
-            row = [
-                request.id,
-                request.owner_id,
-                request.team_name,
-                request.status,
-                request.created_at.strftime(settings.DATETIME_FORMAT),
-            ]
+            row = deque(
+                [
+                    request.id,
+                    request.owner_id,
+                    request.team_name,
+                    request.status,
+                    request.created_at.strftime(settings.DATETIME_FORMAT),
+                ]
+            )
 
             for participation in request.participation.all():
                 user_fields = dict((form_value.field_id, form_value.value) for form_value in participation.form.all())
 
-                row += [participation.user_id, *[user_fields.get(expected) or "-" for expected in fields]]
+                row.append(participation.user_id)
+                row.extend(user_fields.get(expected) or self.EMPTY_FIELD for expected in fields)
 
-            rows.append(row)
+            rows.append(list(row))
 
         return rows

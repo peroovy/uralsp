@@ -25,12 +25,12 @@ from api.internal.logging import log
 from api.internal.responses import SuccessResponse
 from api.internal.users.domain.entities import (
     CurrentProfileIn,
-    UsersFilters,
     FormValueOut,
     FullProfileOut,
     MergingIn,
     ProfileIn,
     ProfileOut,
+    UsersFilters,
 )
 from api.internal.users.domain.services import MergingService, UserSerializer, UserService
 from api.internal.users.requests.presentation.handlers import CurrentUserRequestsHandlers
@@ -141,7 +141,7 @@ class UsersHandlers(metaclass=HandlersMetaclass):
             raise UnprocessableEntityException(self.EMAIL_ALREADY_EXISTS, error=self.BAD_EMAIL)
 
         logger.info(log(_operation_id, PROCESSING))
-        self._user_service.update(user, data)
+        self._user_service.update_user(user, data)
 
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
@@ -203,7 +203,7 @@ class UsersHandlers(metaclass=HandlersMetaclass):
             raise UnprocessableEntityException(self.INTERSECTION_PARTICIPANTS, error=self.PARTICIPANTS)
 
         logger.info(log(_operation_id, PROCESSING))
-        self._merging_service.merge(data)
+        self._merging_service.merge_users(data)
 
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
@@ -270,7 +270,7 @@ class CurrentUserHandlers(metaclass=HandlersMetaclass):
             raise UnprocessableEntityException(self.EMAIL_ALREADY_EXISTS, error=self.BAD_EMAIL)
 
         logger.info(log(_operation_id, PROCESSING))
-        self._user_service.update(request.user, data)
+        self._user_service.update_user(request.user, data)
 
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return SuccessResponse()
