@@ -264,8 +264,9 @@
 							window.location.reload();
 						} else {
 							res.json().then((data) => {
+								console.log(data)
 								alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
-									<strong> ${data.error} </strong>
+									<strong> ${data.detail? data.detail[0].msg: data.error} </strong>
 									<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 								</div>`;
 							});
@@ -296,8 +297,9 @@
 							window.location.reload();
 						} else {
 							res.json().then((data) => {
+								console.log(data)
 								alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
-									<strong> ${data.error} </strong>
+									<strong> ${data.detail? data.detail[0].msg: data.error} </strong>
 									<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 								</div>`;
 							});
