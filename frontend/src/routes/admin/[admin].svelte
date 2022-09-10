@@ -124,15 +124,15 @@
 
 	// User controls
 	let email: string, name: string, region: string | undefined, eduType: string | undefined, institute: string, year: string;
-	let userPermission : string | undefined;
+	let userPermission: string | undefined;
 	eduType = 'Choose...';
 	interface searchParams {
 		email: string | undefined;
 		search: string | undefined;
 		region: string | undefined;
 		institution_type: string | undefined;
-		institution_name: string| undefined;
-		institution_course: string| undefined;
+		institution_name: string | undefined;
+		institution_course: string | undefined;
 		permission: string | undefined;
 	}
 	let searchParams: searchParams = {
@@ -164,10 +164,10 @@
 			return;
 		}
 
-		for(let key in searchParams) {
-			if(searchParams[key] === "" || searchParams[key] == "Choose..." || searchParams[key] == null) searchParams[key] = undefined;
+		for (let key in searchParams) {
+			if (searchParams[key] === '' || searchParams[key] == 'Choose...' || searchParams[key] == null) searchParams[key] = undefined;
 		}
-		
+
 		alertCont.innerHTML = '';
 
 		// Removing the undefinded values from the search params
@@ -283,7 +283,8 @@
 	$: req = [];
 	$: selectedCompID = '';
 	$: selectedCompName = '';
-	$: selectedCompRegDate = '';
+	$: selectedCompRegStart = '';
+	$: selectedCompRegEnd = '';
 	$: selectedCompStart = '';
 	$: selectedCompLink = '';
 	$: selectedCompContestantsPerTeam = 0;
@@ -309,8 +310,9 @@
 		let start_date = comp.started_at.replace('Z', '').trim().split('T');
 		selectedCompID = comp.id;
 		selectedCompName = comp.name;
-		selectedCompRegDate = reg_s_date[0] + ', at: ' + reg_s_date[1] + ' : ' + reg_e_date[0] + ', at: ' + reg_e_date[1];
-		selectedCompStart = start_date[0] + ', at: ' + start_date[1];
+		selectedCompRegStart = reg_s_date[0] + ', at: ' + reg_s_date[1].split(':').slice(0, -1).join(':');
+		selectedCompRegEnd = reg_e_date[0] + ', at: ' + reg_e_date[1].split(':').slice(0, -1).join(':');
+		selectedCompStart = start_date[0] + ', at: ' + start_date[1].split(':').slice(0, -1).join(':');
 		selectedCompLink = comp.link;
 		selectedCompContestantsPerTeam = comp.persons_amount;
 		request_template = comp.request_template;
@@ -326,7 +328,10 @@
 			return;
 		}
 
-		stretched ? compResults.classList.remove('align-items-stretch') : compResults.classList.add('align-items-start');
+		if (stretched) {
+			compResults.classList.remove('align-items-stretch');
+			compResults.classList.add('align-items-start');
+		}
 		await fetch(`http://localhost:8000/competitions/${comp.id}/requests`, {
 			method: 'GET',
 			headers: {
@@ -344,6 +349,7 @@
 			});
 
 		selectedComp = 'comp';
+		req = requests;
 	}
 
 	// Select and download Application
@@ -393,8 +399,9 @@
 		}
 	}
 
-	function downloadasExcel() {
+	async function downloadasExcel() {
 		updateSelected();
+		console.log(selectedAppArray);
 		//check for empty set
 		if (selectedAppArray.size === 0) {
 			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -404,12 +411,17 @@
 			return;
 		}
 		alertCont.innerHTML = '';
+		// filter the selected requests
 		let fileName = prompt('Enter file name:', 'New request');
 		if (!fileName) {
 			// cancel
 			return;
 		}
 		if (fileName == null) fileName = 'New request';
+		// change participants array in the selected requests to string
+		for(let i of selectedAppArray){
+			i.participants = i.participants.join(', ');
+		}
 		let jsondata = JSON.parse(JSON.stringify(Array.from(selectedAppArray)));
 		let wb = XLSX.utils.book_new();
 		let ws = XLSX.utils.json_to_sheet(jsondata);
@@ -447,6 +459,8 @@
 									</div>`;
 			return;
 		}
+		let confirmRemoval = confirm('Are you sure you want to delete this competition?');
+		if (!confirmRemoval) return;
 		await fetch(`http://localhost:8000/competitions/${id}`, {
 			method: 'DELETE',
 			headers: {
@@ -467,6 +481,77 @@
 			.finally(() => {
 				window.location.reload();
 			});
+	}
+
+	// Applications
+	async function acceptApplication(id: string) {
+		let confirmAccept = confirm('Are you sure you want to accept this application?');
+		if (!confirmAccept) return;
+		let description = prompt('Enter description:', 'Accepted');
+		await fetch(`http://localhost:8000/requests/${id}/process`, {
+			method: "PATCH",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: "Bearer " + access_token,
+			},
+			body: JSON.stringify({
+				status: "accepted",
+				"description": description,
+			}),
+		})
+			.then((res) => {
+				if(res.status == 200){ 
+					alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+											<strong>Success!</strong>
+											<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+										</div>`;
+					window.location.reload();
+				} else {
+					alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+											<strong>Error!</strong> Something went wrong.
+											<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+										</div>`;
+				}
+			})
+			.catch((err) => {
+				console.error(err);
+			})
+	}
+	async function declineApplication(id: string) {
+		let confirmDecline = confirm('Are you sure you want to reject this application?');
+		if (!confirmDecline) return;
+		let description = prompt('Enter description:', 'Rejected');
+		await fetch(`http://localhost:8000/requests/${id}/process`, {
+			method: "PATCH",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: "Bearer " + access_token,
+			},
+			body: JSON.stringify({
+				status: "rejected",
+				"description": description,
+			}),
+		})
+			.then((res) => {
+				if(res.status == 200){ 
+					alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+											<strong>Success!</strong>
+											<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+										</div>`;
+					window.location.reload();
+				} else {
+					alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+											<strong>Error!</strong> Something went wrong.
+											<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+										</div>`;
+				}
+			})
+			.catch((err) => {
+				console.error(err);
+			})
+	}
+	function viewApplication(id: string) {
+		window.location.href = `${base}/admin/requests/${id}`;
 	}
 	// Signout
 	function signout(): void {
@@ -515,7 +600,7 @@
 						<span class="nav-link" id="Competitions" on:click={() => slider('Competitions')}> Competitions control </span>
 					</li>
 					{#if per === 'super_admin'}
-						<li class="nav-item" on:click={() => window.location.href = './contests/create-competition'}>
+						<li class="nav-item" on:click={() => (window.location.href = './contests/create-competition')}>
 							<span class="nav-link" style:color="rgba(0,0,0,.55)"> Create Competitions </span>
 						</li>
 					{/if}
@@ -748,7 +833,11 @@
 											</tr>
 											<tr>
 												<th>Registration time</th>
-												<td>{selectedCompRegDate}</td>
+												<td>
+													From {selectedCompRegStart}
+													<br />
+													To {selectedCompRegEnd}
+												</td>
 											</tr>
 											<tr>
 												<th>Start</th>
@@ -759,18 +848,16 @@
 												<td><a href={selectedCompLink}> Link </a></td>
 											</tr>
 											<tr>
-												<th>Number of contestants per team</th>
+												<th>Contestants per team</th>
 												<td>{selectedCompContestantsPerTeam}</td>
 											</tr>
 											<tr>
-												<th>Competition' monitors</th>
+												<th>Monitors' IDs</th>
 												{#if selectedCompMonitors.length == 0}
 													<td>No monitors</td>
 												{:else}
 													<td>
-														{#each selectedCompMonitors as monitor}
-															<span class="badge badge-primary">{monitor}</span>
-														{/each}
+														{selectedCompMonitors.join(' ,')}
 													</td>
 												{/if}
 											</tr>
@@ -811,21 +898,25 @@
 												<th scope="col" class="ms-1 text-center"> Id </th>
 												<th scope="col" class="text-center"> Status </th>
 												<th scope="col" class="text-center"> № of participants </th>
-												<th scope="col" class="text-center"> Action </th>
+												<th scope="col" class="text-center"> Actions </th>
 											</tr>
 										</thead>
 										<tbody>
-											{#each req as applicant, i}
-												<tr bind:this={applicationBinds[i]} id={applicant.id} class="text-center">
+											{#each req as application, i}
+												<tr bind:this={applicationBinds[i]} id={application.id} class="text-center">
 													<td><li on:click={() => selectApp(i)} class="fa fa-square-o" /></td>
-													<td>{applicant.id}</td>
-													<td>{applicant.status}</td>
-													<td class="text-center">{applicant.participants.length}</td>
+													<td>{application.id}</td>
+													<td>{application.status}</td>
+													<td class="text-center">{application.participants.length}</td>
 													<td>
 														<div class="btn-group">
-															<button class="btn btn-success btn-sm" on:click={() => accept(applicant.id)}><i class="fa fa-check-square" /></button>
-															<button class="btn btn-danger btn-sm" on:click={() => decline(applicant.id)}><i class="fa fa-ban" /></button>
-															<button class="btn btn-primary btn-sm" on:click={() => decline(applicant.id)}><i class="fa fa-eye" /></button>
+															<button class="btn btn-success btn-sm" on:click={() => acceptApplication(application.id)}
+																><i class="fa fa-check-square" /></button
+															>
+															<button class="btn btn-danger btn-sm" on:click={() => declineApplication(application.id)}
+																><i class="fa fa-ban" /></button
+															>
+															<button class="btn btn-primary btn-sm" on:click={() => viewApplication(application.id)}><i class="fa fa-eye" /></button>
 														</div>
 													</td>
 												</tr>
@@ -858,7 +949,7 @@
 								<button
 									class="btn btn-primary rounded-0"
 									style="background-color:#3490dc; border: none"
-									on:click={() => window.location.href = base + 'contests/' + selectedCompID}
+									on:click={() => (window.location.href = base + 'contests/' + selectedCompID)}
 								>
 									<i class="fa fa-edit" /> Edit</button
 								>

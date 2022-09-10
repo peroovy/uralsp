@@ -279,6 +279,7 @@
 						</div>`;
 					});
 			} else {
+				update.permission = userPermission;
 				await fetch(`http://localhost:8000/users/${userInfo.id}`, {
 					method: 'PUT',
 					headers: {

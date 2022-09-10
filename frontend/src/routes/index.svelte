@@ -166,20 +166,20 @@
         <div class="btn-group-vertical col-12">
             <button class="btn btn-lg btn-block btn-outline">
                 <i class="fa fa-google"></i>
-                <span> Sign up with Google </span> 
+                <span> Continue with Google </span> 
                 <i class="fa fa-arrow-right"></i>
                 <div bind:this={google} class="googleBtnHolder"></div>
             </button>
             
             <button class="btn btn-lg btn-block btn-outline"> 
                 <i class="fa fa-vk"></i>
-                <span> Sign up with VK </span> 
+                <span> Continue with VK </span> 
                 <i class="fa fa-arrow-right"></i>
                 <div id="vk_auth" class="vkHolder"></div>
             </button>
             <div class="btn btn-lg btn-block btn-outline"> 
                 <i class="fa fa-telegram"></i>
-                <span> Sign up with Telegram </span> 
+                <span> Continue with Telegram </span> 
                 <i class="fa fa-arrow-right"></i>
                 <div class="telegramBtnHolder">
                     <Login username="zeyaddevbot" on:auth={onTelegramAuth}/>
@@ -316,6 +316,7 @@
         position: absolute;
         scale: 2;
         opacity: 0.000001;
+        height: fit-content;
     }
     @media screen and (max-width: 450px){
         .signup-form{

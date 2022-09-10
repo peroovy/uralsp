@@ -220,7 +220,7 @@
 			<div class="row justify-content-center align-items-center gap-3 p-0 m-0" style="flex-flow: column nowrap; gap: 30px; width: max-content" id="upcomming">
 				{#if upComming_competitions.length == 0}
 					<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
-						<lottie-player src={lottieNotFoundSrc} background="transparent" style="width: 500px" speed="1" autoplay nocontrols></lottie-player>
+						<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols></lottie-player>
 						<h2> No Upcomming registerations!</h2>
 						<small style = "margin-top:-10px; display:block; opacity: 0.7">  Please, try later. </small>
 					</div>
@@ -280,7 +280,7 @@
 			<div class="row justify-content-center gap-4 justify-content-center align-items-center gap-3 p-0 m-0"  style="flex-flow: column nowrap; gap: 30px; width: max-content" id="ongoing">
 			{#if ongoing_competition.length == 0}
 			<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
-				<lottie-player src={lottieNotFoundSrc} background="transparent" style="width: 500px" speed="1" autoplay nocontrols></lottie-player>
+				<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols></lottie-player>
 				<h2> No ongoing registerations!</h2>
 				<small style = "margin-top:-10px; display:block; opacity: 0.7">  Please, try later. </small>
 			</div>
@@ -347,8 +347,8 @@
 			<div class="row justify-content-center align-items-center gap-3 p-0 m-0 " id="past">
 				<div class="col-md">
 					{#if started_competitions.length == 0}
-						<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
-							<lottie-player src={lottieNotFoundSrc} background="transparent" style="width: 500px" speed="1" autoplay nocontrols></lottie-player>
+						<div class="text-center p-3 notFound" style="background: white">
+							<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols></lottie-player>
 							<h2> No ongoing registerations!</h2>
 							<small style = "margin-top:-10px; display:block; opacity: 0.7">  Please, try later. </small>
 						</div>
@@ -400,46 +400,46 @@
 			<div class="row part_4 justify-content-center align-items-center gap-3 p-0 m-0" id="requests">
 				{#if requests.length == 0}
 					<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
-						<lottie-player src={lottieNotFoundSrc} background="transparent" style="width: 500px" speed="1" autoplay nocontrols></lottie-player>
+						<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols></lottie-player>
 						<h2> No requests found</h2>
 						<small style = "margin-top:-10px; display:block; opacity: 0.7">  Please, try later. </small>
 					</div>
 				{:else}
+					<div class="row justify-content-center algin-itmes-start">
 						{#each requests as request}
 							{@const createdAt = new Date (Date.parse(request.created_at))}
-							<div class="row justify-content-center algin-itmes-start">
-								<div class="card p-0 col-md-6 border-0 shadow-sm">
-									<h4 class="card-header p-4 m-0">
-										<li class="fa fa-paper-plane me-1"></li>
-										{request.team_name}
-									</h4>
-									<div class="card-body">
-										<p class="request-description"> {request.description ? request.description : "No description"} </p>
+							<div class="card p-0 col-md-6 border-0 shadow-sm" style="max-width: 500px; min-width: max-content">
+								<h4 class="card-header p-4 m-0">
+									<li class="fa fa-paper-plane me-1"></li>
+									{request.team_name}
+								</h4>
+								<div class="card-body">
+									<p class="request-description"> {request.description ? request.description : "No description"} </p>
 
-										<table class="table table-striped table-hover">
-											<tbody>
-												<tr>
-													<th scope="row">Status</th>
-													<td>{request.status}</td>
-												</tr>
-												<tr>
-													<th scope="row">Created at</th>
-													<td>{createdAt.toDateString()}, {createdAt.getUTCHours()}</td>
-												</tr>
-												<tr>
-													<th scope="row">Participants IDs</th>
-													<td>{request.participants.join(' ,')}</td>
-												</tr>
-											</tbody>
-										</table>
-										<div class="btn gap-2">
-											<button class="btn btn-primary btn-sm"> <li class="fa fa-edit" /> Edit </button>
-											<button class="btn btn-danger btn-sm"> <li class="fa fa-trash" /> Remove </button>
-										</div>
+									<table class="table table-striped table-hover">
+										<tbody>
+											<tr>
+												<th scope="row">Status</th>
+												<td>{request.status}</td>
+											</tr>
+											<tr>
+												<th scope="row">Created at</th>
+												<td>{createdAt.toDateString()}, {createdAt.getUTCHours()}</td>
+											</tr>
+											<tr>
+												<th scope="row">Participants IDs</th>
+												<td>{request.participants.join(' ,')}</td>
+											</tr>
+										</tbody>
+									</table>
+									<div class="btn gap-2">
+										<button class="btn btn-primary btn-sm"> <li class="fa fa-edit" /> Edit </button>
+										<button class="btn btn-danger btn-sm"> <li class="fa fa-trash" /> Remove </button>
 									</div>
 								</div>
 							</div>
 						{/each}
+					</div>
 				{/if}
 			</div>
 		</div>
@@ -450,7 +450,8 @@
 	@import '../../lib/Assets/common.scss';
 	.participant-container {
 		width: 100vw;
-		min-height: calc(100vh );
+		min-height: calc(100vh - 38px);
+		max-height: fit-content !important;
 		align-items: center;
 		background-color: $bg-color;
 		@include bg;
@@ -479,6 +480,7 @@
 	.parts-container {
 		display: flex;
 		width: 400vw;
+		height: fit-content !important;
 		flex-direction: row nowrap;
 	}
 	.request-description{
@@ -491,6 +493,7 @@
 	.part_4 {
 		flex-shrink: 0;
 		padding: 0px !important;
+		padding-bottom: 30px !important;
 		margin: 0px !important;
 		width: 100vw !important;
 	}

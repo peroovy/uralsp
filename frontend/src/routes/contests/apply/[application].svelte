@@ -119,6 +119,13 @@
 		let template = requestTemplates[index].children[1].children;
 		let fieldIndex = 0;
 		let form = [];
+		if(applicant_id == '') {
+			showMessage('Error', 'Please enter the applicant id');
+			return;
+		} else if(isNaN(parseInt(applicant_id))) {
+			showMessage('Error', 'Please enter a valid applicant id');
+			return;
+		}
 		for(let i = 0; i < template.length; i++) {
 			let fieldId = template[i].dataset.id;
 			let fieldValue = (template[i].children[1] as HTMLInputElement).value;
@@ -137,6 +144,7 @@
 		for(let i = 0; i < application.team.length; i++) {
 			if(application.team[i].user_id == parseInt(applicant_id)) {
 				application.team[i].form = form;
+				showMessage('Success', 'Application saved successfully');
 				return;
 			}
 		}
@@ -152,7 +160,9 @@
 			alert('Please add save all the applications first');
 			return;
 		}
-		if(application.team_name == '') {
+		application.team_name = team_name;
+		
+		if(application.team_name === '') {
 			alert('Please enter a team name');
 			return;
 		}

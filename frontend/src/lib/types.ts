@@ -58,7 +58,7 @@ export type Competition = {
 	persons_amount: number;
 	request_template: string;
 	link: string;
-    admins: Array<number>;
+	admins: Array<number>;
 };
 export type Field = {
 	id: string;
@@ -68,7 +68,7 @@ export type Field = {
 	is_visible: boolean;
 };
 export type CompetitionWithFields = {
-    id: number;
+	id: number;
 	name: string;
 	registration_start: string;
 	registration_end: string;
@@ -76,9 +76,8 @@ export type CompetitionWithFields = {
 	persons_amount: number;
 	request_template: string;
 	link: string;
-    fields : Array<Field>
-    admins: Array<number>;
-
+	fields: Array<Field>;
+	admins: Array<number>;
 };
 export type Competitions = Array<Competition>;
 
@@ -94,14 +93,31 @@ export type UserRequest = {
 };
 
 export type RequestsOut = {
-	team_name: string,
+	team_name: string;
 	team: {
-		user_id: number,
+		user_id: number;
 		form: {
-			field_id: string,
-			value: string
-		  }[];
-	  }[],
-	competition: number
-}
+			field_id: string;
+			value: string;
+		}[];
+	}[];
+	competition: number;
+};
 export type Requests = Array<UserRequest>;
+
+export type RequestsIn = {
+	id: number;
+	owner: number;
+	competition: number;
+	team_name: string;
+	status: string;
+	description: string;
+	created_at: string;
+	participants: {
+		user_id: number;
+		form: {
+			field_id: string;
+			value: string;
+		}[];
+	}[];
+};
