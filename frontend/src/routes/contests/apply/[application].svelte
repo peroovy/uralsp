@@ -76,13 +76,14 @@
 	import { base } from '$app/paths';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
 	import type { RequestsOut, UserRequest, CompetitionWithFields, Field } from '$lib/types';
-
+	
 	export let contest: CompetitionWithFields = {} as CompetitionWithFields,
-		oldRequest: UserRequest = {} as UserRequest,
-		userId: number,
-		accessToken: string,
-		permissions: string;
-
+	oldRequest: UserRequest = {} as UserRequest,
+	userId: number,
+	accessToken: string,
+	permissions: string;
+	
+	console.log(oldRequest);
 	let alertCont: HTMLDivElement;
 
 	let everyThingIsOk = true;
@@ -341,7 +342,7 @@
 					{/each}
 				</div>
 				<div class="btn-group col-12 pt-3 ">
-					{#if oldRequest}
+					{#if oldRequest != undefined && Object.keys(oldRequest).length > 0}
 						<!-- Update the request -->
 						<button class="btn btn-block btn-primary rounded-0 border-0" style="background-color: #3490dc" on:click={updateRequest}>
 							<i class="fas fa-refresh me-1" />
