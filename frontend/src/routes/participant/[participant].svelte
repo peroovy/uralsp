@@ -80,9 +80,7 @@
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
 	import type { Requests, Competitions, Competition, UserData } from '$lib/types';
 	import { onMount } from 'svelte';
-
 	import lottieNotFoundSrc from '$lib/Assets/animations/lottie-notfound2.json?url';
-import { identity } from 'svelte/internal';
 	export let userInfo: UserData;
 	export let ongoing_competition: Competitions = [], upComming_competitions : Competitions = [], started_competitions : Competitions = [];
 	export let requests : Requests = [];
@@ -147,7 +145,7 @@ import { identity } from 'svelte/internal';
 	}
 
 	function editApplication(id: number) {
-		console.log('edit:', id);
+		window.location.href = `${base}/contests/apply/${id}`;
 	}
 	// Sections slider
 	let sectionHolders = '' as unknown as HTMLElement;
@@ -474,7 +472,7 @@ import { identity } from 'svelte/internal';
 										</tbody>
 									</table>
 									<div class="btn gap-2">
-										<button class="btn btn-primary btn-sm" on:click={()=> editApplication(request.id)}> <li class="fa fa-edit" /> Edit </button>
+										<button class="btn btn-primary btn-sm" on:click={()=> editApplication(request.competition)}> <li class="fa fa-edit" /> Edit </button>
 										{#if request.status != 'canceled' && request.status != 'cancelled'}
 											<button class="btn btn-danger btn-sm" on:click={()=> cancelApplication(request.id)}> <li class="fa fa-trash" /> Cancel </button>
 										{:else if request.status == 'canceled' || request.status == 'cancelled'}

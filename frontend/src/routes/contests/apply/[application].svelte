@@ -114,16 +114,15 @@
 		}, 2000);
 	}
 
-	function saveApp(index: number): void {
+	function saveApp(index: number, mode = "msg"): void {
 		let applicant_id = (requestTemplates[index].children[0].children[1] as HTMLInputElement ).value;
 		let template = requestTemplates[index].children[1].children;
-		let fieldIndex = 0;
 		let form = [];
 		if(applicant_id == '') {
-			showMessage('Error', 'Please enter the applicant id');
+			if(mode == "msg") showMessage('Error', 'Please enter a valid applicant ID');
 			return;
 		} else if(isNaN(parseInt(applicant_id))) {
-			showMessage('Error', 'Please enter a valid applicant id');
+			if(mode == "msg") showMessage('Error', 'Please enter a valid applicant ID');
 			return;
 		}
 		for(let i = 0; i < template.length; i++) {
@@ -132,7 +131,7 @@
 			let isRequired = contest.fields.find((field) => field.id == fieldId)!.is_required;
 			if(isRequired && fieldValue == '') {
 				alert('Please fill all the required fields');
-				alertDiv.style.display = 'block';
+				alertCont.style.display = 'block';
 				return;
 			}
 			form.push({
@@ -144,7 +143,7 @@
 		for(let i = 0; i < application.team.length; i++) {
 			if(application.team[i].user_id == parseInt(applicant_id)) {
 				application.team[i].form = form;
-				showMessage('Success', 'Application saved successfully');
+				if(mode == "msg") showMessage('Success', 'Application saved successfully');
 				return;
 			}
 		}
@@ -152,7 +151,7 @@
 			user_id: parseInt(applicant_id),
 			form
 		});
-		showMessage('Success', 'Application saved successfully');
+		if(mode == "msg") showMessage('Success', 'Application saved successfully');
 	}
 	async function submitRequest(){
 		// Validate the application
@@ -184,8 +183,67 @@
 		}
 
 	}
+
+	async function updateRequest(){
+		// Validate the application
+		if(application.team.length < contest.persons_amount) {
+			alert('Please add save all the applications first');
+			return;
+		}
+		application.team_name = team_name;
+		
+		if(application.team_name === '') {
+			alert('Please enter a team name');
+			return;
+		}
+		// send the request to the server and validate the response
+		const response = await fetch(`http://localhost:8000/requests/${oldRequest.id}`, {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${accessToken}`
+			},
+			body: JSON.stringify(application)
+		});
+		if(response.status == 200) {
+			showMessage('Success', 'Your request has been updated successfully');
+		}
+		else {
+			showMessage('Error', response.statusText);
+		}
+
+	}
+	async function retreiveOldRequest(){
+		// Reterive the old request and fill the form
+		let old_respond = await fetch("http://localhost:8000/requests/" + oldRequest.id, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				}
+			});
+			if(old_respond.status == 200) {
+				let old_request = await old_respond.json();
+				for(let u = 0; u < contest.persons_amount; u++){
+					saveApp(u, "silent");
+					let template = requestTemplates[u].children[1].children;
+					team_name = old_request.team_name;
+					for(let i = 0; i < template.length; i++) {
+						(requestTemplates[i].children[0].children[1] as HTMLInputElement ).value = old_request.participants[i].user_id.toString();
+						let fieldId = template[i].dataset.id;
+						let fieldValue = old_request.participants[i].form.find((field) => field.field_id == fieldId)!.value;
+						(template[i].children[1] as HTMLInputElement).value = fieldValue;
+					}
+				}
+			}
+	}
+	
 	onMount(() => {
 		if (!everyThingIsOk) goto(base + '/');
+		if(oldRequest){
+			retreiveOldRequest();
+		}
+		
 	});
 </script>
 
@@ -287,10 +345,18 @@
 					{/each}
 				</div>
 				<div class="btn-group col-12 pt-3 ">
+					{#if oldRequest}
+						<!-- Update the request -->
+						<button class="btn btn-block btn-primary rounded-0 border-0" style="background-color: #3490dc" on:click={updateRequest}>
+							<i class="fas fa-refresh me-1" />
+							Update request
+						</button>
+					{:else}
 					<button class="btn btn-block btn-primary rounded-0 border-0" style="background-color: #3490dc" on:click={submitRequest}>
 						<li class="fa fa-paper-plane me-1" />
 						Submit
 					</button>
+					{/if}
 				</div>
 			</div>
 		</div>
