@@ -414,7 +414,7 @@
 										{request.team_name}
 									</h4>
 									<div class="card-body">
-										<p class="request-description"> {request.description} </p>
+										<p class="request-description"> {request.description ? request.description : "No description"} </p>
 
 										<table class="table table-striped table-hover">
 											<tbody>
@@ -427,7 +427,7 @@
 													<td>{createdAt.toDateString()}, {createdAt.getUTCHours()}</td>
 												</tr>
 												<tr>
-													<th scope="row">Participants</th>
+													<th scope="row">Participants IDs</th>
 													<td>{request.participants.join(' ,')}</td>
 												</tr>
 											</tbody>
