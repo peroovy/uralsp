@@ -57,16 +57,15 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import * as XLSX from 'xlsx';
-
+	import type { Competition, UserData, SearchParams, Competitions, Requests, UserRequest } from '$lib/types';
 	import src from '$lib/Assets/imgs/logo.png';
 	import tempPhoto from '$lib/Assets/imgs/temp-photo.png';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
-	import type { Competition } from '$lib/types';
 	import lottie from '$lib/Assets/animations/lottie-search?url';
 	import lottieSelect from '$lib/Assets/animations/lottie-select.gif';
 	import { republics } from '$lib/Assets/republics.json';
 	const { utils } = XLSX;
-	export let userInfo, competitionsInfo, access_token: string;
+	export let userInfo: UserData, competitionsInfo: Competitions, access_token: string;
 	export let permission: string;
 	export let real_id: number;
 	import { sessionDuration } from '$lib/sessionDuration';
@@ -126,16 +125,8 @@
 	let email: string, name: string, region: string | undefined, eduType: string | undefined, institute: string, year: string;
 	let userPermission: string | undefined;
 	eduType = 'Choose...';
-	interface searchParams {
-		email: string | undefined;
-		search: string | undefined;
-		region: string | undefined;
-		institution_type: string | undefined;
-		institution_name: string | undefined;
-		institution_course: string | undefined;
-		permission: string | undefined;
-	}
-	let searchParams: searchParams = {
+
+	let searchParams: SearchParams = {
 		email: '',
 		search: '',
 		region: '',
@@ -165,6 +156,7 @@
 		}
 
 		for (let key in searchParams) {
+			//@ts-ignore
 			if (searchParams[key] === '' || searchParams[key] == 'Choose...' || searchParams[key] == null) searchParams[key] = undefined;
 		}
 
@@ -183,7 +175,7 @@
 	}
 
 	// Pagination competitions and applications
-	let comps = [];
+	let comps = [] as Competitions;
 	$: itemPerpage = 20;
 	function pagination(page: number): void {
 		let start = page * itemPerpage;
@@ -280,8 +272,8 @@
 	}
 	$: selectedComp = '';
 	$: appLength = 0;
-	$: req = [];
-	$: selectedCompID = '';
+	$: req = [] as Requests;
+	$: selectedCompID = 0;
 	$: selectedCompName = '';
 	$: selectedCompRegStart = '';
 	$: selectedCompRegEnd = '';
@@ -289,11 +281,11 @@
 	$: selectedCompLink = '';
 	$: selectedCompContestantsPerTeam = 0;
 	$: request_template = '';
-	$: selectedCompMonitors = [];
+	$: selectedCompMonitors = [] as number[];
 
 	let collegeYear = ['1 course', '2 course', '3 course', '4 course', '5 course'];
 	async function editComp(id: number) {
-		let comp;
+		let comp = {} as Competition;
 		await fetch(`http://localhost:8000/competitions/${id}`, {
 			method: 'GET',
 			headers: {
@@ -317,7 +309,7 @@
 		selectedCompContestantsPerTeam = comp.persons_amount;
 		request_template = comp.request_template;
 		selectedCompMonitors = comp.admins;
-		let requests = [];
+		let requests = [] as Requests;
 
 		// stretched is for design purposes
 		let stretched = compResults.classList.contains('align-items-stretch');
@@ -389,7 +381,7 @@
 		}
 	}
 
-	let selectedAppArray = new Set();
+	let selectedAppArray = new Set<UserRequest>();
 	function updateSelected() {
 		selectedAppArray = new Set();
 		for (let i = 0; i < req.length; i++) {
@@ -419,7 +411,8 @@
 		}
 		if (fileName == null) fileName = 'New request';
 		// change participants array in the selected requests to string
-		for(let i of selectedAppArray){
+		for (let i of selectedAppArray) {
+			//@ts-ignore
 			i.participants = i.participants.join(', ');
 		}
 		let jsondata = JSON.parse(JSON.stringify(Array.from(selectedAppArray)));
@@ -484,23 +477,24 @@
 	}
 
 	// Applications
-	async function acceptApplication(id: string) {
+	async function acceptApplication(id: number) {
 		let confirmAccept = confirm('Are you sure you want to accept this application?');
 		if (!confirmAccept) return;
 		let description = prompt('Enter description:', 'Accepted');
+
 		await fetch(`http://localhost:8000/requests/${id}/process`, {
-			method: "PATCH",
+			method: 'PATCH',
 			headers: {
-				"Content-Type": "application/json",
-				Authorization: "Bearer " + access_token,
+				'Content-Type': 'application/json',
+				Authorization: 'Bearer ' + access_token
 			},
 			body: JSON.stringify({
-				status: "accepted",
-				"description": description,
-			}),
+				status: 'accepted',
+				description: description
+			})
 		})
 			.then((res) => {
-				if(res.status == 200){ 
+				if (res.status == 200) {
 					alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
 											<strong>Success!</strong>
 											<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -515,25 +509,25 @@
 			})
 			.catch((err) => {
 				console.error(err);
-			})
+			});
 	}
-	async function declineApplication(id: string) {
+	async function declineApplication(id: number) {
 		let confirmDecline = confirm('Are you sure you want to reject this application?');
 		if (!confirmDecline) return;
 		let description = prompt('Enter description:', 'Rejected');
 		await fetch(`http://localhost:8000/requests/${id}/process`, {
-			method: "PATCH",
+			method: 'PATCH',
 			headers: {
-				"Content-Type": "application/json",
-				Authorization: "Bearer " + access_token,
+				'Content-Type': 'application/json',
+				Authorization: 'Bearer ' + access_token
 			},
 			body: JSON.stringify({
-				status: "rejected",
-				"description": description,
-			}),
+				status: 'rejected',
+				description: description
+			})
 		})
 			.then((res) => {
-				if(res.status == 200){ 
+				if (res.status == 200) {
 					alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
 											<strong>Success!</strong>
 											<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -548,9 +542,9 @@
 			})
 			.catch((err) => {
 				console.error(err);
-			})
+			});
 	}
-	function viewApplication(id: string) {
+	function viewApplication(id: number) {
 		window.location.href = `${base}/admin/requests/${id}`;
 	}
 	// Signout
@@ -903,7 +897,7 @@
 										</thead>
 										<tbody>
 											{#each req as application, i}
-												<tr bind:this={applicationBinds[i]} id={application.id} class="text-center">
+												<tr bind:this={applicationBinds[i]} id={application.id + ''} class="text-center">
 													<td><li on:click={() => selectApp(i)} class="fa fa-square-o" /></td>
 													<td>{application.id}</td>
 													<td>{application.status}</td>
@@ -953,9 +947,7 @@
 								>
 									<i class="fa fa-edit" /> Edit</button
 								>
-								<button class="btn btn-danger rounded-0" on:click={() => deleteComp(parseInt(selectedCompID))}>
-									<i class="fa fa-trash" /> Delete</button
-								>
+								<button class="btn btn-danger rounded-0" on:click={() => deleteComp(selectedCompID)}> <i class="fa fa-trash" /> Delete</button>
 							</div>
 						</div>
 					{/if}
@@ -988,9 +980,6 @@
 		nav {
 			width: 100vw !important;
 			background-color: rgb(248, 248, 248);
-			.nav-link {
-				//color: rgba(255, 255, 255, 0.692) !important;
-			}
 		}
 		.form {
 			position: relative;
@@ -1172,11 +1161,6 @@
 		.even {
 			background-color: $bg-color;
 		}
-		.info {
-			width: 100%;
-			display: flex;
-			flex-flow: column nowrap;
-		}
 	}
 	table {
 		font-family: 'light', sans-serif;
@@ -1267,7 +1251,6 @@
 		}
 	}
 	@media screen and (max-width: 800px) {
-		.compt-filter,
 		.compt-holder {
 			max-width: 100vw !important;
 			margin: 0px !important;

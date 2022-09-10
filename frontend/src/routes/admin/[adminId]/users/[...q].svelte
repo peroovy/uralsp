@@ -25,7 +25,7 @@
 			};
 		}
 		// if the user is not an admin, redirect to the home page
-		if(permission != 'admin' && permission != 'super_admin'){
+		if (permission != 'admin' && permission != 'super_admin') {
 			return {
 				status: 301,
 				redirect: '/'
@@ -36,13 +36,15 @@
 		await fetch(`http://localhost:8000/users?${searchQueries}`, {
 			method: 'GET',
 			headers: {
-				'Content-Type': 'application/json',
+				'Content-Type': 'application/json'
 			}
-		}).then((res) => {
-			return res.json();
-		}).then((data) => {
-			usersOrErr = data;
 		})
+			.then((res) => {
+				return res.json();
+			})
+			.then((data) => {
+				usersOrErr = data;
+			});
 		return {
 			props: {
 				adminId,
@@ -64,8 +66,11 @@
 	import { republics } from '$lib/Assets/republics.json';
 	import { searchparams } from '$lib/stores';
 
-	export let searchQueries: string = '', adminId: number = 0, usersOrErr: any = [];
-	export let token: string = '', real_id: number = 0;
+	export let searchQueries: string = '',
+		adminId: number = 0,
+		usersOrErr: any = [];
+	export let token: string = '',
+		real_id: number = 0;
 	const { utils } = XLSX;
 	let userCont = '' as unknown as HTMLElement;
 	let toolbar = '' as unknown as HTMLElement;
@@ -91,15 +96,15 @@
 		eduType: string | undefined,
 		institute: string | undefined,
 		year: string | undefined;
-	let userPermission : string | undefined;
+	let userPermission: string | undefined;
 	eduType = 'Choose...';
 	interface searchParams {
 		email: string | undefined;
 		search: string | undefined;
 		region: string | undefined;
 		institution_type: string | undefined;
-		institution_name: string| undefined;
-		institution_course: string| undefined;
+		institution_name: string | undefined;
+		institution_course: string | undefined;
 		permission: string | undefined;
 	}
 	let searchParams: searchParams = {
@@ -121,7 +126,7 @@
 		searchParams.permission = userPermission;
 
 		// form validation
-		let check = Object.values(searchParams).every((item) => (item === undefined || item === null));
+		let check = Object.values(searchParams).every((item) => item === undefined || item === null);
 		if (check) {
 			alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
 										<strong>Error!</strong> Please fill at least one field.
@@ -130,10 +135,11 @@
 			return;
 		}
 
-		for(let key in searchParams) {
-			if(searchParams[key] === "" || searchParams[key] == "Choose..." || searchParams[key] == null) searchParams[key] = undefined;
+		for (let key in searchParams) {
+			// @ts-ignore
+			if (searchParams[key] === '' || searchParams[key] == 'Choose...' || searchParams[key] == null) searchParams[key] = undefined;
 		}
-		
+
 		alertCont.innerHTML = '';
 
 		// Removing the undefinded values from the search params
@@ -160,11 +166,11 @@
 		}
 	}
 	let users = [] as any;
-	
+
 	let headers = '';
-	let resultsNumber : number | undefined;
+	let resultsNumber: number | undefined;
 	onMount(() => {
-		if(usersOrErr.details === undefined && usersOrErr.detail === undefined){
+		if (usersOrErr.details === undefined && usersOrErr.detail === undefined) {
 			users = usersOrErr.items;
 			resultsNumber = users.length;
 		} else {
@@ -177,11 +183,11 @@
 			let searchParams = new URLSearchParams(searchQueries);
 			email = searchParams.get('email') ? searchParams.get('email')! : undefined;
 			name = searchParams.get('search') ? searchParams.get('search')! : undefined;
-			region = searchParams.get('region')? searchParams.get('region')! : undefined;
-			eduType = searchParams.get('institution_type')? searchParams.get('institution_type')! : undefined;
-			institute = searchParams.get('institution_name')? searchParams.get('institution_name')! : undefined;
+			region = searchParams.get('region') ? searchParams.get('region')! : undefined;
+			eduType = searchParams.get('institution_type') ? searchParams.get('institution_type')! : undefined;
+			institute = searchParams.get('institution_name') ? searchParams.get('institution_name')! : undefined;
 			year = searchParams.get('institution_course') ? searchParams.get('institution_course')! : undefined;
-			userPermission = searchParams.get('permission')? searchParams.get('permission')! : undefined;
+			userPermission = searchParams.get('permission') ? searchParams.get('permission')! : undefined;
 		}
 		// Intilize userBinds
 		userBinds = Array(resultsNumber).fill(document.createElement('div'));
@@ -259,18 +265,18 @@
 		}
 		alertCont.innerHTML = '';
 		let check = confirm(`Are you sure you want to merge these users-(${ids[0]}-${ids[1]})?`);
-		if(check){
+		if (check) {
 			// Send merge request
 			await fetch('http://localhost:8000/users/merge', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${token}`
+					Authorization: `Bearer ${token}`
 				},
 				body: JSON.stringify({
 					from_id: ids[0],
-					to_id: ids[1],
-				}),
+					to_id: ids[1]
+				})
 			}).then((res) => {
 				if (res.status === 200) {
 					alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -295,32 +301,32 @@
 												</div>`;
 					});
 				}
-			})
+			});
 		}
 	}
 
 	// Edit user
-	function editUser(userId : string) {
+	function editUser(userId: string) {
 		// Get user data
 		window.location.href = `${base}/info/${userId}`;
 	}
 	let selectedUsersArray = [] as any;
-	async function getUsersData(){
-		for(let i = 0; i < Array.from(selectedIds).length ; i++){
+	async function getUsersData() {
+		for (let i = 0; i < Array.from(selectedIds).length; i++) {
 			let userId = Array.from(selectedIds)[i];
 			// Request user data
 			await fetch(`http://localhost:8000/users/${userId}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`,
-				},
-			})  .then((res) => res.json())
+					Authorization: `Bearer ${token}`
+				}
+			})
+				.then((res) => res.json())
 				.then((data) => {
-					if(data.error === undefined){
+					if (data.error === undefined) {
 						selectedUsersArray.push(data);
 						console.log(data);
-						
 					} else {
 						alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
 										<strong>Error!</strong> ${data.error}.
@@ -362,9 +368,7 @@
 </script>
 
 <svelte:head>
-	<script
-		defer
-		src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+	<script defer src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 	<title>Search results</title>
 </svelte:head>
 {#if resultsNumber == undefined}
@@ -373,20 +377,10 @@
 	</div>
 {:else if resultsNumber == 0}
 	<section class="notfound">
-		<lottie-player
-			src={lottieNotfound}
-			background="transparent"
-			speed="1"
-			loop
-			autoplay
-			nocontrols
-		/>
+		<lottie-player src={lottieNotfound} background="transparent" speed="1" loop autoplay nocontrols />
 		<h1>No results found</h1>
 		<p>Try to search for something else.</p>
-		<button
-			class="btn btn-primary d-flex gap-3 align-items-center"
-			on:click={() => window.location.href = `${base}/admin/${adminId}`}
-		>
+		<button class="btn btn-primary d-flex gap-3 align-items-center" on:click={() => (window.location.href = `${base}/admin/${adminId}`)}>
 			<i class="fa fa-arrow-left" />
 			Back
 		</button>
@@ -402,10 +396,7 @@
 					<h4 class="p-0 m-0">Search results</h4>
 				</div>
 				<div class="navbar-nav">
-					<button
-						class="btn d-flex gap-3 align-items-center"
-						on:click={() => window.location.href = `${base}/admin/${adminId}`}
-					>
+					<button class="btn d-flex gap-3 align-items-center" on:click={() => (window.location.href = `${base}/admin/${adminId}`)}>
 						<i class="fa fa-arrow-left" />
 						Back
 					</button>
@@ -525,7 +516,8 @@
 									</div>
 								{/if}
 							</div>
-							<button class="btn" on:click={queryParams}>Search</button>						</div>
+							<button class="btn" on:click={queryParams}>Search</button>
+						</div>
 					</div>
 					<!-- <div class="managment" style="display: none">
 						<div class="card-header d-flex justify-content-left align-items-center">
@@ -591,34 +583,24 @@
 								{#if i % 2 == 0}
 									<div class="userInfo even d-flex flex-row align-items-center">
 										<div class="selectBox m-1 me-4 mb-0">
-											<i
-												class="select fa fa-square-o"
-												id={user.id}
-												bind:this={userBinds[i]}
-												on:click|capture={() => handleSelect(i)}
-											/>
+											<i class="select fa fa-square-o" id={user.id} bind:this={userBinds[i]} on:click|capture={() => handleSelect(i)} />
 										</div>
 										<div class="info">
 											<div class="d-flex justify-content-between align-items-center">
-												<span class="d-inline">{user.name + ' ' +user.surname}</span>
-												<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc" on:click={()=>editUser(user.id)}/>
+												<span class="d-inline">{user.name + ' ' + user.surname}</span>
+												<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc" on:click={() => editUser(user.id)} />
 											</div>
 										</div>
 									</div>
 								{:else}
 									<div class="userInfo d-flex flex-row align-items-center">
 										<div class="selectBox m-1 me-4 mb-0">
-											<i
-												class="select fa fa-square-o"
-												id={user.id}
-												bind:this={userBinds[i]}
-												on:click|capture={() => handleSelect(i)}
-											/>
+											<i class="select fa fa-square-o" id={user.id} bind:this={userBinds[i]} on:click|capture={() => handleSelect(i)} />
 										</div>
 										<div class="info">
 											<div class="d-flex justify-content-between align-items-center">
-												<span class="d-inline">{user.name + ' ' +user.surname}</span>
-												<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc" on:click={()=>editUser(user.id)}/>
+												<span class="d-inline">{user.name + ' ' + user.surname}</span>
+												<i class="fa fa-edit m-1" style="cursor:pointer; color:#3490dc" on:click={() => editUser(user.id)} />
 											</div>
 										</div>
 									</div>
@@ -644,56 +626,31 @@
 			</div>
 		</div>
 		<div class="toolbar shadow d-flex flex-row align-items-stretch" bind:this={toolbar}>
-			<i
-				class="fa fa-cogs me-3 d-flex justify-contnet-center align-items-center"
-				on:click={toggleToolbar}
-			/>
+			<i class="fa fa-cogs me-3 d-flex justify-contnet-center align-items-center" on:click={toggleToolbar} />
 			<div class="btn-group-vertical gap-2 me-2 align-items-stretch" role="group">
-				<button
-					type="button"
-					class="toolbarBtn d-flex align-items-center rounded-1"
-					on:click={sellectAll}
-				>
+				<button type="button" class="toolbarBtn d-flex align-items-center rounded-1" on:click={sellectAll}>
 					<i class="fa fa-plus me-3" />
 					Select all
 				</button>
-				<button
-					type="button"
-					class="toolbarBtn d-flex align-items-center rounded-1"
-					on:click={deselectAll}
-				>
+				<button type="button" class="toolbarBtn d-flex align-items-center rounded-1" on:click={deselectAll}>
 					<i class="fa fa-minus me-3" />
 					Deselect all
 				</button>
-				<button
-					type="button"
-					class="toolbarBtn d-flex align-items-center rounded-1"
-					on:click={merge}
-				>
+				<button type="button" class="toolbarBtn d-flex align-items-center rounded-1" on:click={merge}>
 					<i class="fa-solid fa-code-merge me-3" />
 					Merge selected
 				</button>
 				<div class="dropdown toolbarBtn d-flex align-items-center rounded-1 p-0">
-					<button
-						class="btn toolbarBtn dropdown-toggle"
-						type="button"
-						id="dropdownMenuButton1"
-						data-bs-toggle="dropdown"
-						aria-expanded="false"
-					>
+					<button class="btn toolbarBtn dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
 						<i class="fa fa-download m-0 me-3" />
 						Download selected
 					</button>
 					<ul class="dropdown-menu">
 						<li class="dropdown-item">
-							<span class="dropdown-item" style:cursor="pointer" on:click={downloadasCSV}>
-								CSV
-							</span>
+							<span class="dropdown-item" style:cursor="pointer" on:click={downloadasCSV}> CSV </span>
 						</li>
 						<li class="dropdown-item">
-							<span class="dropdown-item" style:cursor="pointer" on:click={downloadasExcel}>
-								Excel (.xlsx)</span
-							>
+							<span class="dropdown-item" style:cursor="pointer" on:click={downloadasExcel}> Excel (.xlsx)</span>
 						</li>
 					</ul>
 				</div>
@@ -760,8 +717,7 @@
 			display: flex;
 			flex-flow: column nowrap;
 			justify-content: center;
-			button,
-			.card-body > button {
+			button {
 				background-color: $secondary-color;
 				color: white;
 				border: none;
@@ -871,7 +827,8 @@
 		left: 30px;
 	}
 	@media screen and (max-width: 650px) {
-		.filter, .results{
+		.filter,
+		.results {
 			max-width: 100% !important;
 			min-width: 100% !important;
 			width: 100% !important;

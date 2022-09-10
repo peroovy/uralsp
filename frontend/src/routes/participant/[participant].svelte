@@ -33,20 +33,20 @@
 		let UpComming_competitions = await fetch(`http://localhost:8000/competitions?opened=false`, {
 			method: 'GET',
 			headers: {
-				'Content-Type': 'application/json',
-			},
+				'Content-Type': 'application/json'
+			}
 		});
 		let Ongoing_competitions = await fetch(`http://localhost:8000/competitions?opened=true`, {
 			method: 'GET',
 			headers: {
-				'Content-Type': 'application/json',
-			},
+				'Content-Type': 'application/json'
+			}
 		});
 		let Started_competitions = await fetch(`http://localhost:8000/competitions?started=true`, {
 			method: 'GET',
 			headers: {
-				'Content-Type': 'application/json',
-			},
+				'Content-Type': 'application/json'
+			}
 		});
 		let requests = await fetch(`http://localhost:8000/users/current/requests`, {
 			method: 'GET',
@@ -54,7 +54,7 @@
 				'Content-Type': 'application/json',
 				Authorization: 'Bearer ' + token
 			}
-		}).then (res => res.json());
+		}).then((res) => res.json());
 		let userInfo = await userData.json();
 		let upComming_competitions = await UpComming_competitions.json();
 		let started_competitions = await Started_competitions.json();
@@ -82,8 +82,10 @@
 	import { onMount } from 'svelte';
 	import lottieNotFoundSrc from '$lib/Assets/animations/lottie-notfound2.json?url';
 	export let userInfo: UserData;
-	export let ongoing_competition: Competitions = [], upComming_competitions : Competitions = [], started_competitions : Competitions = [];
-	export let requests : Requests = [];
+	export let ongoing_competition: Competitions = [],
+		upComming_competitions: Competitions = [],
+		started_competitions: Competitions = [];
+	export let requests: Requests = [];
 	let userId: number;
 	let paricipantName = '';
 	onMount(() => {
@@ -110,7 +112,7 @@
 	// Applications
 	function cancelApplication(id: number) {
 		let confirmation = confirm('Are you sure you want to cancel your application?');
-		if(!confirmation) return;
+		if (!confirmation) return;
 		fetch(`http://localhost:8000/users/current/requests/${id}/cancel`, {
 			method: 'PATCH',
 			headers: {
@@ -256,12 +258,16 @@
 
 	<div class="parts-container p-0" bind:this={sectionHolders}>
 		<div class="part_4 d-flex justify-content-center align-items-start">
-			<div class="row justify-content-center align-items-center gap-3 p-0 m-0" style="flex-flow: column nowrap; gap: 30px; width: max-content" id="upcomming">
+			<div
+				class="row justify-content-center align-items-center gap-3 p-0 m-0"
+				style="flex-flow: column nowrap; gap: 30px; width: max-content"
+				id="upcomming"
+			>
 				{#if upComming_competitions.length == 0}
 					<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
-						<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols></lottie-player>
-						<h2> No Upcomming registerations!</h2>
-						<small style = "margin-top:-10px; display:block; opacity: 0.7">  Please, try later. </small>
+						<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols />
+						<h2>No Upcomming registerations!</h2>
+						<small style="margin-top:-10px; display:block; opacity: 0.7"> Please, try later. </small>
 					</div>
 				{/if}
 				{#each upComming_competitions as competition}
@@ -312,26 +318,29 @@
 						</div>
 					</div>
 				{/each}
-
 			</div>
 		</div>
 		<div class="part_4 d-flex justify-content-center align-items-start">
-			<div class="row justify-content-center gap-4 justify-content-center align-items-center gap-3 p-0 m-0"  style="flex-flow: column nowrap; gap: 30px; width: max-content" id="ongoing">
-			{#if ongoing_competition.length == 0}
-			<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
-				<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols></lottie-player>
-				<h2> No ongoing registerations!</h2>
-				<small style = "margin-top:-10px; display:block; opacity: 0.7">  Please, try later. </small>
-			</div>
-			{:else}
+			<div
+				class="row justify-content-center gap-4 justify-content-center align-items-center gap-3 p-0 m-0"
+				style="flex-flow: column nowrap; gap: 30px; width: max-content"
+				id="ongoing"
+			>
+				{#if ongoing_competition.length == 0}
+					<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
+						<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols />
+						<h2>No ongoing registerations!</h2>
+						<small style="margin-top:-10px; display:block; opacity: 0.7"> Please, try later. </small>
+					</div>
+				{:else}
 					{#each ongoing_competition as comp}
-						{@const diff =  Date.parse(comp.registration_end) - Date.parse(Date())}
-						{@const regDay = new Date (Date.parse(comp.registration_start)).toDateString()}
+						{@const diff = Date.parse(comp.registration_end) - Date.parse(Date())}
+						{@const regDay = new Date(Date.parse(comp.registration_start)).toDateString()}
 						{@const days = Math.floor(diff / (1000 * 60 * 60 * 24))}
 						{@const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))}
 						{@const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))}
 						{@const seconds = Math.floor((diff % (1000 * 60)) / 1000)}
-						{@const ApplyLink = '/contests/apply/'+comp.id}
+						{@const ApplyLink = '/contests/apply/' + comp.id}
 						<div class="col-md">
 							<div class="card shadow-sm border-0">
 								<div class="card-header bg-light">
@@ -387,49 +396,49 @@
 				<div class="col-md">
 					{#if started_competitions.length == 0}
 						<div class="text-center p-3 notFound" style="background: white">
-							<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols></lottie-player>
-							<h2> No ongoing registerations!</h2>
-							<small style = "margin-top:-10px; display:block; opacity: 0.7">  Please, try later. </small>
+							<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols />
+							<h2>No ongoing registerations!</h2>
+							<small style="margin-top:-10px; display:block; opacity: 0.7"> Please, try later. </small>
 						</div>
 					{:else}
-					{#each started_competitions as comp}
-						{@const StartDay = new Date (Date.parse(comp.started_at)).toDateString()}
+						{#each started_competitions as comp}
+							{@const StartDay = new Date(Date.parse(comp.started_at)).toDateString()}
 
-						<div class="col-md-5" style:width="fit-content">
-							<div class="card shadow-sm border-0">
-								<div class="card-header bg-light">
-									<nav class="navbar navbar-expand-lg bg-light navbar-light mb-3 align-items-center">
-										<div class="navbar-brand">
-											<h4 class="m-0">{comp.name}</h4>
+							<div class="col-md-5" style:width="fit-content">
+								<div class="card shadow-sm border-0">
+									<div class="card-header bg-light">
+										<nav class="navbar navbar-expand-lg bg-light navbar-light mb-3 align-items-center">
+											<div class="navbar-brand">
+												<h4 class="m-0">{comp.name}</h4>
+											</div>
+										</nav>
+									</div>
+									<div class="card-body gap-2">
+										<table class="table">
+											<tbody>
+												<tr>
+													<th scope="row"><i class="fa-solid fa-calendar" /></th>
+													<td>Start date</td>
+													<td colspan="2">{StartDay}</td>
+												</tr>
+												<tr>
+													<th scope="row"><i class="fa fa-group" /></th>
+													<td colspan="2">Number of Contestant per team</td>
+													<td>{comp.persons_amount}</td>
+												</tr>
+											</tbody>
+										</table>
+										<div class="btn btn-group gap-2 on:click={showContest}">
+											<button class="btn btn-primary" on:click={showContest}>
+												<a class="link-light" href={comp.link} target="_blank">
+													<span class="fa fa-eye" />
+													<span> View full Contest</span>
+												</a>
+											</button>
 										</div>
-									</nav>
-								</div>
-								<div class="card-body gap-2">
-									<table class="table">
-										<tbody>
-											<tr>
-												<th scope="row"><i class="fa-solid fa-calendar" /></th>
-												<td>Start date</td>
-												<td colspan="2">{StartDay}</td>
-											</tr>
-											<tr>
-												<th scope="row"><i class="fa fa-group" /></th>
-												<td colspan="2">Number of Contestant per team</td>
-												<td>{comp.persons_amount}</td>
-											</tr>
-										</tbody>
-									</table>
-									<div class="btn btn-group gap-2 on:click={showContest}">
-										<button class="btn btn-primary" on:click={showContest}>
-											<a class="link-light" href={comp.link} target="_blank">
-												<span class="fa fa-eye" />
-												<span> View full Contest</span>
-											</a>
-										</button>
 									</div>
 								</div>
 							</div>
-						</div>
 						{/each}
 					{/if}
 				</div>
@@ -439,21 +448,21 @@
 			<div class="row part_4 justify-content-center align-items-center gap-3 p-0 m-0" id="requests">
 				{#if requests.length == 0}
 					<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
-						<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols></lottie-player>
-						<h2> No requests found</h2>
-						<small style = "margin-top:-10px; display:block; opacity: 0.7">  Please, try later. </small>
+						<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols />
+						<h2>No requests found</h2>
+						<small style="margin-top:-10px; display:block; opacity: 0.7"> Please, try later. </small>
 					</div>
 				{:else}
 					<div class="row justify-content-center algin-itmes-start">
 						{#each requests as request}
-							{@const createdAt = new Date (Date.parse(request.created_at))}
+							{@const createdAt = new Date(Date.parse(request.created_at))}
 							<div class="card p-0 col-md-6 border-0 shadow-sm" style="max-width: 500px; min-width: max-content">
 								<h4 class="card-header p-4 m-0">
-									<li class="fa fa-paper-plane me-1"></li>
+									<li class="fa fa-paper-plane me-1" />
 									{request.team_name}
 								</h4>
 								<div class="card-body">
-									<p class="request-description"> {request.description ? request.description : "No description"} </p>
+									<p class="request-description">{request.description ? request.description : 'No description'}</p>
 
 									<table class="table table-striped table-hover">
 										<tbody>
@@ -463,7 +472,7 @@
 											</tr>
 											<tr>
 												<th scope="row">Created at</th>
-												<td>{createdAt.toDateString()}, {createdAt.getHours() + ":" + createdAt.getMinutes() + ":" + createdAt.getSeconds()}</td>
+												<td>{createdAt.toDateString()}, {createdAt.getHours() + ':' + createdAt.getMinutes() + ':' + createdAt.getSeconds()}</td>
 											</tr>
 											<tr>
 												<th scope="row">Participants IDs</th>
@@ -472,13 +481,21 @@
 										</tbody>
 									</table>
 									<div class="btn gap-2">
-										<button class="btn btn-primary btn-sm" on:click={()=> editApplication(request.competition)}> <li class="fa fa-edit" /> Edit </button>
+										<button class="btn btn-primary btn-sm" on:click={() => editApplication(request.competition)}>
+											<li class="fa fa-edit" />
+											 Edit
+										</button>
 										{#if request.status != 'canceled' && request.status != 'cancelled'}
-											<button class="btn btn-danger btn-sm" on:click={()=> cancelApplication(request.id)}> <li class="fa fa-trash" /> Cancel </button>
+											<button class="btn btn-danger btn-sm" on:click={() => cancelApplication(request.id)}>
+												<li class="fa fa-trash" />
+												 Cancel
+											</button>
 										{:else if request.status == 'canceled' || request.status == 'cancelled'}
-											<button class="btn btn-success btn-sm" on:click={()=> renewApplication(request.id)}> <li class="fa fa-trash-restore" /> Renew </button>
+											<button class="btn btn-success btn-sm" on:click={() => renewApplication(request.id)}>
+												<li class="fa fa-trash-restore" />
+												 Renew
+											</button>
 										{/if}
-
 									</div>
 								</div>
 							</div>
@@ -527,7 +544,7 @@
 		height: fit-content !important;
 		flex-direction: row nowrap;
 	}
-	.request-description{
+	.request-description {
 		font-family: 'light';
 		line-height: 25px;
 		font-size: 16px;
@@ -546,12 +563,12 @@
 		z-index: 10 !important;
 		background-color: #f8f9fa !important;
 	}
-	.notFound{
+	.notFound {
 		font-family: 'light';
 		font-size: 18px;
 		padding-bottom: 100px !important;
-		h2{
-			margin-top: -40px
+		h2 {
+			margin-top: -40px;
 		}
 	}
 	@media screen and (min-width: 1000px) {

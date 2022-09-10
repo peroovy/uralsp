@@ -3,10 +3,10 @@
 	import { parsePayload } from '$lib/parse';
 
 	// @ts-ignore
-	export async function load({params}) {
+	export async function load({ params }) {
 		if (!browser) return;
 		let token = localStorage.getItem('access_token');
-		
+
 		if (token == null) {
 			return {
 				// status: 301,
@@ -22,7 +22,7 @@
 				redirect: '/'
 			};
 		}
-		
+
 		// Retrieve all the available fields
 		let fields = await fetch('http://127.0.0.1:8000/fields', {
 			method: 'GET',
@@ -40,33 +40,33 @@
 			};
 		}
 
-
 		// Parse the params
 		let contestId = parseInt(params.contestId);
 
 		let contest;
-		if(!isNaN(contestId)) {
+		if (!isNaN(contestId)) {
 			// Retrieve the contest
 			contest = await fetch(`http://localhost:8000/competitions/${contestId}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json'
 				}
-			}).then(res => res.json())
-				.then(data => data)
-				.catch(err => {
+			})
+				.then((res) => res.json())
+				.then((data) => data)
+				.catch((err) => {
 					return {
 						status: 301,
 						redirect: '/'
 					};
 				});
-				// In case of something goes wrong
-				if (contest.error != undefined) {
-					return {
-						status: 301,
-						redirect: '/'
-					};
-				}
+			// In case of something goes wrong
+			if (contest.error != undefined) {
+				return {
+					status: 301,
+					redirect: '/'
+				};
+			}
 		}
 
 		return {
@@ -88,20 +88,20 @@
 	import { onMount } from 'svelte';
 	import lottieInfoSrc from '$lib/Assets/animations/lottie-info.json?url';
 	import lottieEmptySrc from '$lib/Assets/animations/lottie-empty.json?url';
-	import type { CompetitionWithFields } from '$lib/types';
+	import type { CompetitionWithFields, Field } from '$lib/types';
 
 	sessionDuration();
 
 	export let id: number, permission: string, fields_data, access_token: string;
 	export let contest: undefined | CompetitionWithFields;
-	
+
 	let questionId = '',
 		questionTitle = '',
 		default_value = '',
-		questionType : string | undefined = undefined;
+		questionType: string | undefined = undefined;
 
-	let selectedOldField;
-	let filtered = [];
+	let selectedOldField = {} as Field;
+	let filtered = [] as Field[];
 	let monitorId: number | undefined;
 	let contestantsPerTeam: number | undefined;
 
@@ -117,20 +117,20 @@
 	let is_visible = false,
 		is_requiered = false;
 	let fields = fields_data;
-	$: contestName = ''
-	$:	contestLink = ''
-	$:	startOn = ''
-	$:	startAt = ''
-	$:	regStartOn = ''
-	$:	regStartAt = ''
-	$:	regEndOn = ''
-	$:	regEndAt = ''
-	$:	category = ''
+	$: contestName = '';
+	$: contestLink = '';
+	$: startOn = '';
+	$: startAt = '';
+	$: regStartOn = '';
+	$: regStartAt = '';
+	$: regEndOn = '';
+	$: regEndAt = '';
+	$: category = '';
 
-	let formFields = [];
+	let formFields = [] as Field[];
 
 	function filterFields() {
-		filtered = fields.filter((item) => {
+		filtered = fields.filter((item: Field) => {
 			if (questionId !== '') {
 				if (item.name.toLowerCase().indexOf(questionId.toLowerCase()) === -1) {
 					return false;
@@ -144,7 +144,7 @@
 		}
 	}
 	function chooseField(id: string) {
-		selectedOldField = fields.find((item) => {
+		selectedOldField = fields.find((item: Field) => {
 			return item.id === id;
 		});
 		if (selectedOldField) {
@@ -209,7 +209,7 @@
 		};
 		// If the selected field has been modified
 		if (selectedOldField && selectedOldField.id == newField.id) {
-			let index = fields.findIndex((item) => {
+			let index = fields.findIndex((item: Field) => {
 				return item.id === questionId;
 			});
 			// compare the old and new field
@@ -231,25 +231,29 @@
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					'Authorization': `Bearer `+ access_token
+					Authorization: `Bearer ` + access_token
 				},
 				body: JSON.stringify(newField)
-			}).then((res) => {
-				if (res.status === 200) {
-					fields.push(newField);
-				}
-			}).catch((err) => {
-				showMessage('error', 'Error adding new field.');
-			}).finally(() => {
-				questionId = '';
-				questionTitle = '';
-				questionType = '';
-				is_visible = true;
-				is_requiered = true;
-				default_value = '';
-			}).then(() => {
-				filterFields();
-			});
+			})
+				.then((res) => {
+					if (res.status === 200) {
+						fields.push(newField);
+					}
+				})
+				.catch((err) => {
+					showMessage('error', 'Error adding new field.');
+				})
+				.finally(() => {
+					questionId = '';
+					questionTitle = '';
+					questionType = '';
+					is_visible = true;
+					is_requiered = true;
+					default_value = '';
+				})
+				.then(() => {
+					filterFields();
+				});
 		}
 
 		// Add the field to the form preview
@@ -262,7 +266,7 @@
 		is_visible = false;
 		is_requiered = false;
 		default_value = '';
-		selectedOldField = null;
+		selectedOldField = {} as Field;
 		filtered = [];
 		suggestions.classList.remove('show');
 		addToPreview();
@@ -270,18 +274,18 @@
 	async function updateField() {
 		// TODO: SEND updates to server
 		let questionTypeNum = 0;
-		if(questionType === 'Short answer question/ Single-line text input field') {
+		if (questionType === 'Short answer question/ Single-line text input field') {
 			questionTypeNum = 0;
-		} else if(questionType === 'Long answer question/ Multi-line text input field') {
+		} else if (questionType === 'Long answer question/ Multi-line text input field') {
 			questionTypeNum = 1;
-		} else if(questionType === 'Upload file') {
+		} else if (questionType === 'Upload file') {
 			questionTypeNum = 2;
 		}
 		await fetch(`http://localhost:8000/fields/${questionId}`, {
 			method: 'PUT',
 			headers: {
 				'Content-Type': 'application/json',
-				'Authorization': `Bearer `+ access_token
+				Authorization: `Bearer ` + access_token
 			},
 			body: JSON.stringify({
 				name: questionTitle,
@@ -290,15 +294,17 @@
 				is_visible: is_visible,
 				default_values: [default_value]
 			})
-		}).then((res) => {
-			if (res.status === 200) {
-				showMessage('Success', 'Field updated successfully!');
-			} else {
-				showMessage('Error', 'Something went wrong!');
-			}
-		}).catch((err) => {
-			showMessage('Error', 'Something went wrong!: ' + err);
 		})
+			.then((res) => {
+				if (res.status === 200) {
+					showMessage('Success', 'Field updated successfully!');
+				} else {
+					showMessage('Error', 'Something went wrong!');
+				}
+			})
+			.catch((err) => {
+				showMessage('Error', 'Something went wrong!: ' + err);
+			});
 		// update the selected old field
 		selectedOldField = {
 			id: questionId,
@@ -322,7 +328,7 @@
 				is_visible = false;
 				is_requiered = false;
 				default_value = '';
-				selectedOldField = null;
+				selectedOldField = {} as Field;
 				filtered = [];
 				suggestions.classList.remove('show');
 			}
@@ -331,7 +337,7 @@
 	async function removeField(): Promise<void> {
 		if (selectedOldField) {
 			if (confirm(`Do you want to delete the selected field with the id: ${selectedOldField.id}?`)) {
-				let index = fields.findIndex((item) => {
+				let index = fields.findIndex((item: Field) => {
 					return item.id === selectedOldField.id;
 				});
 				fields.splice(index, 1);
@@ -341,24 +347,26 @@
 					body: JSON.stringify({
 						fields: fields
 					})
-				}).then((res) => {
-					if (res.status === 200) {
-						showMessage('Success', 'Field deleted successfully!');
-					} else {
-						showMessage('Error', 'Something went wrong!');
-						return ;
-					}
-				}).catch((err) => {
-					showMessage('Error', 'Something went wrong!');
-					return ;
 				})
+					.then((res) => {
+						if (res.status === 200) {
+							showMessage('Success', 'Field deleted successfully!');
+						} else {
+							showMessage('Error', 'Something went wrong!');
+							return;
+						}
+					})
+					.catch((err) => {
+						showMessage('Error', 'Something went wrong!');
+						return;
+					});
 				// Remove the field from the form preview
 				formFields = formFields.filter((item) => {
 					return item.id === selectedOldField.id ? false : true;
 				});
 
 				// Reset
-				selectedOldField = null;
+				selectedOldField = {} as Field;
 				filtered = [];
 				suggestions.classList.remove('show');
 				questionId = '';
@@ -376,7 +384,7 @@
 		formFields.forEach((field) => {
 			let type = 'text';
 			if (field.type == 0) {
-				type = "text";
+				type = 'text';
 			} else if (field.type === 1) {
 				type = 'textarea';
 			} else if (field.type == 2) {
@@ -386,7 +394,7 @@
 			let newField = document.createElement('div');
 			newField.classList.add('form-field');
 			if (type == 'textarea') {
-				newField.innerHTML = `<div class="d-flex row col-12 m-0" data-id="${(field.id).trim()}">
+				newField.innerHTML = `<div class="d-flex row col-12 m-0" data-id="${field.id.trim()}">
 										<div class="d-flex col-12 justify-content-between align-items-baseline">
 											<div class="col-md-6">
 												<label for="${field.id}">${field.name}</label>
@@ -418,22 +426,23 @@
 											</div>
 										</div>
 										<input type="${type}" class="form-control" placeholder="Enter ${field.name}" value="${field.default_values[0]}" ${
-											field.is_required ? 'required' : ''
-										}">
+					field.is_required ? 'required' : ''
+				}">
 									</div>`;
 			}
 			formPreview.appendChild(newField);
 			let editBtn = newField.children[0].children[0].children[1].children[1].children[0];
 			let removeBtn = newField.children[0].children[0].children[1].children[1].children[1];
 			editBtn.addEventListener('click', () => {
-				if (editBtn.dataset.click) {
-					let id = editBtn.dataset.click;
+				if ((editBtn as HTMLElement).dataset.click) {
+					let id = (editBtn as HTMLElement).dataset.click;
+					if (!id) return;
 					chooseField(id);
 				}
 			});
 			removeBtn.addEventListener('click', () => {
-				if (removeBtn.dataset.click) {
-					let id = removeBtn.dataset.click;
+				if ((removeBtn as HTMLElement).dataset.click) {
+					let id = (removeBtn as HTMLElement).dataset.click;
 					// Remove from formFields
 					formFields = formFields.filter((field) => {
 						return field.id != id;
@@ -464,7 +473,7 @@
 	}
 	let monitors: Array<number> = [];
 	function addMonitor(id: number | undefined, printMsg: boolean = true): void {
-		if(permission != "super_admin") return;
+		if (permission != 'super_admin') return;
 		if (id === undefined) {
 			showMessage('Error', 'Please enter a valid ID');
 			return;
@@ -502,7 +511,7 @@
 			monitorsCont.removeChild(newMonitor);
 		});
 		// Success mesage
-		if(printMsg){
+		if (printMsg) {
 			showMessage('Success', `Monitor with id: ${id} added to monitor list.`);
 		}
 		monitorId = undefined;
@@ -528,37 +537,31 @@
 		}
 	}
 	let comp = {
-		name: "string",
-		registration_start: "2022-08-27T20:24:53.677Z",
-		registration_end: "2022-08-27T20:24:53.677Z",
-		started_at: "2022-08-27T20:24:53.677Z",
+		name: 'string',
+		registration_start: '2022-08-27T20:24:53.677Z',
+		registration_end: '2022-08-27T20:24:53.677Z',
+		started_at: '2022-08-27T20:24:53.677Z',
 		persons_amount: 1,
-		request_template: "string",
-		link: "string",
-		fields: [
-			"string"
-		],
-		admins: [
-			0
-		]
-	}
+		request_template: 'string',
+		link: 'string',
+		fields: ['string'],
+		admins: [0]
+	};
 	async function create(): Promise<void> {
-		if(permission != "super_admin") return;
+		if (permission != 'super_admin') return;
 		comp.name = contestName;
-		comp.registration_start = regStartOn+"T"+regStartAt+":00.000Z";
-		comp.registration_end = regEndOn+"T"+regEndAt+":00.000Z";
-		comp.started_at = startOn+"T"+startAt+":00.000Z";
-		if(contestantsPerTeam === undefined) {
+		comp.registration_start = regStartOn + 'T' + regStartAt + ':00.000Z';
+		comp.registration_end = regEndOn + 'T' + regEndAt + ':00.000Z';
+		comp.started_at = startOn + 'T' + startAt + ':00.000Z';
+		if (contestantsPerTeam === undefined) {
 			comp.persons_amount = 1;
 		} else {
 			comp.persons_amount = contestantsPerTeam;
 		}
-		let template = "";
+		let template = '';
 		formFields.forEach((field) => {
 			let type = 'text';
-			if (field.type == 'text') {
-				type = field.category.toLowerCase;
-			} else if (field.type === 1) {
+			if (field.type === 1) {
 				type = 'textarea';
 			} else if (field.type == 2) {
 				type = 'file';
@@ -567,7 +570,7 @@
 			let newField = document.createElement('div');
 			newField.classList.add('form-field');
 			if (type == 'textarea') {
-				newField.innerHTML = `<div class="d-flex row col-12 m-0" data-id="${(field.id).trim()}">
+				newField.innerHTML = `<div class="d-flex row col-12 m-0" data-id="${field.id.trim()}">
 										<div class="d-flex col-12 justify-content-between align-items-baseline">
 											<div class="col-md-6">
 												<label for="${field.id}">${field.name}</label>
@@ -585,8 +588,8 @@
 											</div>
 										</div>
 										<input type="${type}" class="form-control" placeholder="Enter ${field.name}" value="${field.default_values[0]}" ${
-											field.is_required ? 'required' : ''
-										}">
+					field.is_required ? 'required' : ''
+				}">
 									</div>`;
 			}
 			template += newField.innerHTML;
@@ -601,42 +604,42 @@
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${access_token}`
+				Authorization: `Bearer ${access_token}`
 			},
 			body: JSON.stringify(comp)
-		}).then(res => {
-			if (res.status === 200) {
-				showMessage('Success', 'Competition created successfully.');
-			} else {
-				// show the error message
-				showMessage('Error', 'Something went wrong.');
-				res.json().then(data => {
-					console.log(data)
-					showMessage(res.statusText, (data.details !== undefined)? data.details: "Please fill the form correctly!");
-				});
-			}
-		}).catch(err => {
-			let error = '';
-			showMessage('Error', 'Something went wrong: ' + err);
-		});
+		})
+			.then((res) => {
+				if (res.status === 200) {
+					showMessage('Success', 'Competition created successfully.');
+				} else {
+					// show the error message
+					showMessage('Error', 'Something went wrong.');
+					res.json().then((data) => {
+						console.log(data);
+						showMessage(res.statusText, data.details !== undefined ? data.details : 'Please fill the form correctly!');
+					});
+				}
+			})
+			.catch((err) => {
+				let error = '';
+				showMessage('Error', 'Something went wrong: ' + err);
+			});
 	}
 
 	async function update(): Promise<void> {
 		comp.name = contestName;
-		comp.registration_start = regStartOn+"T"+regStartAt+"Z";
-		comp.registration_end = regEndOn+"T"+regEndAt+"Z";
-		comp.started_at = startOn+"T"+startAt+"Z";
-		if(contestantsPerTeam === undefined) {
+		comp.registration_start = regStartOn + 'T' + regStartAt + 'Z';
+		comp.registration_end = regEndOn + 'T' + regEndAt + 'Z';
+		comp.started_at = startOn + 'T' + startAt + 'Z';
+		if (contestantsPerTeam === undefined) {
 			comp.persons_amount = 1;
 		} else {
 			comp.persons_amount = contestantsPerTeam;
 		}
-		let template = "";
+		let template = '';
 		formFields.forEach((field) => {
 			let type = 'text';
-			if (field.type == 'text') {
-				type = field.category.toLowerCase;
-			} else if (field.type === 1) {
+			if (field.type == 1) {
 				type = 'textarea';
 			} else if (field.type == 2) {
 				type = 'file';
@@ -645,7 +648,7 @@
 			let newField = document.createElement('div');
 			newField.classList.add('form-field');
 			if (type == 'textarea') {
-				newField.innerHTML = `<div class="d-flex row col-12 m-0" data-id="${(field.id).trim()}">
+				newField.innerHTML = `<div class="d-flex row col-12 m-0" data-id="${field.id.trim()}">
 										<div class="d-flex col-12 justify-content-between align-items-baseline">
 											<div class="col-md-6">
 												<label for="${field.id}">${field.name}</label>
@@ -663,8 +666,8 @@
 											</div>
 										</div>
 										<input type="${type}" class="form-control" placeholder="Enter ${field.name}" value="${field.default_values[0]}" ${
-											field.is_required ? 'required' : ''
-										}">
+					field.is_required ? 'required' : ''
+				}">
 									</div>`;
 			}
 			template += newField.innerHTML;
@@ -675,100 +678,108 @@
 			return field.id;
 		});
 		comp.admins = monitors;
-		let updateFormOnly = confirm("Do you want to update the form only?");
-		if(updateFormOnly){
+		let updateFormOnly = confirm('Do you want to update the form only?');
+		if (updateFormOnly) {
 			// update the request template first
 			await fetch(`http://localhost:8000/competitions/${contest?.id}/request-template`, {
 				method: 'PATCH',
 				headers: {
 					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${access_token}`
+					Authorization: `Bearer ${access_token}`
 				},
-				body: JSON.stringify({ "request_template" : comp.request_template })
-			}).then(res => {
-				if (res.status === 200) {
-					showMessage('Success', 'Request template updated successfully.');
-				} else {
-					// show the error message
-					showMessage('Error', 'Something went wrong.');
-					res.json().then(data => {
-						console.log(data)
-						showMessage(res.statusText, (data.details !== undefined)? data.details: "Please fill the form correctly!");
-					});
-				}
-			}).catch(err => {
-				let error = '';
-				showMessage('Error', 'Something went wrong: ' + err);
-			});
+				body: JSON.stringify({ request_template: comp.request_template })
+			})
+				.then((res) => {
+					if (res.status === 200) {
+						showMessage('Success', 'Request template updated successfully.');
+					} else {
+						// show the error message
+						showMessage('Error', 'Something went wrong.');
+						res.json().then((data) => {
+							console.log(data);
+							showMessage(res.statusText, data.details !== undefined ? data.details : 'Please fill the form correctly!');
+						});
+					}
+				})
+				.catch((err) => {
+					let error = '';
+					showMessage('Error', 'Something went wrong: ' + err);
+				});
 			// update the fields
 			await fetch(`http://localhost:8000/competitions/${contest?.id}/form`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${access_token}`
+					Authorization: `Bearer ${access_token}`
 				},
-				body: JSON.stringify({ "fields" :comp.fields })
-			}).then(res => {
-				if (res.status === 200) {
-					showMessage('Success', 'Form fields updated successfully.');
-				} else {
-					// show the error message
-					showMessage('Error', 'Something went wrong.');
-					res.json().then(data => {
-						console.log(data)
-						showMessage(res.statusText, (data.details !== undefined)? data.details: "Please fill the form correctly!");
-					});
-				}
-			}).catch(err => {
-				let error = '';
-				showMessage('Error', 'Something went wrong: ' + err);
-			});
-		} else if(confirm("Do you want to update the form monitors list only?")) {
+				body: JSON.stringify({ fields: comp.fields })
+			})
+				.then((res) => {
+					if (res.status === 200) {
+						showMessage('Success', 'Form fields updated successfully.');
+					} else {
+						// show the error message
+						showMessage('Error', 'Something went wrong.');
+						res.json().then((data) => {
+							console.log(data);
+							showMessage(res.statusText, data.details !== undefined ? data.details : 'Please fill the form correctly!');
+						});
+					}
+				})
+				.catch((err) => {
+					let error = '';
+					showMessage('Error', 'Something went wrong: ' + err);
+				});
+		} else if (confirm('Do you want to update the form monitors list only?')) {
 			await fetch(`http://localhost:8000/competitions/${contest?.id}/admins`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${access_token}`
+					Authorization: `Bearer ${access_token}`
 				},
-				body: JSON.stringify({ "admins" : comp.admins })
-			}).then(res => {
-				if (res.status === 200) {
-					showMessage('Success', "monitors' list updated successfully.");
-				} else {
-					// show the error message
-					showMessage('Error', 'Something went wrong.');
-					res.json().then(data => {
-						console.log(data)
-						showMessage(res.statusText, (data.details !== undefined)? data.details: "Please fill the form correctly!");
-					});
-				}
-			}).catch(err => {
-				let error = '';
-				showMessage('Error', 'Something went wrong: ' + err);
-			});
+				body: JSON.stringify({ admins: comp.admins })
+			})
+				.then((res) => {
+					if (res.status === 200) {
+						showMessage('Success', "monitors' list updated successfully.");
+					} else {
+						// show the error message
+						showMessage('Error', 'Something went wrong.');
+						res.json().then((data) => {
+							console.log(data);
+							showMessage(res.statusText, data.details !== undefined ? data.details : 'Please fill the form correctly!');
+						});
+					}
+				})
+				.catch((err) => {
+					let error = '';
+					showMessage('Error', 'Something went wrong: ' + err);
+				});
 		} else {
 			await fetch(`http://localhost:8000/competitions/${contest?.id}`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${access_token}`
+					Authorization: `Bearer ${access_token}`
 				},
 				body: JSON.stringify(comp)
-			}).then(res => {
-				if (res.status === 200) {
-					showMessage('Success', 'competition updated successfully.');
-				} else {
-					// show the error message
-					showMessage('Error', 'Something went wrong.');
-					res.json().then(data => {
-						console.log(data)
-						showMessage(res.statusText, (data.details !== undefined)? data.details: "Please fill the form correctly!");
-					});
-				}
-			}).catch(err => {
-				let error = '';
-				showMessage('Error', 'Something went wrong: ' + err);
-			});
+			})
+				.then((res) => {
+					if (res.status === 200) {
+						showMessage('Success', 'competition updated successfully.');
+					} else {
+						// show the error message
+						showMessage('Error', 'Something went wrong.');
+						res.json().then((data) => {
+							console.log(data);
+							showMessage(res.statusText, data.details !== undefined ? data.details : 'Please fill the form correctly!');
+						});
+					}
+				})
+				.catch((err) => {
+					let error = '';
+					showMessage('Error', 'Something went wrong: ' + err);
+				});
 		}
 	}
 	let slideContorls = `<div class="slideControls border-top">
@@ -779,7 +790,7 @@
 						</div>`;
 	onMount(() => {
 		controlsCont.forEach((control, i) => {
-			if (permission !== 'super_admin' && i == 2){
+			if (permission !== 'super_admin' && i == 2) {
 				return;
 			}
 			let sliderBtns = control.children[0].children[0].children;
@@ -790,11 +801,11 @@
 				nextSlide();
 			});
 		});
-		if(contest !== undefined){
+		if (contest !== undefined) {
 			contestName = contest.name;
 			contestLink = contest.link;
 			contestantsPerTeam = contest.persons_amount;
-			
+
 			// set the start date
 			let start = new Date(contest.started_at);
 			startOn = start.toISOString().split('T')[0];
@@ -811,11 +822,11 @@
 			// update fields
 			contest.fields.forEach((field) => {
 				// add the default value
-				field.default_values = [""];
-			})
+				field.default_values = [''];
+			});
 			formFields = contest.fields;
 			addToPreview();
-			if(permission === 'super_admin'){
+			if (permission === 'super_admin') {
 				// hide the admin section
 				contest.admins.forEach((monitor) => {
 					addMonitor(monitor, false);
@@ -825,7 +836,7 @@
 			// Replace the default next button with a custom one- Create contest btn
 			// Create contest button
 			let updateContestBtn = document.createElement('button');
-			if(permission === 'super_admin'){
+			if (permission === 'super_admin') {
 				updateContestBtn.className = 'btn btn-sm btn-block p-2';
 				updateContestBtn.innerHTML = 'Update Contest <li class="fa fa-check-circle">';
 				// Add event listener to create contest button
@@ -836,7 +847,7 @@
 				(controlsCont[2].children[0].children[0].children[1] as HTMLElement).style.display = 'none';
 				// Add create contest button to final button
 				controlsCont[2].children[0].children[0].appendChild(updateContestBtn);
-			} else if (permission === 'admin'){
+			} else if (permission === 'admin') {
 				updateContestBtn.className = 'btn btn-sm btn-block p-2';
 				updateContestBtn.innerHTML = 'Update Contest <li class="fa fa-check-circle">';
 				// Add event listener to create contest button
@@ -848,9 +859,6 @@
 				// Add create contest button to final button
 				controlsCont[1].children[0].children[0].appendChild(updateContestBtn);
 			}
-			
-
-
 		} else {
 			// Replace the default next button with a custom one- Create contest btn
 			// Create contest button
@@ -884,7 +892,7 @@
 				<h4 class="p-0 m-0">Create new contest</h4>
 			</div>
 			<div class="navbar-nav">
-				<button class="btn d-flex gap-3 align-items-center" on:click={() => window.location.href = `${base}/admin/${id}`}>
+				<button class="btn d-flex gap-3 align-items-center" on:click={() => (window.location.href = `${base}/admin/${id}`)}>
 					<i class="fa fa-arrow-left" />
 					Back
 				</button>
@@ -1072,29 +1080,29 @@
 					<div bind:this={controlsCont[1]} style="background-color: white">{@html slideContorls}</div>
 				</div>
 			</div>
-			{#if permission === "super_admin"}
-			<div class="slide">
-				<div class="row col-12 justify-content-center">
-					<div class="card p-0 mb-3 col-md-5">
-						<h1 class="card-header" style="padding: 20px">
-							<i class="fa-solid fa-gear me-1" />
-							Set admin
-						</h1>
-						<div class="card-body">
-							<div class="showSelectedAdmin d-flex" style="width: fit-content; flex-flow: row wrap;" bind:this={monitorsCont} />
-							<input type="text" class="form-control" id="admin" placeholder="Enter admin id ..." bind:value={monitorId} />
-							<button
-								type="button"
-								class="btn btn-primary btn-sm"
-								on:click={() => {
-									addMonitor(monitorId);
-								}}>Add</button
-							>
+			{#if permission === 'super_admin'}
+				<div class="slide">
+					<div class="row col-12 justify-content-center">
+						<div class="card p-0 mb-3 col-md-5">
+							<h1 class="card-header" style="padding: 20px">
+								<i class="fa-solid fa-gear me-1" />
+								Set admin
+							</h1>
+							<div class="card-body">
+								<div class="showSelectedAdmin d-flex" style="width: fit-content; flex-flow: row wrap;" bind:this={monitorsCont} />
+								<input type="text" class="form-control" id="admin" placeholder="Enter admin id ..." bind:value={monitorId} />
+								<button
+									type="button"
+									class="btn btn-primary btn-sm"
+									on:click={() => {
+										addMonitor(monitorId);
+									}}>Add</button
+								>
+							</div>
+							<div bind:this={controlsCont[2]} style="background-color: white">{@html slideContorls}</div>
 						</div>
-						<div bind:this={controlsCont[2]} style="background-color: white">{@html slideContorls}</div>
 					</div>
 				</div>
-			</div>
 			{/if}
 		</div>
 	</div>
@@ -1112,16 +1120,13 @@
 		background-image: linear-gradient(to bottom right, $primary-color, $secondary-color);
 		font-family: 'Light', sans-serif;
 		line-height: 1.4832;
-		h5 {
-			font-family: 'Medium', sans-serif;
-		}
+
 		@include bg;
 		@include navbar;
 		nav {
 			background-color: rgba(255, 255, 255);
 		}
 		input[type='text'],
-		input[type='email'],
 		select {
 			border-radius: 0;
 			border: 0px;
@@ -1160,14 +1165,6 @@
 				display: flex;
 				justify-content: center;
 				align-items: center;
-			}
-			.slideControls {
-				position: absolute;
-				bottom: 5px;
-				left: 0px;
-				font-family: 'Medium', sans-serif;
-				font-size: 12px;
-				color: $primary-color;
 			}
 		}
 	}

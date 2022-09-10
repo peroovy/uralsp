@@ -112,7 +112,7 @@
 		google_id: '',
 		telegram_id: '',
 		patronymic: '',
-		permission: 0
+		permission: ''
 	};
 	export let real_id: number, real_permission: string;
 
@@ -241,7 +241,8 @@
 			institution_type: userInfo.institution_type,
 			institution_name: userInfo.institution_name,
 			institution_course: userInfo.institution_course,
-			institution_faculty: userInfo.institution_faculty
+			institution_faculty: userInfo.institution_faculty,
+			permission: userPermission
 		};
 		// TODO: make a server request to update user info
 		if (browser) {
@@ -264,9 +265,9 @@
 							window.location.reload();
 						} else {
 							res.json().then((data) => {
-								console.log(data)
+								console.log(data);
 								alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
-									<strong> ${data.detail? data.detail[0].msg: data.error} </strong>
+									<strong> ${data.detail ? data.detail[0].msg : data.error} </strong>
 									<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 								</div>`;
 							});
@@ -298,9 +299,9 @@
 							window.location.reload();
 						} else {
 							res.json().then((data) => {
-								console.log(data)
+								console.log(data);
 								alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
-									<strong> ${data.detail? data.detail[0].msg: data.error} </strong>
+									<strong> ${data.detail ? data.detail[0].msg : data.error} </strong>
 									<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 								</div>`;
 							});
@@ -658,19 +659,19 @@
 					{/if}
 				</div>
 				{#if real_id != userInfo.id}
-				<h5 class="card-title m-4 mt-2">
-					<i class="fa-solid fa-lock" />
-					Permission
-				</h5>
-				<div class="card-body ms-4 mt-0">
-					<label for="region">Permission</label>
-					<select class="form-select form-select-sm" aria-label="Default select example" bind:value={userPermission}>
-						<option selected>Choose...</option>
-						{#each permissionsArr as per}
-							<option>{per}</option>
-						{/each}
-					</select>
-				</div>
+					<h5 class="card-title m-4 mt-2">
+						<i class="fa-solid fa-lock" />
+						Permission
+					</h5>
+					<div class="card-body ms-4 mt-0">
+						<label for="region">Permission</label>
+						<select class="form-select form-select-sm" aria-label="Default select example" bind:value={userPermission}>
+							<option selected>Choose...</option>
+							{#each permissionsArr as per}
+								<option>{per}</option>
+							{/each}
+						</select>
+					</div>
 				{/if}
 				<h5 class="card-title m-4 mt-0 me-0 pe-0">
 					<i class="fa-solid fa-share-nodes" />

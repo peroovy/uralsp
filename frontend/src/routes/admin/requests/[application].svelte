@@ -29,7 +29,7 @@
 		if (app_respond.status == 200) {
 			let app = await app_respond.json();
 			let ownerName = '';
-            let comp;
+			let comp;
 			let owner_respond = await fetch(`http://localhost:8000/users/${app.owner}`, {
 				method: 'GET',
 				headers: {
@@ -43,25 +43,25 @@
 			} else {
 				ownerName = 'Unknown';
 			}
-            let comp_respond = await fetch(`http://localhost:8000/competitions/${app.competition}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            if(comp_respond.status == 200) {
-                comp = await comp_respond.json();
-            } else {
-                return{
-                    status: 301,
-                    redirect: '/'
-                }
-            }
+			let comp_respond = await fetch(`http://localhost:8000/competitions/${app.competition}`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`
+				}
+			});
+			if (comp_respond.status == 200) {
+				comp = await comp_respond.json();
+			} else {
+				return {
+					status: 301,
+					redirect: '/'
+				};
+			}
 			return {
 				props: {
 					app,
-                    comp,
+					comp,
 					ownerName,
 					permission,
 					real_id,
@@ -88,11 +88,11 @@
 		real_id: number,
 		access_token: string,
 		ownerName: string,
-        comp = {} as CompetitionWithFields;
+		comp = {} as CompetitionWithFields;
 
-    let NParticipants = '';
-    let alertCont = '' as unknown as HTMLDivElement;
-    let requestTemplates: HTMLElement[] = [];
+	let NParticipants = '';
+	let alertCont = '' as unknown as HTMLDivElement;
+	let requestTemplates: HTMLElement[] = [];
 
 	function showMessage(msgTitle: string, msgbody: string): void {
 		if (msgTitle === 'Success') {
@@ -111,24 +111,24 @@
 		}, 2000);
 	}
 
-    // Applications
-	async function acceptApplication(id: string) {
+	// Applications
+	async function acceptApplication(id: number) {
 		let confirmAccept = confirm('Are you sure you want to accept this application?');
 		if (!confirmAccept) return;
 		let description = prompt('Enter description:', 'Accepted');
 		await fetch(`http://localhost:8000/requests/${id}/process`, {
-			method: "PATCH",
+			method: 'PATCH',
 			headers: {
-				"Content-Type": "application/json",
-				Authorization: "Bearer " + access_token,
+				'Content-Type': 'application/json',
+				Authorization: 'Bearer ' + access_token
 			},
 			body: JSON.stringify({
-				status: "accepted",
-				"description": description,
-			}),
+				status: 'accepted',
+				description: description
+			})
 		})
 			.then((res) => {
-				if(res.status == 200){ 
+				if (res.status == 200) {
 					alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
 											<strong>Success!</strong>
 											<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -143,25 +143,25 @@
 			})
 			.catch((err) => {
 				console.error(err);
-			})
+			});
 	}
-	async function declineApplication(id: string) {
+	async function declineApplication(id: number) {
 		let confirmDecline = confirm('Are you sure you want to reject this application?');
 		if (!confirmDecline) return;
 		let description = prompt('Enter description:', 'Rejected');
 		await fetch(`http://localhost:8000/requests/${id}/process`, {
-			method: "PATCH",
+			method: 'PATCH',
 			headers: {
-				"Content-Type": "application/json",
-				Authorization: "Bearer " + access_token,
+				'Content-Type': 'application/json',
+				Authorization: 'Bearer ' + access_token
 			},
 			body: JSON.stringify({
-				status: "rejected",
-				"description": description,
-			}),
+				status: 'rejected',
+				description: description
+			})
 		})
 			.then((res) => {
-				if(res.status == 200){ 
+				if (res.status == 200) {
 					alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
 											<strong>Success!</strong>
 											<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -176,7 +176,7 @@
 			})
 			.catch((err) => {
 				console.error(err);
-			})
+			});
 	}
 
 	$: team_name = '';
@@ -186,22 +186,22 @@
 		team: [],
 		competition: comp.id
 	};
-	function saveApp(index: number, mode = "msg"): void {
-		let applicant_id = (requestTemplates[index].children[0].children[1] as HTMLInputElement ).value;
+	function saveApp(index: number, mode = 'msg'): void {
+		let applicant_id = (requestTemplates[index].children[0].children[1] as HTMLInputElement).value;
 		let template = requestTemplates[index].children[1].children;
 		let form = [];
-		if(applicant_id == '') {
-			if(mode == "msg") showMessage('Error', 'Please enter a valid applicant ID');
+		if (applicant_id == '') {
+			if (mode == 'msg') showMessage('Error', 'Please enter a valid applicant ID');
 			return;
-		} else if(isNaN(parseInt(applicant_id))) {
-			if(mode == "msg") showMessage('Error', 'Please enter a valid applicant ID');
+		} else if (isNaN(parseInt(applicant_id))) {
+			if (mode == 'msg') showMessage('Error', 'Please enter a valid applicant ID');
 			return;
 		}
-		for(let i = 0; i < template.length; i++) {
-			let fieldId = template[i].dataset.id;
+		for (let i = 0; i < template.length; i++) {
+			let fieldId = (template[i] as HTMLElement).dataset.id;
 			let fieldValue = (template[i].children[1] as HTMLInputElement).value;
 			let isRequired = comp.fields.find((field) => field.id == fieldId)!.is_required;
-			if(isRequired && fieldValue == '') {
+			if (isRequired && fieldValue == '') {
 				alert('Please fill all the required fields');
 				alertCont.style.display = 'block';
 				return;
@@ -212,10 +212,10 @@
 			});
 		}
 		// check if the user saved this application before
-		for(let i = 0; i < application.team.length; i++) {
-			if(application.team[i].user_id == parseInt(applicant_id)) {
+		for (let i = 0; i < application.team.length; i++) {
+			if (application.team[i].user_id == parseInt(applicant_id)) {
 				application.team[i].form = form;
-				if(mode == "msg") showMessage('Success', 'Application saved successfully');
+				if (mode == 'msg') showMessage('Success', 'Application saved successfully');
 				return;
 			}
 		}
@@ -223,17 +223,17 @@
 			user_id: parseInt(applicant_id),
 			form
 		});
-		if(mode == "msg") showMessage('Success', 'Application saved successfully');
+		if (mode == 'msg') showMessage('Success', 'Application saved successfully');
 	}
-	async function updateRequest(){
+	async function updateRequest() {
 		// Validate the application
-		if(application.team.length < comp.persons_amount) {
+		if (application.team.length < comp.persons_amount) {
 			alert('Please add save all the applications first');
 			return;
 		}
 		application.team_name = team_name;
-		
-		if(application.team_name === '') {
+
+		if (application.team_name === '') {
 			alert('Please enter a team name');
 			return;
 		}
@@ -242,17 +242,15 @@
 			method: 'PUT',
 			headers: {
 				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${access_token}`
+				Authorization: `Bearer ${access_token}`
 			},
 			body: JSON.stringify(application)
 		});
-		if(response.status == 200) {
+		if (response.status == 200) {
 			showMessage('Success', 'Your request has been sent successfully');
-		}
-		else {
+		} else {
 			showMessage('Error', response.statusText);
 		}
-
 	}
 
 	function deleteApplication(id: number) {
@@ -272,20 +270,21 @@
 			}
 		});
 	}
-    onMount(() => {
-        NParticipants = app.participants.map(p => p.user_id).join(" ,");
-		for(let u = 0; u < comp.persons_amount; u++){
-			saveApp(u, "silent");
+	onMount(() => {
+		NParticipants = app.participants.map((p) => p.user_id).join(' ,');
+		for (let u = 0; u < comp.persons_amount; u++) {
+			saveApp(u, 'silent');
 			let template = requestTemplates[u].children[1].children;
 			team_name = app.team_name;
-			for(let i = 0; i < template.length; i++) {
-				(requestTemplates[i].children[0].children[1] as HTMLInputElement ).value = app.participants[i].user_id.toString();
-				let fieldId = template[i].dataset.id;
+			for (let i = 0; i < template.length; i++) {
+				(requestTemplates[i].children[0].children[1] as HTMLInputElement).value = app.participants[i].user_id.toString();
+				let fieldId = (template[i] as HTMLElement).dataset.id;
 				let fieldValue = app.participants[i].form.find((field) => field.field_id == fieldId)!.value;
+				if (!fieldValue) fieldValue = '';
 				(template[i].children[1] as HTMLInputElement).value = fieldValue;
 			}
 		}
-    })
+	});
 </script>
 
 <svelte:head>
@@ -313,74 +312,72 @@
 	<div class="container-fluid d-flex justify-content-center align-items-center" style="min-height: calc(100vh - 38px); width: 100vw;">
 		<div class="row m-0 justify-content-center align-items-stretch gap-0">
 			<div class="card col-md border-0 rounded-0 basic-app-info" style="min-width: min-content;">
-                <h3 class="card-title mb-2 mt-4 ms-1 me-5">
-                    <span class="fa fa-info-circle ms-0 me-2" />
-                    Basic Information
-                </h3>
-                <div class="card-body">
-                    <div class="row">
-                        <table class="table">
-                            <thead>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <th scope="row">ID</th>
-                                    <td colspan="3">{app.id}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Status</th>
-                                    <td colspan="3">{app.status}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Owner<small class="ms-1" style="font-weight: 100; font-style: italic; font-size: 12px;">  >> (N-ID) </small> </th>
-                                    <td colspan="3">{ownerName} - {app.owner}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Description</th>
-                                    <td colspan="3">{app.description}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Participants IDs</th>
-                                    <td colspan="3">{NParticipants}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Created on</th>
-                                    <td colspan="3">{new Date(Date.parse(app.created_at)).toDateString()}</td>
-                                </tr>
+				<h3 class="card-title mb-2 mt-4 ms-1 me-5">
+					<span class="fa fa-info-circle ms-0 me-2" />
+					Basic Information
+				</h3>
+				<div class="card-body">
+					<div class="row">
+						<table class="table">
+							<thead />
+							<tbody>
+								<tr>
+									<th scope="row">ID</th>
+									<td colspan="3">{app.id}</td>
+								</tr>
+								<tr>
+									<th scope="row">Status</th>
+									<td colspan="3">{app.status}</td>
+								</tr>
+								<tr>
+									<th scope="row">Owner<small class="ms-1" style="font-weight: 100; font-style: italic; font-size: 12px;"> >> (N-ID) </small> </th>
+									<td colspan="3">{ownerName} - {app.owner}</td>
+								</tr>
+								<tr>
+									<th scope="row">Description</th>
+									<td colspan="3">{app.description}</td>
+								</tr>
+								<tr>
+									<th scope="row">Participants IDs</th>
+									<td colspan="3">{NParticipants}</td>
+								</tr>
+								<tr>
+									<th scope="row">Created on</th>
+									<td colspan="3">{new Date(Date.parse(app.created_at)).toDateString()}</td>
+								</tr>
 								<tr>
 									<th scope="row">Competition</th>
 									<td colspan="3">{comp.name}</td>
 								</tr>
-                            </tbody>
-                        </table>
-                        <div class="btns col-12">
-                            <button type="button" class="btn btn-success" on:click={() => acceptApplication(app.id)}>
-                                <span class="fa fa-check" />
-                                Accept
-                            </button>
-                            <button type="button" class="btn btn-secondary" on:click={() => declineApplication(app.id)}>
-                                <span class="fa fa-trash" />
-                                Reject
-                            </button>
-                            <button type="button" class="btn btn-primary" on:click={() => updateRequest()}>
-                                <span class="fa fa-edit" />
-                                Update
-                            </button>
-							<button class="btn btn-danger" on:click={()=> deleteApplication(app.id)}> 
-								<li class="fa fa-trash" />
-								Remove 
+							</tbody>
+						</table>
+						<div class="btns col-12">
+							<button type="button" class="btn btn-success" on:click={() => acceptApplication(app.id)}>
+								<span class="fa fa-check" />
+								Accept
 							</button>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
+							<button type="button" class="btn btn-secondary" on:click={() => declineApplication(app.id)}>
+								<span class="fa fa-trash" />
+								Reject
+							</button>
+							<button type="button" class="btn btn-primary" on:click={() => updateRequest()}>
+								<span class="fa fa-edit" />
+								Update
+							</button>
+							<button class="btn btn-danger" on:click={() => deleteApplication(app.id)}>
+								<li class="fa fa-trash" />
+								Remove
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
 			<div class="card col-md border-0 rounded-0 application-form">
-                <h3 class="card-title mb-2 mt-4 ms-1">
-                    <span class="fa fa-file-alt ms-0 me-2" />
-                    Application Form
-                </h3>
-                <div class="card-body" style="position: relative;">
+				<h3 class="card-title mb-2 mt-4 ms-1">
+					<span class="fa fa-file-alt ms-0 me-2" />
+					Application Form
+				</h3>
+				<div class="card-body" style="position: relative;">
 					<div class="form-field mb-3">
 						<label for="teamName">Team Name <span class="text-danger" style:font-size="19px">*</span></label>
 						<input type="text" id="teamName" class="form-control" placeholder="Team Name" bind:value={team_name} />
@@ -417,10 +414,9 @@
 						{/each}
 					</div>
 				</div>
-            </div>
+			</div>
 		</div>
 	</div>
-    
 </div>
 <div bind:this={alertCont} class="alert" />
 
@@ -442,18 +438,18 @@
 		background-image: linear-gradient(to bottom right, $primary-color, $secondary-color);
 		width: 100vw;
 		min-height: calc(100vh - 38px);
-        .basic-app-info{
-            background-color: rgba(255, 255, 255, 0.98);
-            font-family: 'Medium';
-            line-height: 30px;
-            .btns{
-                width: 100%;
-                display: flex;
-                justify-content: center;
-                gap: 5px;
-                align-items: center;
-            }
-        }
+		.basic-app-info {
+			background-color: rgba(255, 255, 255, 0.98);
+			font-family: 'Medium';
+			line-height: 30px;
+			.btns {
+				width: 100%;
+				display: flex;
+				justify-content: center;
+				gap: 5px;
+				align-items: center;
+			}
+		}
 	}
 	.alert {
 		position: fixed;

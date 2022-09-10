@@ -66,6 +66,7 @@ export type Field = {
 	type: number;
 	is_required: boolean;
 	is_visible: boolean;
+	default_values: string[];
 };
 export type CompetitionWithFields = {
 	id: number;
@@ -97,8 +98,8 @@ export type RequestsOut = {
 	team: {
 		user_id: number;
 		form: {
-			field_id: string;
-			value: string;
+			field_id: string | undefined;
+			value: string | undefined;
 		}[];
 	}[];
 	competition: number;
@@ -116,8 +117,18 @@ export type RequestsIn = {
 	participants: {
 		user_id: number;
 		form: {
-			field_id: string;
-			value: string;
+			field_id: string | undefined;
+			value: string | undefined;
 		}[];
 	}[];
+};
+
+export type SearchParams = {
+	email: string | undefined;
+	search: string | undefined;
+	region: string | undefined;
+	institution_type: string | undefined;
+	institution_name: string | undefined;
+	institution_course: string | undefined;
+	permission: string | undefined;
 };
