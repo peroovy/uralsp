@@ -254,6 +254,24 @@
 		}
 
 	}
+
+	function deleteApplication(id: number) {
+		let confirmation = confirm('Are you sure you want to delete this application?');
+		if (!confirmation) return;
+		fetch(`http://localhost:8000/requests/${id}`, {
+			method: 'DELETE',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: 'Bearer ' + localStorage.getItem('access_token')
+			}
+		}).then((res) => {
+			if (res.status == 200) {
+				location.reload();
+			} else {
+				console.error(res);
+			}
+		});
+	}
     onMount(() => {
         NParticipants = app.participants.map(p => p.user_id).join(" ,");
 		for(let u = 0; u < comp.persons_amount; u++){
@@ -340,7 +358,7 @@
                                 <span class="fa fa-check" />
                                 Accept
                             </button>
-                            <button type="button" class="btn btn-danger" on:click={() => declineApplication(app.id)}>
+                            <button type="button" class="btn btn-secondary" on:click={() => declineApplication(app.id)}>
                                 <span class="fa fa-trash" />
                                 Reject
                             </button>
@@ -348,6 +366,11 @@
                                 <span class="fa fa-edit" />
                                 Update
                             </button>
+							<button class="btn btn-danger" on:click={()=> deleteApplication(app.id)}> 
+								<li class="fa fa-trash" />
+								Remove 
+							</button>
+
                         </div>
                     </div>
                 </div>

@@ -82,6 +82,7 @@
 	import { onMount } from 'svelte';
 
 	import lottieNotFoundSrc from '$lib/Assets/animations/lottie-notfound2.json?url';
+import { identity } from 'svelte/internal';
 	export let userInfo: UserData;
 	export let ongoing_competition: Competitions = [], upComming_competitions : Competitions = [], started_competitions : Competitions = [];
 	export let requests : Requests = [];
@@ -108,6 +109,46 @@
 		contest.set(JSON.stringify(contestObject));
 	};
 
+	// Applications
+	function cancelApplication(id: number) {
+		let confirmation = confirm('Are you sure you want to cancel your application?');
+		if(!confirmation) return;
+		fetch(`http://localhost:8000/users/current/requests/${id}/cancel`, {
+			method: 'PATCH',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: 'Bearer ' + localStorage.getItem('access_token')
+			}
+		}).then((res) => {
+			if (res.status == 200) {
+				location.reload();
+			} else {
+				console.error(res);
+			}
+		});
+	}
+
+	function renewApplication(id: number) {
+		let confirmation = confirm('Are you sure you want to renew your application?');
+		if (!confirmation) return;
+		fetch(`http://localhost:8000/users/current/requests/${id}/renew`, {
+			method: 'PATCH',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: 'Bearer ' + localStorage.getItem('access_token')
+			}
+		}).then((res) => {
+			if (res.status == 200) {
+				location.reload();
+			} else {
+				console.error(res);
+			}
+		});
+	}
+
+	function editApplication(id: number) {
+		console.log('edit:', id);
+	}
 	// Sections slider
 	let sectionHolders = '' as unknown as HTMLElement;
 	let navBar = '' as unknown as HTMLElement;
@@ -424,7 +465,7 @@
 											</tr>
 											<tr>
 												<th scope="row">Created at</th>
-												<td>{createdAt.toDateString()}, {createdAt.getUTCHours()}</td>
+												<td>{createdAt.toDateString()}, {createdAt.getHours() + ":" + createdAt.getMinutes() + ":" + createdAt.getSeconds()}</td>
 											</tr>
 											<tr>
 												<th scope="row">Participants IDs</th>
@@ -433,8 +474,13 @@
 										</tbody>
 									</table>
 									<div class="btn gap-2">
-										<button class="btn btn-primary btn-sm"> <li class="fa fa-edit" /> Edit </button>
-										<button class="btn btn-danger btn-sm"> <li class="fa fa-trash" /> Remove </button>
+										<button class="btn btn-primary btn-sm" on:click={()=> editApplication(request.id)}> <li class="fa fa-edit" /> Edit </button>
+										{#if request.status != 'canceled' && request.status != 'cancelled'}
+											<button class="btn btn-danger btn-sm" on:click={()=> cancelApplication(request.id)}> <li class="fa fa-trash" /> Cancel </button>
+										{:else if request.status == 'canceled' || request.status == 'cancelled'}
+											<button class="btn btn-success btn-sm" on:click={()=> renewApplication(request.id)}> <li class="fa fa-trash-restore" /> Renew </button>
+										{/if}
+
 									</div>
 								</div>
 							</div>
