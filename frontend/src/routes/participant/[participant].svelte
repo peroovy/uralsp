@@ -453,54 +453,52 @@
 						<small style="margin-top:-10px; display:block; opacity: 0.7"> Please, try later. </small>
 					</div>
 				{:else}
-					<div class="row justify-content-center algin-itmes-start">
-						{#each requests as request}
-							{@const createdAt = new Date(Date.parse(request.created_at))}
-							<div class="card p-0 col-md-6 border-0 shadow-sm" style="max-width: 500px; min-width: max-content">
-								<h4 class="card-header p-4 m-0">
-									<li class="fa fa-paper-plane me-1" />
-									{request.team_name}
-								</h4>
-								<div class="card-body">
-									<p class="request-description">{request.description ? request.description : 'No description'}</p>
+					{#each requests as request}
+						{@const createdAt = new Date(Date.parse(request.created_at))}
+						<div class="card p-0 border-0 shadow-sm" style="width: 500px; flex-flow: column nowrap;">
+							<h4 class="card-header p-4 m-0">
+								<li class="fa fa-paper-plane me-1" />
+								{request.team_name}
+							</h4>
+							<div class="card-body">
+								<p class="request-description">{request.description ? request.description : 'No description'}</p>
 
-									<table class="table table-striped table-hover">
-										<tbody>
-											<tr>
-												<th scope="row">Status</th>
-												<td>{request.status}</td>
-											</tr>
-											<tr>
-												<th scope="row">Created at</th>
-												<td>{createdAt.toDateString()}, {createdAt.getHours() + ':' + createdAt.getMinutes() + ':' + createdAt.getSeconds()}</td>
-											</tr>
-											<tr>
-												<th scope="row">Participants IDs</th>
-												<td>{request.participants.join(' ,')}</td>
-											</tr>
-										</tbody>
-									</table>
-									<div class="btn gap-2">
-										<button class="btn btn-primary btn-sm" on:click={() => editApplication(request.competition)}>
-											<li class="fa fa-edit" />
-											 Edit
+								<table class="table table-striped table-hover">
+									<tbody>
+										<tr>
+											<th scope="row">Status</th>
+											<td>{request.status}</td>
+										</tr>
+										<tr>
+											<th scope="row">Created at</th>
+											<td>{createdAt.toDateString()}, {createdAt.getHours() + ':' + createdAt.getMinutes() + ':' + createdAt.getSeconds()}</td>
+										</tr>
+										<tr>
+											<th scope="row">Participants IDs</th>
+											<td>{request.participants.join(' ,')}</td>
+										</tr>
+									</tbody>
+								</table>
+								<div class="btn gap-2">
+									<button class="btn btn-primary btn-sm" on:click={() => editApplication(request.competition)}>
+										<li class="fa fa-edit" />
+											Edit
+									</button>
+									{#if request.status != 'canceled' && request.status != 'cancelled'}
+										<button class="btn btn-danger btn-sm" on:click={() => cancelApplication(request.id)}>
+											<li class="fa fa-trash" />
+												Cancel
 										</button>
-										{#if request.status != 'canceled' && request.status != 'cancelled'}
-											<button class="btn btn-danger btn-sm" on:click={() => cancelApplication(request.id)}>
-												<li class="fa fa-trash" />
-												 Cancel
-											</button>
-										{:else if request.status == 'canceled' || request.status == 'cancelled'}
-											<button class="btn btn-success btn-sm" on:click={() => renewApplication(request.id)}>
-												<li class="fa fa-trash-restore" />
-												 Renew
-											</button>
-										{/if}
-									</div>
+									{:else if request.status == 'canceled' || request.status == 'cancelled'}
+										<button class="btn btn-success btn-sm" on:click={() => renewApplication(request.id)}>
+											<li class="fa fa-trash-restore" />
+												Renew
+										</button>
+									{/if}
 								</div>
 							</div>
-						{/each}
-					</div>
+						</div>
+					{/each}
 				{/if}
 			</div>
 		</div>

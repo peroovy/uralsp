@@ -75,15 +75,14 @@
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
-	import type { RequestsOut, UserRequest, CompetitionWithFields, Field } from '$lib/types';
-	
+	import type { RequestsOut, UserRequest, CompetitionWithFields } from '$lib/types';
+
 	export let contest: CompetitionWithFields = {} as CompetitionWithFields,
-	oldRequest: UserRequest = {} as UserRequest,
-	userId: number,
-	accessToken: string,
-	permissions: string;
-	
-	console.log(oldRequest);
+		oldRequest: UserRequest = {} as UserRequest,
+		userId: number,
+		accessToken: string,
+		permissions: string;
+
 	let alertCont: HTMLDivElement;
 
 	let everyThingIsOk = true;
@@ -96,6 +95,12 @@
 		team: [],
 		competition: contest.id
 	};
+	interface TeamMember { user_id: number; form: { field_id: string | undefined; value: string | undefined; }[]; }
+	let demoField = {} as TeamMember;
+	
+	for (let i = 0; i < contest.persons_amount; i++) {
+		application.team.push(demoField);
+	}
 
 	let requestTemplates: HTMLElement[] = [];
 	function showMessage(msgTitle: string, msgbody: string): void {
@@ -115,7 +120,9 @@
 		}, 2000);
 	}
 
+	let savedIndex = new Set<number>();
 	function saveApp(index: number, mode = 'msg'): void {
+		savedIndex.add(index);
 		let applicant_id = (requestTemplates[index].children[0].children[1] as HTMLInputElement).value;
 		let template = requestTemplates[index].children[1].children;
 		let form = [];
@@ -141,12 +148,15 @@
 			});
 		}
 		// check if the user saved this application before
-		for (let i = 0; i < application.team.length; i++) {
-			if (application.team[i].user_id == parseInt(applicant_id)) {
-				application.team[i].form = form;
-				if (mode == 'msg') showMessage('Success', 'Application saved successfully');
-				return;
-			}
+		if (savedIndex.has(index)) {
+			application.team[index].user_id = parseInt(applicant_id);
+			application.team[index].form = form;
+			if (mode == 'msg') showMessage('Success', 'Application saved successfully');
+			return
+		}
+		if (application.team.length >= contest.persons_amount) {
+			if (mode == 'msg') showMessage('Error', "You can't add more than the allowed number of participants");
+			return;
 		}
 		application.team.push({
 			user_id: parseInt(applicant_id),
@@ -221,6 +231,7 @@
 		});
 		if (old_respond.status == 200) {
 			let old_request = await old_respond.json();
+			console.log(old_request);
 			for (let u = 0; u < contest.persons_amount; u++) {
 				saveApp(u, 'silent');
 				let template = requestTemplates[u].children[1].children;
@@ -236,6 +247,9 @@
 		}
 	}
 
+	let applicationNumber = 1;
+	function next() {}
+	function back() {}
 	onMount(() => {
 		if (!everyThingIsOk) goto(base + '/');
 		if (oldRequest) {
@@ -253,7 +267,7 @@
 	<div class="d2" />
 
 	<div class="row col-12 m-0 p-0 justify-content-center">
-		<div class="card col-md-5 p-0" style="max-width: 400px">
+		<div class="card col-md-5 p-0" style="max-width: 500px">
 			<nav class="navbar card-header">
 				<div class="container-fluid justify-content-left">
 					<div class="d-flex navbar-brand mb-0 justify-content-left align-items-center gap-3 p-3">
@@ -313,7 +327,7 @@
 				<div class="row gap-1">
 					{#each Array(contest.persons_amount) as _, i}
 						<button
-							class="btn btn-light border-0 rounded-0 btn-block"
+							class="btn mb-0 btn-light border-0 rounded-0 btn-block"
 							type="button"
 							data-bs-toggle="collapse"
 							data-bs-target="#appLicationNum{i}"
@@ -322,7 +336,7 @@
 						>
 							Application Number: {i + 1}
 						</button>
-						<div class="collapse multi-collapse {i == 0 ? 'show' : ''}" id="appLicationNum{i}" bind:this={requestTemplates[i]}>
+						<div class="collapse mt-0 multi-collapse bg-light {i == 0 ? 'show' : ''}" id="appLicationNum{i}" bind:this={requestTemplates[i]}>
 							<div class="form-field mb-3">
 								<label for="teamName">Applicant Id <span class="text-danger" style:font-size="19px">*</span></label>
 								<input type="text" class="form-control" placeholder="Enter applicant Id ..." />
@@ -330,11 +344,7 @@
 							<div>
 								{@html contest.request_template}
 							</div>
-							<button
-								class="btn btn-sm btn-primary m-2 ms-0 border-0"
-								style="max-width: max-content; background-color: #3490dc"
-								on:click={() => saveApp(i)}
-							>
+							<button class="btn btn-sm btn-secondary m-2 ms-0" style="max-width: max-content;" on:click={() => saveApp(i)}>
 								<i class="fas fa-save me-1" />
 								Save application
 							</button>
@@ -342,14 +352,23 @@
 					{/each}
 				</div>
 				<div class="btn-group col-12 pt-3 ">
-					{#if oldRequest != undefined && Object.keys(oldRequest).length > 0}
-						<!-- Update the request -->
-						<button class="btn btn-block btn-primary rounded-0 border-0" style="background-color: #3490dc" on:click={updateRequest}>
+					<!-- Update the request -->
+					<div class="btn-group col-12 gap-1 d-flex justify-content-center align-items-center">
+						{#if oldRequest != undefined && Object.keys(oldRequest).length > 0}
+						<button class="btn btn-block btn-primary rounded-0" style="background-color: #3490dc; border-color: #3490dc" on:click={updateRequest}>
 							<i class="fas fa-refresh me-1" />
-							Update request
+							Update Application
 						</button>
-					{:else}
-						<button class="btn btn-block btn-primary rounded-0 border-0" style="background-color: #3490dc" on:click={submitRequest}>
+						{/if}
+						{#if permissions === 'teacher'}
+							<button class="btn btn-block btn-outline-primary rounded-0" on:click={submitRequest}>
+								<i class="fas fa-plus me-1" />
+								Add another Application
+							</button>
+						{/if}
+					</div>
+					{#if oldRequest === undefined && Object.keys(oldRequest).length <= 0}
+						<button class="btn btn-block btn-primary rounded-0" style="background-color: #3490dc; border-color: #3490dc" on:click={submitRequest}>
 							<li class="fa fa-paper-plane me-1" />
 							Submit
 						</button>
@@ -375,6 +394,14 @@
 		padding-bottom: 30px;
 		.card {
 			font-family: 'Light';
+			.btn-outline-primary {
+				border-color: #3490dc;
+				color: #3490dc;
+				&:hover {
+					background-color: #3490dc;
+					color: white !important;
+				}
+			}
 		}
 	}
 	.alert {
