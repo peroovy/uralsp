@@ -85,9 +85,9 @@
 		'1 (master)',
 		'2 (master)'
 	];
-	console.log(API);
 	// Bind variables
 	let alertCont = '' as unknown as HTMLElement;
+	let loading = '' as unknown as HTMLElement;
 	let sliderCont = '' as unknown as HTMLElement;
 	let formCont = '' as unknown as HTMLElement;
 	let compResults = '' as unknown as HTMLElement;
@@ -428,6 +428,7 @@
 	onMount(() => {
 		adminName = `${userInfo.name}  ${userInfo.surname}`;
 		comps = competitionsInfo;
+		loading.style.display = 'none';
 		filter();
 		if (browser) {
 			let oldLocation = localStorage.getItem('oldLocation');
@@ -961,7 +962,11 @@
 	<div class="hide">keephideClass</div>
 	<div bind:this={alertCont} class="alertCont" />
 </section>
-
+<div class="loading" bind:this={loading} >
+	<div class="spinner-border" role="status">
+		<span class="visually-hidden">Loading...</span>
+	</div>
+</div>
 <style lang="scss">
 	@import '../../lib/Assets/common.scss';
 	nav {

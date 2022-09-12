@@ -8,7 +8,8 @@
 	import { parsePayload } from '$lib/parse';
 	const API = import.meta.env.VITE_API_URL;
 
-	let google = '' as unknown as HTMLElement;
+	let google : HTMLElement;
+	let loading : HTMLElement;
 
 	function redirct(per: string, user_id: number) {
 		if (per === 'super_admin' || per === 'admin') {
@@ -48,6 +49,7 @@
 				let data = {
 					id_token: credential
 				};
+				loading.style.display = 'block';
 				await fetch(`${API}/auth/signin-google`, {
 					method: 'POST',
 					headers: {
@@ -91,6 +93,7 @@
 						last_name: ln,
 						hash: hash
 					};
+					loading.style.display = 'block';
 					await fetch(`${API}/auth/signin-vkontakte`, {
 						method: 'POST',
 						headers: {
@@ -111,6 +114,7 @@
 				}
 			});
 		}
+		loading.style.display = 'none';
 	});
 	function onTelegramAuth(user: {
 		detail: { first_name: string; last_name: string; username: string; photo_url: 'string'; id: number; auth_date: number; hash: string };
@@ -125,6 +129,7 @@
 			auth_date: user.detail.auth_date,
 			hash: user.detail.hash
 		};
+		loading.style.display = 'block';
 		fetch(`${API}/auth/signin-telegram`, {
 			method: 'POST',
 			headers: {
@@ -198,6 +203,12 @@
 		</div>
 	</div>
 </section>
+
+<div class="loading" bind:this={loading} >
+	<div class="spinner-border" role="status">
+		<span class="visually-hidden">Loading...</span>
+	</div>
+</div>
 
 <style lang="scss">
 	@import '../lib/Assets/common.scss';

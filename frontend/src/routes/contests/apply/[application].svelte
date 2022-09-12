@@ -87,6 +87,7 @@
 		API: string;
 
 	let alertCont: HTMLDivElement;
+	let loading: HTMLDivElement;
 
 	let everyThingIsOk = true;
 	if (Object.keys(contest).length == 0 || userId === undefined || accessToken == undefined || permissions == undefined) everyThingIsOk = false;
@@ -257,6 +258,7 @@
 		if (oldRequest) {
 			retreiveOldRequest();
 		}
+		loading.style.display = 'none';
 	});
 </script>
 
@@ -381,6 +383,11 @@
 	</div>
 	<div class="alert" bind:this={alertCont} />
 </section>
+<div class="loading" bind:this={loading} >
+	<div class="spinner-border" role="status">
+		<span class="visually-hidden">Loading...</span>
+	</div>
+</div>
 
 <style lang="scss">
 	@import '../../../lib/Assets/common.scss';

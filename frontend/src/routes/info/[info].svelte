@@ -83,7 +83,7 @@
 	$: instName = '';
 	$: instYear = '';
 	$: instFacultyName = '';
-	let alertCont = '' as unknown as HTMLElement;
+	let alertCont : HTMLElement;
 
 	interface SocialIDs {
 		google: null | string;
@@ -117,7 +117,8 @@
 	export let API : string = import.meta.env.VITE_API_URL;
 	
 	let id = userInfo.id;
-	let google = '' as unknown as HTMLElement;
+	let google : HTMLElement;
+	let loading : HTMLElement;
 	let userPermission: string | undefined;
 	let permissionsArr = ['default', 'teacher', 'admin', 'super_admin'];
 	onMount(() => {
@@ -202,6 +203,7 @@
 				}
 			});
 		}
+		loading.style.display = 'none';
 	});
 
 	let instituteYear = [
@@ -721,6 +723,12 @@
 	<div class="alertCont" bind:this={alertCont} />
 </section>
 
+<div class="loading" bind:this={loading} >
+	<div class="spinner-border" role="status">
+		<span class="visually-hidden">Loading...</span>
+	</div>
+</div>
+
 <style lang="scss">
 	@import '../../lib/Assets/common.scss';
 
@@ -732,6 +740,7 @@
 		nav {
 			font-family: 'Medium';
 			margin-bottom: 20px;
+			z-index: 10;
 			background-color: white;
 		}
 		.card {

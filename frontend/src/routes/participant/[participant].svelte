@@ -97,6 +97,7 @@
 	onMount(() => {
 		userId = userInfo.id;
 		paricipantName = `${userInfo.name}  ${userInfo.surname}`;
+		loading.style.display = 'none';
 	});
 	let contestObject: Competitions = [
 		{
@@ -155,6 +156,7 @@
 	function editApplication(id: number) {
 		window.location.href = `${base}/contests/apply/${id}`;
 	}
+	let loading = '' as unknown as HTMLElement;
 	// Sections slider
 	let sectionHolders = '' as unknown as HTMLElement;
 	let navBar = '' as unknown as HTMLElement;
@@ -510,6 +512,12 @@
 		</div>
 	</div>
 </section>
+
+<div class="loading" bind:this={loading} >
+	<div class="spinner-border" role="status">
+		<span class="visually-hidden">Loading...</span>
+	</div>
+</div>
 
 <style lang="scss">
 	@import '../../lib/Assets/common.scss';

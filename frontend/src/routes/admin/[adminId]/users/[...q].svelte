@@ -69,7 +69,7 @@
 	import { republics } from '$lib/Assets/republics.json';
 	import { sessionDuration } from '$lib/sessionDuration';
 	sessionDuration();
-	
+
 	export let searchQueries: string = '',
 		adminId: number = 0,
 		usersOrErr: any = [];
@@ -80,6 +80,7 @@
 	let userCont = '' as unknown as HTMLElement;
 	let toolbar = '' as unknown as HTMLElement;
 	let alertCont = '' as unknown as HTMLElement;
+	let loading = '' as unknown as HTMLElement;
 	$: itemPerpage = 5;
 	// filter data
 	let InstituteYear = [
@@ -199,6 +200,7 @@
 		Object.keys(users[0]).map((key) => (headers += `${key},`));
 		// remove last comma
 		headers = headers.slice(0, -1);
+		loading.style.display = 'none';
 		setTimeout(() => {
 			// Hide all the items except the first 5
 			for (let i = 0; i < itemPerpage; i++) {
@@ -375,6 +377,13 @@
 	<script defer src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 	<title>Search results</title>
 </svelte:head>
+
+<div class="loading" bind:this={loading} >
+	<div class="spinner-border" role="status">
+		<span class="visually-hidden">Loading...</span>
+	</div>
+</div>
+
 {#if resultsNumber == undefined}
 	<div class="loading">
 		<h1>Searching...</h1>

@@ -111,6 +111,7 @@
 	let formPreview = '' as unknown as HTMLElement;
 	let monitorsCont = '' as unknown as HTMLElement;
 	let sliderCont = '' as unknown as HTMLElement;
+	let loading = '' as unknown as HTMLElement;
 	// Demo element
 	let demo = '' as unknown as HTMLElement;
 	let controlsCont = [demo, demo, demo];
@@ -870,6 +871,8 @@
 			// Add create contest button to final button
 			controlsCont[2].children[0].children[0].appendChild(createContestBtn);
 		}
+
+		loading.style.display = 'none';
 	});
 </script>
 
@@ -1104,7 +1107,11 @@
 	</div>
 	<div bind:this={alertCont} class="alertCont" />
 </section>
-
+<div class="loading" bind:this={loading} >
+	<div class="spinner-border" role="status">
+		<span class="visually-hidden">Loading...</span>
+	</div>
+</div>
 <style lang="scss">
 	@import '../../../lib/Assets/common.scss';
 	.createContest {
