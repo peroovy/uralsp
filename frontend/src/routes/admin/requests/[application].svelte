@@ -5,6 +5,8 @@
 	// @ts-ignore
 	export async function load({ params }) {
 		if (!browser) return;
+		const API = import.meta.env.VITE_API_URL;
+
 		let requestId = parseInt(params.application);
 		// @ts-ignore
 		let token = localStorage.getItem('access_token');
@@ -19,7 +21,7 @@
 		let real_id = payload.user_id;
 		let permission = payload.permission;
 
-		let app_respond = await fetch(`http://localhost:8000/requests/${requestId}`, {
+		let app_respond = await fetch(`${API}/requests/${requestId}`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -30,7 +32,7 @@
 			let app = await app_respond.json();
 			let ownerName = '';
 			let comp;
-			let owner_respond = await fetch(`http://localhost:8000/users/${app.owner}`, {
+			let owner_respond = await fetch(`${API}/users/${app.owner}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
@@ -43,7 +45,7 @@
 			} else {
 				ownerName = 'Unknown';
 			}
-			let comp_respond = await fetch(`http://localhost:8000/competitions/${app.competition}`, {
+			let comp_respond = await fetch(`${API}/competitions/${app.competition}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
@@ -65,7 +67,8 @@
 					ownerName,
 					permission,
 					real_id,
-					access_token: token
+					access_token: token,
+					API
 				}
 			};
 		} else {
@@ -88,8 +91,9 @@
 		real_id: number,
 		access_token: string,
 		ownerName: string,
-		comp = {} as CompetitionWithFields;
-
+		comp = {} as CompetitionWithFields,
+		API: string = import.meta.env.VITE_API_URL;
+		
 	let NParticipants = '';
 	let alertCont = '' as unknown as HTMLDivElement;
 	let requestTemplates: HTMLElement[] = [];
@@ -116,7 +120,7 @@
 		let confirmAccept = confirm('Are you sure you want to accept this application?');
 		if (!confirmAccept) return;
 		let description = prompt('Enter description:', 'Accepted');
-		await fetch(`http://localhost:8000/requests/${id}/process`, {
+		await fetch(`${API}/requests/${id}/process`, {
 			method: 'PATCH',
 			headers: {
 				'Content-Type': 'application/json',
@@ -149,7 +153,7 @@
 		let confirmDecline = confirm('Are you sure you want to reject this application?');
 		if (!confirmDecline) return;
 		let description = prompt('Enter description:', 'Rejected');
-		await fetch(`http://localhost:8000/requests/${id}/process`, {
+		await fetch(`${API}/requests/${id}/process`, {
 			method: 'PATCH',
 			headers: {
 				'Content-Type': 'application/json',
@@ -238,7 +242,7 @@
 			return;
 		}
 		// send the request to the server and validate the response
-		const response = await fetch(`http://localhost:8000/requests/${app.id}`, {
+		const response = await fetch(`${API}/requests/${app.id}`, {
 			method: 'PUT',
 			headers: {
 				'Content-Type': 'application/json',
@@ -256,7 +260,7 @@
 	function deleteApplication(id: number) {
 		let confirmation = confirm('Are you sure you want to delete this application?');
 		if (!confirmation) return;
-		fetch(`http://localhost:8000/requests/${id}`, {
+		fetch(`${API}/requests/${id}`, {
 			method: 'DELETE',
 			headers: {
 				'Content-Type': 'application/json',

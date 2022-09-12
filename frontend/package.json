@@ -44,6 +44,7 @@
 		"bootstrap-icons": "^1.9.1",
 		"cors": "^2.8.5",
 		"crocks": "^0.12.4",
+		"dotenv": "^16.0.2",
 		"express": "^4.18.1",
 		"google-auth-library": "^8.1.1",
 		"path": "^0.12.7",

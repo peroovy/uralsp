@@ -4,68 +4,67 @@
 
 	// @ts-ignore
 	export async function load({ params }) {
-		if (browser) {
-			let id = params.info;
-			// @ts-ignore
-			let token = localStorage.getItem('access_token');
-			if (token != null) {
-				let payload = parsePayload(token);
-				let permission = payload.permission;
-				let real_id = payload.user_id;
-				// if the user is not the same as the participant, redirect to the home page
-				if (real_id != id) {
-					if (permission != 'admin' && permission != 'super_admin') {
-						return {
-							status: 300,
-							redirect: '/'
-						};
-					}
-				}
-				let userInfo;
-				if (real_id == id) {
-					// Request the user's information
-					let response = await fetch(`http://localhost:8000/users/current/profile`, {
-						method: 'GET',
-						headers: {
-							'Content-Type': 'application/json',
-							Authorization: `Bearer ${token}`
-						}
-					});
-					userInfo = await response.json();
-				} else {
-					let respond = await fetch(`http://localhost:8000/users/${id}`, {
-						method: 'GET',
-						headers: {
-							'Content-Type': 'application/json',
-							Authorization: 'Bearer ' + token
-						}
-					});
-					userInfo = await respond.json();
-				}
-				console.log(userInfo);
-				// If admin requests super admin data, redirect to home page
-				if (
-					real_id != id &&
-					((permission == 'admin' && userInfo.permission == 'super_admin') || (permission == 'admin' && userInfo.permission == 'admin'))
-				) {
+		if (!browser) return;
+		const API = import.meta.env.VITE_API_URL;
+		let id = params.info;
+		// @ts-ignore
+		let token = localStorage.getItem('access_token');
+		if (token != null) {
+			let payload = parsePayload(token);
+			let permission = payload.permission;
+			let real_id = payload.user_id;
+			// if the user is not the same as the participant, redirect to the home page
+			if (real_id != id) {
+				if (permission != 'admin' && permission != 'super_admin') {
 					return {
 						status: 300,
 						redirect: '/'
 					};
 				}
-				return {
-					props: {
-						real_id,
-						real_permission: permission,
-						userInfo
+			}
+			let userInfo;
+			if (real_id == id) {
+				// Request the user's information
+				let response = await fetch(`${API}/users/current/profile`, {
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${token}`
 					}
-				};
+				});
+				userInfo = await response.json();
 			} else {
+				let respond = await fetch(`${API}/users/${id}`, {
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: 'Bearer ' + token
+					}
+				});
+				userInfo = await respond.json();
+			}
+			// If admin requests super admin data, redirect to home page
+			if (
+				real_id != id &&
+				((permission == 'admin' && userInfo.permission == 'super_admin') || (permission == 'admin' && userInfo.permission == 'admin'))
+			) {
 				return {
 					status: 300,
 					redirect: '/'
 				};
 			}
+			return {
+				props: {
+					real_id,
+					real_permission: permission,
+					userInfo
+				}
+			};
+		} else {
+			return {
+				status: 300,
+				redirect: '/'
+			};
 		}
 	}
 </script>
@@ -115,7 +114,8 @@
 		permission: ''
 	};
 	export let real_id: number, real_permission: string;
-
+	export let API : string = import.meta.env.VITE_API_URL;
+	
 	let id = userInfo.id;
 	let google = '' as unknown as HTMLElement;
 	let userPermission: string | undefined;
@@ -166,7 +166,7 @@
 						last_name: ln,
 						hash: hash
 					};
-					await fetch('http://127.0.0.1:8000/users/current/link-vkontakte', {
+					await fetch(`${API}/users/current/link-vkontakte`, {
 						method: 'PATCH',
 						headers: {
 							'Content-Type': 'application/json',
@@ -247,7 +247,7 @@
 		// TODO: make a server request to update user info
 		if (browser) {
 			if (real_id == userInfo.id) {
-				await fetch(`http://localhost:8000/users/current/profile`, {
+				await fetch(`${API}/users/current/profile`, {
 					method: 'PUT',
 					headers: {
 						'Content-Type': 'application/json',
@@ -265,7 +265,6 @@
 							window.location.reload();
 						} else {
 							res.json().then((data) => {
-								console.log(data);
 								alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
 									<strong> ${data.detail ? data.detail[0].msg : data.error} </strong>
 									<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -281,7 +280,7 @@
 					});
 			} else {
 				update.permission = userPermission;
-				await fetch(`http://localhost:8000/users/${userInfo.id}`, {
+				await fetch(`${API}/users/${userInfo.id}`, {
 					method: 'PUT',
 					headers: {
 						'Content-Type': 'application/json',
@@ -299,7 +298,6 @@
 							window.location.reload();
 						} else {
 							res.json().then((data) => {
-								console.log(data);
 								alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
 									<strong> ${data.detail ? data.detail[0].msg : data.error} </strong>
 									<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -340,7 +338,7 @@
 			return;
 		}
 		alertCont.innerHTML = '';
-		await fetch(`http://localhost:8000/users/current/unlink-${socailID}`, {
+		await fetch(`${API}/users/current/unlink-${socailID}`, {
 			method: 'PATCH',
 			headers: {
 				'Content-Type': 'application/json',
@@ -398,7 +396,7 @@
 				</div>`;
 			return;
 		}
-		await fetch('http://localhost:8000/users/current/link-telegram', {
+		await fetch(`${API}/users/current/link-telegram`, {
 			method: 'PATCH',
 			headers: {
 				'Content-Type': 'application/json',
@@ -450,7 +448,7 @@
 		let data = {
 			id_token: credential
 		};
-		await fetch('http://127.0.0.1:8000/users/current/link-google', {
+		await fetch(`${API}/users/current/link-google`, {
 			method: 'PATCH',
 			headers: {
 				'Content-Type': 'application/json',

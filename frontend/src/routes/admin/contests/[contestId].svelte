@@ -6,6 +6,7 @@
 	export async function load({ params }) {
 		if (!browser) return;
 		let token = localStorage.getItem('access_token');
+		const API = import.meta.env.VITE_API_URL;
 
 		if (token == null) {
 			return {
@@ -24,7 +25,7 @@
 		}
 
 		// Retrieve all the available fields
-		let fields = await fetch('http://127.0.0.1:8000/fields', {
+		let fields = await fetch(`${API}/fields`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json'
@@ -46,7 +47,7 @@
 		let contest;
 		if (!isNaN(contestId)) {
 			// Retrieve the contest
-			contest = await fetch(`http://localhost:8000/competitions/${contestId}`, {
+			contest = await fetch(`${API}/competitions/${contestId}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json'
@@ -75,7 +76,8 @@
 				permission,
 				fields_data,
 				access_token: token,
-				contest
+				contest,
+				API
 			}
 		};
 	}
@@ -83,18 +85,17 @@
 
 <script lang="ts">
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
-	import { sessionDuration } from '$lib/sessionDuration';
 	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
 	import lottieInfoSrc from '$lib/Assets/animations/lottie-info.json?url';
 	import lottieEmptySrc from '$lib/Assets/animations/lottie-empty.json?url';
 	import type { CompetitionWithFields, Field } from '$lib/types';
-
+	import { sessionDuration } from '$lib/sessionDuration';
 	sessionDuration();
 
 	export let id: number, permission: string, fields_data, access_token: string;
 	export let contest: undefined | CompetitionWithFields;
-
+	export let API : string = import.meta.env.VITE_API_URL;
 	let questionId = '',
 		questionTitle = '',
 		default_value = '',
@@ -227,7 +228,7 @@
 			// Adding new field successfully
 			showMessage('Success', 'New field has been added.');
 			// Add the new field to the Server
-			await fetch('http://localhost:8000/fields', {
+			await fetch(`${API}/fields`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -281,7 +282,7 @@
 		} else if (questionType === 'Upload file') {
 			questionTypeNum = 2;
 		}
-		await fetch(`http://localhost:8000/fields/${questionId}`, {
+		await fetch(`${API}/fields/${questionId}`, {
 			method: 'PUT',
 			headers: {
 				'Content-Type': 'application/json',
@@ -342,7 +343,7 @@
 				});
 				fields.splice(index, 1);
 				// TODO: remove the field from the server
-				await fetch(`http://localhost:8000/fields/${selectedOldField.id}`, {
+				await fetch(`${API}/fields/${selectedOldField.id}`, {
 					method: 'DELETE',
 					body: JSON.stringify({
 						fields: fields
@@ -600,7 +601,7 @@
 			return field.id;
 		});
 		comp.admins = monitors;
-		await fetch(`http://localhost:8000/competitions`, {
+		await fetch(`${API}/competitions`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -615,7 +616,6 @@
 					// show the error message
 					showMessage('Error', 'Something went wrong.');
 					res.json().then((data) => {
-						console.log(data);
 						showMessage(res.statusText, data.details !== undefined ? data.details : 'Please fill the form correctly!');
 					});
 				}
@@ -681,7 +681,7 @@
 		let updateFormOnly = confirm('Do you want to update the form only?');
 		if (updateFormOnly) {
 			// update the request template first
-			await fetch(`http://localhost:8000/competitions/${contest?.id}/request-template`, {
+			await fetch(`${API}/competitions/${contest?.id}/request-template`, {
 				method: 'PATCH',
 				headers: {
 					'Content-Type': 'application/json',
@@ -696,7 +696,6 @@
 						// show the error message
 						showMessage('Error', 'Something went wrong.');
 						res.json().then((data) => {
-							console.log(data);
 							showMessage(res.statusText, data.details !== undefined ? data.details : 'Please fill the form correctly!');
 						});
 					}
@@ -706,7 +705,7 @@
 					showMessage('Error', 'Something went wrong: ' + err);
 				});
 			// update the fields
-			await fetch(`http://localhost:8000/competitions/${contest?.id}/form`, {
+			await fetch(`${API}/competitions/${contest?.id}/form`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',
@@ -721,7 +720,6 @@
 						// show the error message
 						showMessage('Error', 'Something went wrong.');
 						res.json().then((data) => {
-							console.log(data);
 							showMessage(res.statusText, data.details !== undefined ? data.details : 'Please fill the form correctly!');
 						});
 					}
@@ -731,7 +729,7 @@
 					showMessage('Error', 'Something went wrong: ' + err);
 				});
 		} else if (confirm('Do you want to update the form monitors list only?')) {
-			await fetch(`http://localhost:8000/competitions/${contest?.id}/admins`, {
+			await fetch(`${API}/competitions/${contest?.id}/admins`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',
@@ -746,7 +744,6 @@
 						// show the error message
 						showMessage('Error', 'Something went wrong.');
 						res.json().then((data) => {
-							console.log(data);
 							showMessage(res.statusText, data.details !== undefined ? data.details : 'Please fill the form correctly!');
 						});
 					}
@@ -756,7 +753,7 @@
 					showMessage('Error', 'Something went wrong: ' + err);
 				});
 		} else {
-			await fetch(`http://localhost:8000/competitions/${contest?.id}`, {
+			await fetch(`${API}/competitions/${contest?.id}`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',
@@ -771,7 +768,6 @@
 						// show the error message
 						showMessage('Error', 'Something went wrong.');
 						res.json().then((data) => {
-							console.log(data);
 							showMessage(res.statusText, data.details !== undefined ? data.details : 'Please fill the form correctly!');
 						});
 					}

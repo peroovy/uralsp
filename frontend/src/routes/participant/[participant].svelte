@@ -4,6 +4,8 @@
 	// @ts-ignore
 	export async function load({ params }) {
 		if (!browser) return;
+		const API = import.meta.env.VITE_API_URL;
+
 		let id = params.participant;
 		// @ts-ignore
 		let token = localStorage.getItem('access_token');
@@ -23,32 +25,32 @@
 			};
 		}
 
-		let userData = await fetch(`http://localhost:8000/users/current/profile`, {
+		let userData = await fetch(`${API}/users/current/profile`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
 				Authorization: 'Bearer ' + token
 			}
 		});
-		let UpComming_competitions = await fetch(`http://localhost:8000/competitions?opened=false`, {
+		let UpComming_competitions = await fetch(`${API}/competitions?opened=false`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json'
 			}
 		});
-		let Ongoing_competitions = await fetch(`http://localhost:8000/competitions?opened=true`, {
+		let Ongoing_competitions = await fetch(`${API}/competitions?opened=true`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json'
 			}
 		});
-		let Started_competitions = await fetch(`http://localhost:8000/competitions?started=true`, {
+		let Started_competitions = await fetch(`${API}/competitions?started=true`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json'
 			}
 		});
-		let requests = await fetch(`http://localhost:8000/users/current/requests`, {
+		let requests = await fetch(`${API}/users/current/requests`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -65,7 +67,8 @@
 				ongoing_competition,
 				upComming_competitions,
 				started_competitions,
-				requests
+				requests,
+				API
 			}
 		};
 	}
@@ -81,11 +84,14 @@
 	import type { Requests, Competitions, Competition, UserData } from '$lib/types';
 	import { onMount } from 'svelte';
 	import lottieNotFoundSrc from '$lib/Assets/animations/lottie-notfound2.json?url';
+	import { sessionDuration } from '$lib/sessionDuration';
+	sessionDuration();
 	export let userInfo: UserData;
 	export let ongoing_competition: Competitions = [],
 		upComming_competitions: Competitions = [],
 		started_competitions: Competitions = [];
 	export let requests: Requests = [];
+	export let API: string;
 	let userId: number;
 	let paricipantName = '';
 	onMount(() => {
@@ -113,7 +119,7 @@
 	function cancelApplication(id: number) {
 		let confirmation = confirm('Are you sure you want to cancel your application?');
 		if (!confirmation) return;
-		fetch(`http://localhost:8000/users/current/requests/${id}/cancel`, {
+		fetch(`${API}/users/current/requests/${id}/cancel`, {
 			method: 'PATCH',
 			headers: {
 				'Content-Type': 'application/json',
@@ -131,7 +137,7 @@
 	function renewApplication(id: number) {
 		let confirmation = confirm('Are you sure you want to renew your application?');
 		if (!confirmation) return;
-		fetch(`http://localhost:8000/users/current/requests/${id}/renew`, {
+		fetch(`${API}/users/current/requests/${id}/renew`, {
 			method: 'PATCH',
 			headers: {
 				'Content-Type': 'application/json',
@@ -482,17 +488,17 @@
 								<div class="btn gap-2">
 									<button class="btn btn-primary btn-sm" on:click={() => editApplication(request.competition)}>
 										<li class="fa fa-edit" />
-											Edit
+										Edit
 									</button>
 									{#if request.status != 'canceled' && request.status != 'cancelled'}
 										<button class="btn btn-danger btn-sm" on:click={() => cancelApplication(request.id)}>
 											<li class="fa fa-trash" />
-												Cancel
+											Cancel
 										</button>
 									{:else if request.status == 'canceled' || request.status == 'cancelled'}
 										<button class="btn btn-success btn-sm" on:click={() => renewApplication(request.id)}>
 											<li class="fa fa-trash-restore" />
-												Renew
+											Renew
 										</button>
 									{/if}
 								</div>

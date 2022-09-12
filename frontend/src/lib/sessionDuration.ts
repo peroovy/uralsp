@@ -1,14 +1,20 @@
 import { browser } from '$app/env';
 import { goto } from '$app/navigation'
+import { base } from '$app/paths';
+
 export function sessionDuration(): void{
-    setInterval(() => {
-        const now = new Date().getTime();
-        if(browser){
-            const expiresDate = parseInt(localStorage.getItem('expires_in')!) * 1000;
-            let re = (expiresDate - now) / (1000*60);
-            if(re <= 0){
-                goto('/');
-            }
+    const now = new Date().getTime();
+    if(browser){
+        const expiresDate = parseInt(localStorage.getItem('expires_in')!) * 1000;
+        let re = (expiresDate - now) / (1000*60);
+        if(re <= 0){
+            goto('/');
         }
-    }, 30000);
+        setInterval(() => {
+            if(re <= 0){
+                localStorage.clear();
+                window.location.href = base;
+            }
+        }, re*1000*60);
+    }
 }

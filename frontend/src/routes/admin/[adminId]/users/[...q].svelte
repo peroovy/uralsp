@@ -4,6 +4,8 @@
 	//@ts-ignore
 	export async function load({ params }) {
 		if (!browser) return;
+		const API = import.meta.env.VITE_API_URL;
+
 		let searchQueries = params.q;
 		let adminId = params.adminId;
 		// @ts-ignore
@@ -33,7 +35,7 @@
 		}
 		// Request data from the server...
 		let usersOrErr;
-		await fetch(`http://localhost:8000/users?${searchQueries}`, {
+		await fetch(`${API}/users?${searchQueries}`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json'
@@ -51,7 +53,8 @@
 				searchQueries: params.q,
 				usersOrErr,
 				token,
-				real_id
+				real_id,
+				API
 			}
 		};
 	}
@@ -64,13 +67,15 @@
 	import { onMount, onDestroy } from 'svelte';
 	import * as XLSX from 'xlsx';
 	import { republics } from '$lib/Assets/republics.json';
-	import { searchparams } from '$lib/stores';
-
+	import { sessionDuration } from '$lib/sessionDuration';
+	sessionDuration();
+	
 	export let searchQueries: string = '',
 		adminId: number = 0,
 		usersOrErr: any = [];
 	export let token: string = '',
-		real_id: number = 0;
+		real_id: number = 0,
+		API : string;
 	const { utils } = XLSX;
 	let userCont = '' as unknown as HTMLElement;
 	let toolbar = '' as unknown as HTMLElement;
@@ -267,7 +272,7 @@
 		let check = confirm(`Are you sure you want to merge these users-(${ids[0]}-${ids[1]})?`);
 		if (check) {
 			// Send merge request
-			await fetch('http://localhost:8000/users/merge', {
+			await fetch(`${API}/users/merge`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -315,7 +320,7 @@
 		for (let i = 0; i < Array.from(selectedIds).length; i++) {
 			let userId = Array.from(selectedIds)[i];
 			// Request user data
-			await fetch(`http://localhost:8000/users/${userId}`, {
+			await fetch(`${API}/users/${userId}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
@@ -326,7 +331,6 @@
 				.then((data) => {
 					if (data.error === undefined) {
 						selectedUsersArray.push(data);
-						console.log(data);
 					} else {
 						alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
 										<strong>Error!</strong> ${data.error}.

@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import { Login } from 'sveltegram';
 	import { parsePayload } from '$lib/parse';
+	const API = import.meta.env.VITE_API_URL;
 
 	let google = '' as unknown as HTMLElement;
 
@@ -47,7 +48,7 @@
 				let data = {
 					id_token: credential
 				};
-				await fetch('http://127.0.0.1:8000/auth/signin-google', {
+				await fetch(`${API}/auth/signin-google`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'
@@ -90,7 +91,7 @@
 						last_name: ln,
 						hash: hash
 					};
-					await fetch('http://127.0.0.1:8000/auth/signin-vkontakte', {
+					await fetch(`${API}/auth/signin-vkontakte`, {
 						method: 'POST',
 						headers: {
 							'Content-Type': 'application/json'
@@ -124,7 +125,7 @@
 			auth_date: user.detail.auth_date,
 			hash: user.detail.hash
 		};
-		fetch('http://127.0.01:8000/auth/signin-telegram', {
+		fetch(`${API}/auth/signin-telegram`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
@@ -133,7 +134,6 @@
 		})
 			.then((res) => {
 				res.json().then((res) => {
-					console.log(res);
 					let expiresIn = res.expires_in;
 					let token = res.access_token;
 					localStorage.setItem('access_token', token);
@@ -144,7 +144,7 @@
 				});
 			})
 			.catch((err) => {
-				console.log(err);
+				console.error(err);
 			});
 	}
 </script>

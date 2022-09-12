@@ -1,10 +1,11 @@
 <script context="module" lang="ts">
 	import { parsePayload } from '$lib/parse';
 	import { browser } from '$app/env';
-
 	// @ts-ignore
 	export async function load({ params }) {
 		if (!browser) return;
+		const API = import.meta.env.VITE_API_URL;
+
 		let id = params.admin;
 		// @ts-ignore
 		let token = localStorage.getItem('access_token');
@@ -25,14 +26,14 @@
 			};
 		}
 
-		let userData = await fetch(`http://localhost:8000/users/current/profile`, {
+		let userData = await fetch(`${API}/users/current/profile`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
 				Authorization: 'Bearer ' + token
 			}
 		});
-		let competitions = await fetch(`http://localhost:8000/competitions`, {
+		let competitions = await fetch(`${API}/competitions`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json'
@@ -46,7 +47,8 @@
 				competitionsInfo,
 				permission,
 				real_id,
-				access_token: token
+				access_token: token,
+				API
 			}
 		};
 	}
@@ -66,11 +68,11 @@
 	import { republics } from '$lib/Assets/republics.json';
 	const { utils } = XLSX;
 	export let userInfo: UserData, competitionsInfo: Competitions, access_token: string;
-	export let permission: string;
+	export let permission: string, API: string;
 	export let real_id: number;
 	import { sessionDuration } from '$lib/sessionDuration';
 	sessionDuration();
-
+	
 	// Dummy data
 	let adminName = '';
 	let InstituteYear = [
@@ -83,7 +85,7 @@
 		'1 (master)',
 		'2 (master)'
 	];
-
+	console.log(API);
 	// Bind variables
 	let alertCont = '' as unknown as HTMLElement;
 	let sliderCont = '' as unknown as HTMLElement;
@@ -286,7 +288,7 @@
 	let collegeYear = ['1 course', '2 course', '3 course', '4 course', '5 course'];
 	async function editComp(id: number) {
 		let comp = {} as Competition;
-		await fetch(`http://localhost:8000/competitions/${id}`, {
+		await fetch(`${API}/competitions/${id}`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -324,7 +326,7 @@
 			compResults.classList.remove('align-items-stretch');
 			compResults.classList.add('align-items-start');
 		}
-		await fetch(`http://localhost:8000/competitions/${comp.id}/requests`, {
+		await fetch(`${API}/competitions/${comp.id}/requests`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -454,7 +456,7 @@
 		}
 		let confirmRemoval = confirm('Are you sure you want to delete this competition?');
 		if (!confirmRemoval) return;
-		await fetch(`http://localhost:8000/competitions/${id}`, {
+		await fetch(`${API}/competitions/${id}`, {
 			method: 'DELETE',
 			headers: {
 				'Content-Type': 'application/json',
@@ -482,7 +484,7 @@
 		if (!confirmAccept) return;
 		let description = prompt('Enter description:', 'Accepted');
 
-		await fetch(`http://localhost:8000/requests/${id}/process`, {
+		await fetch(`${API}/requests/${id}/process`, {
 			method: 'PATCH',
 			headers: {
 				'Content-Type': 'application/json',
@@ -515,7 +517,7 @@
 		let confirmDecline = confirm('Are you sure you want to reject this application?');
 		if (!confirmDecline) return;
 		let description = prompt('Enter description:', 'Rejected');
-		await fetch(`http://localhost:8000/requests/${id}/process`, {
+		await fetch(`${API}/requests/${id}/process`, {
 			method: 'PATCH',
 			headers: {
 				'Content-Type': 'application/json',

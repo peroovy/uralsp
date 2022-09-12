@@ -11,62 +11,62 @@
 				return: '/'
 			};
 		}
-
-		if (browser) {
-			// Check the access token in the local storage
-			const accessToken = localStorage.getItem('access_token');
-			if (accessToken == null) {
-				return {
-					status: 300,
-					redirect: '/'
-				};
-			}
-			let payload = parsePayload(accessToken);
-			const userId = payload.user_id;
-			const permissions = payload.permission;
-			// Get the competition info
-			const contest = await fetch(`http://localhost:8000/competitions/${contestId}`);
-			// Get the user old requests
-			const oldRequests = await fetch(`http://localhost:8000/users/current/requests`, {
-				method: 'GET',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${accessToken}`
-				}
-			});
-			if (oldRequests.status != 200 || contest.status != 200) {
-				return {
-					status: 300,
-					redirect: '/'
-				};
-			}
-			const oldRequestsJson = await oldRequests.json();
-			const contestJson = await contest.json();
-			// check if the contest is overdue or upcoming
-			const now = Date.now();
-			const contestStart = Date.parse(contestJson.registration_start);
-			const contestEnd = Date.parse(contestJson.registration_end);
-
-			if (now < contestStart || now > contestEnd) {
-				alert('The contest is not open for registration');
-				return {
-					status: 300,
-					redirect: '/'
-				};
-			}
-			// Check if the user has already made a request for this competition
-			const oldRequest = (oldRequestsJson as Requests).find((request) => request.owner == contestId || request.participants.includes(userId));
-
+		if (!browser) return;
+		const API = import.meta.env.VITE_API_URL;
+		// Check the access token in the local storage
+		const accessToken = localStorage.getItem('access_token');
+		if (accessToken == null) {
 			return {
-				props: {
-					contest: contestJson,
-					oldRequest,
-					userId,
-					accessToken,
-					permissions
-				}
+				status: 300,
+				redirect: '/'
 			};
 		}
+		let payload = parsePayload(accessToken);
+		const userId = payload.user_id;
+		const permissions = payload.permission;
+		// Get the competition info
+		const contest = await fetch(`${API}/competitions/${contestId}`);
+		// Get the user old requests
+		const oldRequests = await fetch(`${API}/users/current/requests`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${accessToken}`
+			}
+		});
+		if (oldRequests.status != 200 || contest.status != 200) {
+			return {
+				status: 300,
+				redirect: '/'
+			};
+		}
+		const oldRequestsJson = await oldRequests.json();
+		const contestJson = await contest.json();
+		// check if the contest is overdue or upcoming
+		const now = Date.now();
+		const contestStart = Date.parse(contestJson.registration_start);
+		const contestEnd = Date.parse(contestJson.registration_end);
+
+		if (now < contestStart || now > contestEnd) {
+			alert('The contest is not open for registration');
+			return {
+				status: 300,
+				redirect: '/'
+			};
+		}
+		// Check if the user has already made a request for this competition
+		const oldRequest = (oldRequestsJson as Requests).find((request) => request.owner == contestId || request.participants.includes(userId));
+
+		return {
+			props: {
+				contest: contestJson,
+				oldRequest,
+				userId,
+				accessToken,
+				permissions,
+				API
+			}
+		};
 	}
 </script>
 
@@ -76,12 +76,15 @@
 	import { base } from '$app/paths';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
 	import type { RequestsOut, UserRequest, CompetitionWithFields } from '$lib/types';
-
+	import { sessionDuration } from '$lib/sessionDuration';
+	sessionDuration();
+	
 	export let contest: CompetitionWithFields = {} as CompetitionWithFields,
 		oldRequest: UserRequest = {} as UserRequest,
 		userId: number,
 		accessToken: string,
-		permissions: string;
+		permissions: string,
+		API: string;
 
 	let alertCont: HTMLDivElement;
 
@@ -178,7 +181,7 @@
 		}
 		application.team_name = team_name;
 		// send the request to the server and validate the response
-		const response = await fetch(`http://localhost:8000/requests`, {
+		const response = await fetch(`${API}/requests`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -206,7 +209,7 @@
 			return;
 		}
 		// send the request to the server and validate the response
-		const response = await fetch(`http://localhost:8000/requests/${oldRequest.id}`, {
+		const response = await fetch(`${API}/requests/${oldRequest.id}`, {
 			method: 'PUT',
 			headers: {
 				'Content-Type': 'application/json',
@@ -222,7 +225,7 @@
 	}
 	async function retreiveOldRequest() {
 		// Reterive the old request and fill the form
-		let old_respond = await fetch('http://localhost:8000/requests/' + oldRequest.id, {
+		let old_respond = await fetch(`${API}/requests/` + oldRequest.id, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -231,7 +234,6 @@
 		});
 		if (old_respond.status == 200) {
 			let old_request = await old_respond.json();
-			console.log(old_request);
 			for (let u = 0; u < contest.persons_amount; u++) {
 				saveApp(u, 'silent');
 				let template = requestTemplates[u].children[1].children;
