@@ -95,7 +95,7 @@
 
 	export let id: number, permission: string, fields_data, access_token: string;
 	export let contest: undefined | CompetitionWithFields;
-	export let API : string = import.meta.env.VITE_API_URL;
+	export let API: string = import.meta.env.VITE_API_URL;
 	let questionId = '',
 		questionTitle = '',
 		default_value = '',
@@ -106,12 +106,13 @@
 	let monitorId: number | undefined;
 	let contestantsPerTeam: number | undefined;
 
-	let suggestions = '' as unknown as HTMLElement;
-	let alertCont = '' as unknown as HTMLElement;
-	let formPreview = '' as unknown as HTMLElement;
-	let monitorsCont = '' as unknown as HTMLElement;
-	let sliderCont = '' as unknown as HTMLElement;
-	let loading = '' as unknown as HTMLElement;
+	let suggestions: HTMLElement;
+	let alertCont: HTMLElement;
+	let formPreview: HTMLElement;
+	let monitorsCont: HTMLElement;
+	let sliderCont: HTMLElement;
+	let loading: HTMLElement;
+	let chooseUpdate: HTMLElement;
 	// Demo element
 	let demo = '' as unknown as HTMLElement;
 	let controlsCont = [demo, demo, demo];
@@ -627,7 +628,7 @@
 			});
 	}
 
-	async function update(): Promise<void> {
+	async function update(whatToupdate : { all: boolean; form: boolean; admins: boolean }): Promise<void> {
 		comp.name = contestName;
 		comp.registration_start = regStartOn + 'T' + regStartAt + 'Z';
 		comp.registration_end = regEndOn + 'T' + regEndAt + 'Z';
@@ -679,8 +680,9 @@
 			return field.id;
 		});
 		comp.admins = monitors;
-		let updateFormOnly = confirm('Do you want to update the form only?');
-		if (updateFormOnly) {
+		chooseUpdate.style.display = 'none';
+
+		if (whatToupdate.form) {
 			// update the request template first
 			await fetch(`${API}/competitions/${contest?.id}/request-template`, {
 				method: 'PATCH',
@@ -729,7 +731,8 @@
 					let error = '';
 					showMessage('Error', 'Something went wrong: ' + err);
 				});
-		} else if (confirm('Do you want to update the form monitors list only?')) {
+		}
+		if (whatToupdate.admins) {
 			await fetch(`${API}/competitions/${contest?.id}/admins`, {
 				method: 'PUT',
 				headers: {
@@ -753,7 +756,8 @@
 					let error = '';
 					showMessage('Error', 'Something went wrong: ' + err);
 				});
-		} else {
+		}
+		if (whatToupdate.all) {
 			await fetch(`${API}/competitions/${contest?.id}`, {
 				method: 'PUT',
 				headers: {
@@ -778,6 +782,33 @@
 					showMessage('Error', 'Something went wrong: ' + err);
 				});
 		}
+
+	}
+
+	$: updateEverthing = false;
+	$: updateForm = false;
+	$: updateAdmins = false;
+	$: if (browser) {
+		if (updateEverthing) {
+			updateForm = false;
+			updateAdmins = false;
+			document.getElementById('flexSwitchCheck2')?.setAttribute('disabled', 'disabled');
+			document.getElementById('flexSwitchCheck3')?.setAttribute('disabled', 'disabled');
+		} else {
+			document.getElementById('flexSwitchCheck2')?.removeAttribute('disabled');
+			document.getElementById('flexSwitchCheck3')?.removeAttribute('disabled');
+		}
+	}
+
+	function chooseUpdateFunction(): void {
+		chooseUpdate.style.display = 'block';
+
+		let updateObj = {
+			all: updateEverthing,
+			form: updateForm,
+			admins: updateAdmins
+		};
+
 	}
 	let slideContorls = `<div class="slideControls border-top">
 							<div class="btn-group gap-1 col-12 justify-content-center align-items-center p-0 m-0">
@@ -838,7 +869,7 @@
 				updateContestBtn.innerHTML = 'Update Contest <li class="fa fa-check-circle">';
 				// Add event listener to create contest button
 				updateContestBtn.addEventListener('click', () => {
-					update();
+					chooseUpdateFunction();
 				});
 				// Remove final button
 				(controlsCont[2].children[0].children[0].children[1] as HTMLElement).style.display = 'none';
@@ -849,7 +880,7 @@
 				updateContestBtn.innerHTML = 'Update Contest <li class="fa fa-check-circle">';
 				// Add event listener to create contest button
 				updateContestBtn.addEventListener('click', () => {
-					update();
+					chooseUpdateFunction();
 				});
 				// Remove final button
 				(controlsCont[1].children[0].children[0].children[1] as HTMLElement).style.display = 'none';
@@ -1107,11 +1138,32 @@
 	</div>
 	<div bind:this={alertCont} class="alertCont" />
 </section>
-<div class="loading" bind:this={loading} >
+<div class="loading" bind:this={loading}>
 	<div class="spinner-border" role="status">
 		<span class="visually-hidden">Loading...</span>
 	</div>
 </div>
+<div class="choose-update shadow" bind:this={chooseUpdate}>
+	<div class="card">
+		<div class="card-body">
+			<h5 class="card-title">What do you want to update?</h5>
+			<div class="form-check form-switch">
+				<input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheck1" bind:checked={updateEverthing} />
+				<label class="form-check-label" for="flexSwitchCheck1"> Everything </label>
+			</div>
+			<div class="form-check form-switch">
+				<input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheck2" bind:checked={updateAdmins} />
+				<label class="form-check-label" for="flexSwitchCheck2"> Admins list </label>
+			</div>
+			<div class="form-check form-switch">
+				<input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheck3" bind:checked={updateForm} />
+				<label class="form-check-label" for="flexSwitchCheck3"> Application' form </label>
+			</div>
+		</div>
+		<button class="btn btn-primary btn-sm" on:click={()=> update({all: updateEverthing, admins: updateAdmins, form: updateForm})}> Update </button>
+	</div>
+</div>
+
 <style lang="scss">
 	@import '../../../lib/Assets/common.scss';
 	.createContest {
@@ -1168,6 +1220,37 @@
 				display: flex;
 				justify-content: center;
 				align-items: center;
+			}
+		}
+	}
+	.choose-update {
+		width: 100vw;
+		height: 100vh;
+		position: fixed;
+		z-index: 100;
+		top: 0;
+		background-color: rgba(0, 0, 0, 0.5);
+		display: none;
+		.card {
+			width: max-content;
+			height: max-content;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			background-color: white;
+			border-radius: 10px;
+			display: flex;
+			flex-flow: column nowrap;
+			justify-content: space-between;
+			align-items: center;
+			padding: 20px;
+			.form-check {
+				margin: 10px 0px;
+			}
+			.btn {
+				width: 100px;
+				margin-bottom: 10px;
 			}
 		}
 	}
