@@ -2,7 +2,7 @@ FROM python:3.10-slim-buster
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-WORKDIR /uralsp
+WORKDIR /app
 
 COPY Pipfile.lock .
 RUN apt-get update && \

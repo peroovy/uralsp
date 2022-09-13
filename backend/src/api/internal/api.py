@@ -1,5 +1,6 @@
 from typing import Callable, Type
 
+from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from ninja import NinjaAPI
 from ninja.errors import AuthenticationError
@@ -13,9 +14,11 @@ from api.internal.users.api import register_users_api
 
 BAD_ACCESS_TOKEN = "bad access token"
 
+DOCS_URL = "/docs"
+
 
 def get_api() -> NinjaAPI:
-    api = NinjaAPI()
+    api = NinjaAPI(docs_url=DOCS_URL if settings.DEBUG else None)
 
     subscribe_exception_handlers(api)
 
