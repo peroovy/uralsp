@@ -6,8 +6,12 @@
 	import { onMount } from 'svelte';
 	import { Login } from 'sveltegram';
 	import { parsePayload } from '$lib/parse';
-	const API = import.meta.env.VITE_API_URL;
 
+	const API = import.meta.env.VITE_API_URL;
+	const googleId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+	const vkAppId = import.meta.env.VITE_VK_CLIENT_ID;
+	const telgramBotId = import.meta.env.VITE_TELEGRAM_BOT;
+	
 	let google : HTMLElement;
 	let loading : HTMLElement;
 
@@ -71,14 +75,14 @@
 
 			// @ts-ignore
 			window.google.accounts.id.initialize({
-				client_id: '868612228164-4rrjlhpktkg005qd25qp0f5sa55fuu5j.apps.googleusercontent.com',
+				client_id: googleId,
 				callback: handleCredentialResponse
 			});
 			// @ts-ignore
 			window.google.accounts.id.renderButton(google, {});
 			// @ts-ignore
 			VK.init({
-				apiId: 51395235
+				apiId: vkAppId
 			});
 			// @ts-ignore
 			VK.Widgets.Auth('vk_auth', {
@@ -197,7 +201,7 @@
 				<span> Continue with Telegram </span>
 				<i class="fa fa-arrow-right" />
 				<div class="telegramBtnHolder">
-					<Login username="zeyaddevbot" on:auth={onTelegramAuth} />
+					<Login username='{telgramBotId}' on:auth={onTelegramAuth} />
 				</div>
 			</div>
 		</div>

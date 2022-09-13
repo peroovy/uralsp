@@ -79,6 +79,10 @@
 	import { sessionDuration } from '$lib/sessionDuration';
 	sessionDuration();
 
+	const googleId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+	const vkAppId = import.meta.env.VITE_VK_CLIENT_ID;
+	const telgramBotId = import.meta.env.VITE_TELEGRAM_BOT;
+	
 	$: educationType = 'Choose ...';
 	$: instName = '';
 	$: instYear = '';
@@ -138,14 +142,14 @@
 		if (browser) {
 			// @ts-ignore
 			window.google.accounts.id.initialize({
-				client_id: '868612228164-4rrjlhpktkg005qd25qp0f5sa55fuu5j.apps.googleusercontent.com',
+				client_id: googleId,
 				callback: handleCredentialResponse
 			});
 			// @ts-ignore
 			window.google.accounts.id.renderButton(google, {});
 			// @ts-ignore
 			VK.init({
-				apiId: 51395235
+				apiId: vkAppId
 			});
 			// @ts-ignore
 			VK.Widgets.Auth('vk_auth', {
@@ -701,7 +705,7 @@
 							<i class="fa fa-telegram me-3" />
 							{#if ids.tele == null}
 								<div class="telegramBtnHolder">
-									<Login username="zeyaddevbot" on:auth={onTelegramAuth} />
+									<Login username="{telgramBotId}" on:auth={onTelegramAuth} />
 								</div>
 								<span class="me-2"> Link your Telegram </span>
 							{:else}
