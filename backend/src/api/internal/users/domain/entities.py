@@ -7,7 +7,7 @@ from pydantic import EmailStr, Field
 from api.internal.db.models import User
 from api.internal.db.models.user import Institution, Permissions
 
-PHONE_REGEX = r"^\+[0-9]{1}[1-9]{10}$"
+PHONE_REGEX = r"^\+[0-9]{11}$"
 
 
 class ProfileOut(ModelSchema):
