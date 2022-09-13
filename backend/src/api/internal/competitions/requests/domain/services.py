@@ -1,8 +1,8 @@
+from collections import deque
 from io import BytesIO
 from typing import List, Optional
 
 from django.conf import settings
-from collections import deque
 
 from api.internal.competitions.domain.services import CompetitionsService
 from api.internal.competitions.requests.domain.entities import SerializerParams
