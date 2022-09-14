@@ -12,7 +12,7 @@ services:
 
   app:
     build: backend/
-    container_name: api
+    container_name: app
     command: make migrate run
     restart: always
     env_file:
