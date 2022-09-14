@@ -426,7 +426,14 @@
 
 	// Componunt intialization
 	onMount(() => {
-		adminName = `${userInfo.name}  ${userInfo.surname}`;
+		if(userInfo.name == null){
+			adminName = userInfo.email;
+		}
+		if (userInfo.surname){
+			adminName = userInfo.name + ' ' + userInfo.surname;
+		} else {
+			adminName = userInfo.name;
+		}
 		comps = competitionsInfo;
 		loading.style.display = 'none';
 		filter();

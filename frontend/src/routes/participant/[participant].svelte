@@ -96,7 +96,14 @@
 	let paricipantName = '';
 	onMount(() => {
 		userId = userInfo.id;
-		paricipantName = `${userInfo.name}  ${userInfo.surname}`;
+		if(userInfo.name == null){
+			paricipantName = userInfo.email;
+		}
+		if (userInfo.surname){
+			paricipantName = userInfo.name + ' ' + userInfo.surname;
+		} else {
+			paricipantName = userInfo.name;
+		}
 		loading.style.display = 'none';
 	});
 	let contestObject: Competitions = [
