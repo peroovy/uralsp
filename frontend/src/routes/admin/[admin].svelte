@@ -987,10 +987,11 @@
 		padding: 0;
 		margin: 0;
 		background-color: #fff;
-		min-height: 100vh;
 		background-image: linear-gradient(to bottom right, $primary-color, $secondary-color);
 		width: 100vw;
+		overflow: hidden;
 		min-height: calc(100vh - 38px);
+		height: fit-content;
 		nav {
 			width: 100vw !important;
 			background-color: rgb(248, 248, 248);
@@ -1050,6 +1051,7 @@
 		display: flex;
 		flex-flow: row nowrap;
 		transition: all 0.3s ease-in-out;
+		overflow: hidden;
 		.slide {
 			width: 100vw;
 			position: relative;

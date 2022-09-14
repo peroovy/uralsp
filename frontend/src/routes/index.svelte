@@ -197,13 +197,14 @@
 				<i class="fa fa-arrow-right" />
 				<div bind:this={google} class="googleBtnHolder" />
 			</button>
-
-			<button class="btn btn-lg btn-block btn-outline">
-				<i class="fa fa-vk" />
-				<span> Continue with VK </span>
-				<i class="fa fa-arrow-right" />
+			<div class="vk">
 				<div id="vk_auth" class="vkHolder" />
-			</button>
+				<button class="btn btn-lg btn-block btn-outline">
+					<i class="fa fa-vk" />
+					<span> Continue with VK </span>
+					<i class="fa fa-arrow-right" />
+				</button>
+			</div>
 			<div class="btn btn-lg btn-block btn-outline">
 				<i class="fa fa-telegram" />
 				<span> Continue with Telegram </span>
@@ -227,7 +228,7 @@
 
 	.signup {
 		width: 100vw;
-		min-height: 100vh;
+		min-height: calc(100vh - 38px);
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
@@ -268,7 +269,7 @@
 				align-items: center;
 				overflow: hidden;
 				position: relative;
-
+				z-index: 1;
 				.fa-google {
 					background: conic-gradient(from -45deg, #ea4335 110deg, #4285f4 90deg 180deg, #34a853 180deg 270deg, #fbbc05 270deg) 73% 55%/150% 150%
 						no-repeat;
@@ -346,13 +347,20 @@
 		opacity: 0.000001;
 		z-index: 20;
 	}
+	.vk{
+		max-width: 318px;
+		max-height: 80px;
+		overflow: hidden;
+		position: relative;
+	}
 	.vkHolder {
-		margin-top: -180px;
+		margin-top: -100px;
 		margin-left: 50px;
 		position: absolute;
 		scale: 2;
-		opacity: 0.000001;
+		opacity: 0.00000001;
 		height: fit-content;
+		z-index: 22;
 	}
 	@media screen and (max-width: 450px) {
 		.signup-form {

@@ -531,9 +531,10 @@
 	.participant-container {
 		width: 100vw;
 		min-height: calc(100vh - 38px);
-		max-height: fit-content !important;
+		height: fit-content !important;
 		align-items: center;
 		background-color: $bg-color;
+		overflow: hidden;
 		@include bg;
 		position: relative;
 		z-index: 1;
@@ -561,6 +562,7 @@
 		display: flex;
 		width: 400vw;
 		height: fit-content !important;
+		overflow: hidden;
 		flex-direction: row nowrap;
 	}
 	.request-description {
