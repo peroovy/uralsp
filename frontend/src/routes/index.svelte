@@ -1,4 +1,3 @@
-
 <svelte:head>
 	<link
 		rel="stylesheet"
@@ -343,9 +342,12 @@
 		height: 100% !important;
 		margin-left: -20px;
 		opacity: 1;
-		scale: 1;
-		opacity: 0.000001;
+		scale: 2;
+		opacity: 1;
 		z-index: 20;
+	}
+	.telegramBtnHolder{
+		margin: 0px !important;
 	}
 	.vk{
 		max-width: 318px;
