@@ -8,9 +8,9 @@ services:
       - "80:80"
       - "443:443"
     depends_on:
-      - api
+      - app
 
-  api:
+  app:
     build: backend/
     container_name: api
     command: make migrate run
