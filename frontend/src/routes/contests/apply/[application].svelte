@@ -371,7 +371,7 @@
 							</button>
 						{/if}
 					</div>
-					{#if oldRequest === undefined && Object.keys(oldRequest).length <= 0}
+					{#if oldRequest === undefined || Object.keys(oldRequest).length <= 0}
 						<button class="btn btn-block btn-primary rounded-0" style="background-color: #3490dc; border-color: #3490dc" on:click={submitRequest}>
 							<li class="fa fa-paper-plane me-1" />
 							Submit
