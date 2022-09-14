@@ -14,7 +14,7 @@ test:
 	docker-compose run --rm app make test
 
 up:
-	docker-compose -d
+	docker-compose up -d
 
 down:
 	docker-compose down
