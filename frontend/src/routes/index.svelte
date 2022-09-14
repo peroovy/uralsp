@@ -1,3 +1,22 @@
+
+<svelte:head>
+	<link
+		rel="stylesheet"
+		href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+		integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+		crossorigin="anonymous"
+	/>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+	<meta name="description" content="Some description!" />
+	<title>App Name | Signup</title>
+	<script defer
+		src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"
+		integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13"
+		crossorigin="anonymous"></script>
+	<script defer src="http://userapi.com/js/api/openapi.js" type="text/javascript" charset="windows-1251"></script>
+</svelte:head>
+
 <script lang="ts">
 	import logoSrc from '$lib/Assets/imgs/logo.png';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
@@ -73,13 +92,17 @@
 				});
 			}
 
-			// @ts-ignore
-			window.google.accounts.id.initialize({
-				client_id: googleId,
-				callback: handleCredentialResponse
-			});
-			// @ts-ignore
-			window.google.accounts.id.renderButton(google, {});
+			setTimeout(()=>{
+				// @ts-ignore
+				if(window.google){
+					window.google.accounts.id.initialize({
+						client_id: googleId,
+						callback: handleCredentialResponse
+					});
+					// @ts-ignore
+					window.google.accounts.id.renderButton(google, {});
+				}
+			}, 1000);
 			// @ts-ignore
 			VK.init({
 				apiId: vkAppId
@@ -157,24 +180,6 @@
 			});
 	}
 </script>
-
-<svelte:head>
-	<link
-		rel="stylesheet"
-		href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
-		integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
-		crossorigin="anonymous"
-	/>
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-	<meta name="description" content="Some description!" />
-	<title>App Name | Signup</title>
-	<script
-		src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"
-		integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13"
-		crossorigin="anonymous"></script>
-	<script src="http://userapi.com/js/api/openapi.js" type="text/javascript" charset="windows-1251"></script>
-</svelte:head>
 
 <section class="signup">
 	<img class="d1" src={dotsSrc} alt="" />

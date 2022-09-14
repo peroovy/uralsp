@@ -250,7 +250,6 @@
 			institution_faculty: userInfo.institution_faculty,
 			permission: userPermission
 		};
-		// TODO: make a server request to update user info
 		if (browser) {
 			if (real_id == userInfo.id) {
 				await fetch(`${API}/users/current/profile`, {
@@ -554,7 +553,7 @@
 									><img src={russianFlag} alt="The Russian flag" class="flag" />
 								</span>
 							</div>
-							<input type="text" class="form-control" id="phoneNumber" placeholder="Enter phone number" bind:value={userInfo.phone} />
+							<input type="text" class="form-control" id="phoneNumber" placeholder="Enter phone number" bind:value={userInfo.phone} data-mask="+7"/>
 						</div>
 					</div>
 				</div>
