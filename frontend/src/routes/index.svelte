@@ -342,8 +342,8 @@
 		height: 100% !important;
 		margin-left: -20px;
 		opacity: 1;
-		scale: 2;
-		opacity: 1;
+		scale: 3;
+		opacity: 0.0000001;
 		z-index: 20;
 	}
 	.telegramBtnHolder{
