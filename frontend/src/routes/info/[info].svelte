@@ -140,72 +140,78 @@
 			permissionsArr = ['default', 'teacher'];
 		}
 		if (browser) {
-			// @ts-ignore
-			window.google.accounts.id.initialize({
-				client_id: googleId,
-				callback: handleCredentialResponse
-			});
-			// @ts-ignore
-			window.google.accounts.id.renderButton(google, {});
-			// @ts-ignore
-			VK.init({
-				apiId: vkAppId
-			});
-			// @ts-ignore
-			VK.Widgets.Auth('vk_auth', {
-				onAuth: async function (data: { uid: string; hash: string; first_name: string; last_name: string }) {
-					if (real_id != userInfo.id) {
-						alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
-								<strong> You can't link social networks fom other users! </strong>
-								<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-							</div>`;
-						return;
+			setTimeout(() => {
+				if(window.google){
+					// @ts-ignore
+					window.google.accounts.id.initialize({
+						client_id: googleId,
+						callback: handleCredentialResponse
+					});
+					// @ts-ignore
+					window.google.accounts.id.renderButton(google, {});
 					}
-					let uid = data.uid;
-					let hash = data.hash;
-					let fn = data.first_name;
-					let ln = data.last_name;
-					let authData = {
-						uid: uid,
-						first_name: fn,
-						last_name: ln,
-						hash: hash
-					};
-					await fetch(`${API}/users/current/link-vkontakte`, {
-						method: 'PATCH',
-						headers: {
-							'Content-Type': 'application/json',
-							Authorization: 'Bearer ' + access_tk
-						},
-						body: JSON.stringify(authData)
-					})
-						.then((res) => {
-							res.json().then((res) => {
-								let status = res.details;
-								if (status === 'Success') {
-									userInfo.telegram_id = '';
-									alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
-                                            <strong> Success! </strong>
-                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                        </div>`;
-									// Reload
-									window.location.reload();
-								} else {
+				if(VK){
+					// @ts-ignore
+					VK.init({
+						apiId: vkAppId
+					});
+					// @ts-ignore
+					VK.Widgets.Auth('vk_auth', {
+						onAuth: async function (data: { uid: string; hash: string; first_name: string; last_name: string }) {
+							if (real_id != userInfo.id) {
+								alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+										<strong> You can't link social networks fom other users! </strong>
+										<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+									</div>`;
+								return;
+							}
+							let uid = data.uid;
+							let hash = data.hash;
+							let fn = data.first_name;
+							let ln = data.last_name;
+							let authData = {
+								uid: uid,
+								first_name: fn,
+								last_name: ln,
+								hash: hash
+							};
+							await fetch(`${API}/users/current/link-vkontakte`, {
+								method: 'PATCH',
+								headers: {
+									'Content-Type': 'application/json',
+									Authorization: 'Bearer ' + access_tk
+								},
+								body: JSON.stringify(authData)
+							})
+								.then((res) => {
+									res.json().then((res) => {
+										let status = res.details;
+										if (status === 'Success') {
+											userInfo.telegram_id = '';
+											alertCont.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+													<strong> Success! </strong>
+													<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+												</div>`;
+											// Reload
+											window.location.reload();
+										} else {
+											alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+																		<strong> VK account already exists! </strong>
+																		<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+																	</div>`;
+										}
+									});
+								})
+								.catch((err) => {
 									alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                                                <strong> VK account already exists! </strong>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                                            </div>`;
-								}
-							});
-						})
-						.catch((err) => {
-							alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                                <strong> VK account should be unique! </strong>
-                                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                            </div>`;
-						});
+														<strong> VK account should be unique! </strong>
+														<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+													</div>`;
+								});
+						}
+					});
 				}
-			});
+			}, 1000);
 		}
 		loading.style.display = 'none';
 	});
