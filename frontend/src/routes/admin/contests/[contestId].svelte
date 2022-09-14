@@ -1175,7 +1175,7 @@
 		background-image: linear-gradient(to bottom right, $primary-color, $secondary-color);
 		font-family: 'Light', sans-serif;
 		line-height: 1.4832;
-
+		overflow: hidden;
 		@include bg;
 		@include navbar;
 		nav {
@@ -1214,6 +1214,7 @@
 			width: 400vw;
 			display: flex;
 			flex-flow: row nowrap;
+			overflow: hidden;
 			.slide {
 				width: 100vw;
 				min-height: calc(100vh - 38px);
