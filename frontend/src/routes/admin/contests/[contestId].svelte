@@ -10,8 +10,8 @@
 
 		if (token == null) {
 			return {
-				// status: 301,
-				// redirect: '/'
+				status: 301,
+				redirect: '/'
 			};
 		}
 		let payload = parsePayload(token);
@@ -998,7 +998,7 @@
 						style="width: 400px"
 						background="transparent m-4"
 						speed="1"
-						autoplay
+						
 						loop
 						nocontrols
 					/>
@@ -1101,7 +1101,7 @@
 								speed="1"
 								style="height: 300px; margin-top: 30px"
 								loop
-								autoplay
+								
 								nocontrols
 							/>
 						{/if}

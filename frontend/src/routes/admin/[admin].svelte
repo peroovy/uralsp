@@ -747,7 +747,7 @@
 						<button class="btn" on:click={queryParams}>Search</button>
 					</div>
 					<div class="lottie-container col-lg-6 p-0">
-						<lottie-player class="lottie-animations" src={lottie} speed="1" loop nocontrols autoplay />
+						<lottie-player class="lottie-animations" src={lottie} speed="1" loop nocontrols  />
 					</div>
 				</div>
 			</div>

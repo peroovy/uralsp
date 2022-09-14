@@ -21,6 +21,7 @@
 		// if the user is not the same as the participant, redirect to the home page
 		if (real_id != id) {
 			return {
+				status: 300,
 				redirect: '/'
 			};
 		}
@@ -279,8 +280,8 @@
 				id="upcomming"
 			>
 				{#if upComming_competitions.length == 0}
-					<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
-						<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols />
+					<div class="text-center p-3 notFound" style="width: fit-content; background: white">
+						<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1"  nocontrols />
 						<h2>No Upcomming registerations!</h2>
 						<small style="margin-top:-10px; display:block; opacity: 0.7"> Please, try later. </small>
 					</div>
@@ -343,7 +344,7 @@
 			>
 				{#if ongoing_competition.length == 0}
 					<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
-						<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols />
+						<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1"  nocontrols />
 						<h2>No ongoing registerations!</h2>
 						<small style="margin-top:-10px; display:block; opacity: 0.7"> Please, try later. </small>
 					</div>
@@ -411,7 +412,7 @@
 				<div class="col-md">
 					{#if started_competitions.length == 0}
 						<div class="text-center p-3 notFound" style="background: white">
-							<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols />
+							<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1"  nocontrols />
 							<h2>No ongoing registerations!</h2>
 							<small style="margin-top:-10px; display:block; opacity: 0.7"> Please, try later. </small>
 						</div>
@@ -463,7 +464,7 @@
 			<div class="row part_4 justify-content-center align-items-center gap-3 p-0 m-0" id="requests">
 				{#if requests.length == 0}
 					<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
-						<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" autoplay nocontrols />
+						<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1"  nocontrols />
 						<h2>No requests found</h2>
 						<small style="margin-top:-10px; display:block; opacity: 0.7"> Please, try later. </small>
 					</div>
@@ -587,6 +588,7 @@
 	.notFound {
 		font-family: 'light';
 		font-size: 18px;
+		width: 40%;
 		padding-bottom: 100px !important;
 		h2 {
 			margin-top: -40px;

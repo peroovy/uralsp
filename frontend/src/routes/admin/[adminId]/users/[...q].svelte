@@ -390,7 +390,7 @@
 	</div>
 {:else if resultsNumber == 0}
 	<section class="notfound">
-		<lottie-player src={lottieNotfound} background="transparent" speed="1" loop autoplay nocontrols />
+		<lottie-player src={lottieNotfound} background="transparent" speed="1" loop  nocontrols />
 		<h1>No results found</h1>
 		<p>Try to search for something else.</p>
 		<button class="btn btn-primary d-flex gap-3 align-items-center" on:click={() => (window.location.href = `${base}/admin/${adminId}`)}>

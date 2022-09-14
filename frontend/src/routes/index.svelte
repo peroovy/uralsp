@@ -204,12 +204,14 @@
 					<i class="fa fa-arrow-right" />
 				</button>
 			</div>
-			<div class="btn btn-lg btn-block btn-outline">
-				<i class="fa fa-telegram" />
-				<span> Continue with Telegram </span>
-				<i class="fa fa-arrow-right" />
+			<div class="tele">
 				<div class="telegramBtnHolder">
 					<Login username='{telgramBotId}' on:auth={onTelegramAuth} />
+				</div>
+				<div class="btn btn-lg btn-block btn-outline">
+					<i class="fa fa-telegram" />
+					<span> Continue with Telegram </span>
+					<i class="fa fa-arrow-right" />
 				</div>
 			</div>
 		</div>
@@ -349,7 +351,7 @@
 	.telegramBtnHolder{
 		margin: 0px !important;
 	}
-	.vk{
+	.vk, .tele{
 		max-width: 318px;
 		max-height: 80px;
 		overflow: hidden;
@@ -360,7 +362,7 @@
 		margin-left: 50px;
 		position: absolute;
 		scale: 2;
-		opacity: 0.00000001;
+		opacity: 0.000001;
 		height: fit-content;
 		z-index: 22;
 	}
