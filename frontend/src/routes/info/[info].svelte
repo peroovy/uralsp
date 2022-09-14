@@ -497,9 +497,9 @@
 <svelte:head>
 	<meta name="description" content="Some description!" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
-	<script src="http://userapi.com/js/api/openapi.js" type="text/javascript" charset="windows-1251"></script>
+	<script async defer src="http://userapi.com/js/api/openapi.js" type="text/javascript" charset="windows-1251"></script>
 	<title>App Name | {userInfo.name} {userInfo.surname}</title>
-	<script defer src="http://userapi.com/js/api/openapi.js" type="text/javascript" charset="windows-1251"></script>
+	<script async defer src="http://userapi.com/js/api/openapi.js" type="text/javascript" charset="windows-1251"></script>
 </svelte:head>
 
 <section class="user-info">
