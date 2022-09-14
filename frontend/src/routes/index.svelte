@@ -102,44 +102,47 @@
 					// @ts-ignore
 					window.google.accounts.id.renderButton(google, {});
 				}
-			}, 1000);
-			// @ts-ignore
-			VK.init({
-				apiId: vkAppId
-			});
-			// @ts-ignore
-			VK.Widgets.Auth('vk_auth', {
-				onAuth: async function (data: { uid: string; hash: string; first_name: string; last_name: string }) {
-					let uid = data.uid;
-					let hash = data.hash;
-					let fn = data.first_name;
-					let ln = data.last_name;
-					let authData = {
-						uid: uid,
-						first_name: fn,
-						last_name: ln,
-						hash: hash
-					};
-					loading.style.display = 'block';
-					await fetch(`${API}/auth/signin-vkontakte`, {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json'
-						},
-						body: JSON.stringify(authData)
-					}).then((res) => {
-						res.json().then((res) => {
-							let expiresIn = res.expires_in;
-							let token = res.access_token;
-							localStorage.setItem('access_token', token);
-							localStorage.setItem('expires_in', expiresIn);
-							let per = parsePayload(localStorage.getItem('access_token')!).permission;
-							let id = parsePayload(localStorage.getItem('access_token')!).user_id;
-							redirct(per, id);
-						});
+				// @ts-ignore
+				if(VK){
+					// @ts-ignore
+					VK.init({
+						apiId: vkAppId
+					});
+					// @ts-ignore
+					VK.Widgets.Auth('vk_auth', {
+						onAuth: async function (data: { uid: string; hash: string; first_name: string; last_name: string }) {
+							let uid = data.uid;
+							let hash = data.hash;
+							let fn = data.first_name;
+							let ln = data.last_name;
+							let authData = {
+								uid: uid,
+								first_name: fn,
+								last_name: ln,
+								hash: hash
+							};
+							loading.style.display = 'block';
+							await fetch(`${API}/auth/signin-vkontakte`, {
+								method: 'POST',
+								headers: {
+									'Content-Type': 'application/json'
+								},
+								body: JSON.stringify(authData)
+							}).then((res) => {
+								res.json().then((res) => {
+									let expiresIn = res.expires_in;
+									let token = res.access_token;
+									localStorage.setItem('access_token', token);
+									localStorage.setItem('expires_in', expiresIn);
+									let per = parsePayload(localStorage.getItem('access_token')!).permission;
+									let id = parsePayload(localStorage.getItem('access_token')!).user_id;
+									redirct(per, id);
+								});
+							});
+						}
 					});
 				}
-			});
+			}, 1000);
 		}
 		loading.style.display = 'none';
 	});
