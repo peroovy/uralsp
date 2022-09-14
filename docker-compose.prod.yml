@@ -1,0 +1,36 @@
+version: "3.3"
+
+services:
+  nginx:
+    build: ./
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - api
+
+  api:
+    build: backend/
+    container_name: api
+    command: make migrate run
+    restart: always
+    env_file:
+      - backend/src/config/.env
+    volumes:
+      - ./logs:/app/backend/logs
+    environment:
+      POSTGRES_HOST: postgres
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:14-alpine
+    container_name: postgres
+    restart: always
+    environment:
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    env_file:
+      - backend/src/config/.env
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
