@@ -349,7 +349,7 @@
 		z-index: 20;
 	}
 	.telegramBtnHolder{
-		margin: 0px !important;
+		margin-top: 30px !important;
 	}
 	.vk, .tele{
 		max-width: 318px;
