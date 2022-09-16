@@ -23,6 +23,19 @@ AFTER_NOW = [
 
 BEFORE_NOW = [-delta for delta in AFTER_NOW]
 
+USER_OPTIONAL_FIELDS = [
+    "surname",
+    "patronymic",
+    "email",
+    "phone",
+    "city",
+    "region",
+    "institution_type",
+    "institution_name",
+    "institution_faculty",
+    "institution_course",
+]
+
 
 @pytest.fixture(scope="function")
 def user() -> User:

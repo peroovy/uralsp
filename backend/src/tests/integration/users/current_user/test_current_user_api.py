@@ -12,6 +12,7 @@ from django.utils.timezone import now
 from google.oauth2 import id_token
 
 from api.internal.db.models import Competition, Field, FormValue, Participation, Request, User
+from tests.conftest import USER_OPTIONAL_FIELDS
 from tests.integration.conftest import (
     EMAIL__IS_CORRECT,
     INSTITUTION__IS_CORRECT,
@@ -79,12 +80,19 @@ def test_updating_profile(
     body = get_body_for_updating()
     assert_updating_response(client, user, user_token, body, body)
 
-    body["phone"] = body["email"] = None
+
+@pytest.mark.integration
+@pytest.mark.django_db
+@pytest.mark.parametrize("field", USER_OPTIONAL_FIELDS)
+def test_updating_optionals(client: Client, user: User, user_token: str, field: str) -> None:
+    body = get_body_for_updating()
+
+    body[field] = None
     assert_updating_response(client, user, user_token, body, body)
 
-    del body["phone"], body["email"]
+    del body[field]
     expected = get_body_for_updating()
-    expected["phone"] = expected["email"] = None
+    expected[field] = None
     assert_updating_response(client, user, user_token, body, expected)
 
 

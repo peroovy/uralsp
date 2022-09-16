@@ -38,7 +38,7 @@ PHONE__IS_CORRECT = [
 
 
 INSTITUTION__IS_CORRECT = [
-    [None, False],
+    [None, True],
     ["null", False],
     ["", False],
     ["  ", False],

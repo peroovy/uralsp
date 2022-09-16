@@ -24,7 +24,7 @@ class FullProfileOut(ModelSchema):
 
 class ProfileIn(ModelSchema):
     permission: Permissions
-    institution_type: Institution
+    institution_type: Optional[Institution] = None
     phone: Optional[str] = Field(regex=PHONE_REGEX, default=None)
     email: Optional[EmailStr] = None
 
@@ -34,7 +34,7 @@ class ProfileIn(ModelSchema):
 
 
 class CurrentProfileIn(ModelSchema):
-    institution_type: Institution
+    institution_type: Optional[Institution] = None
     phone: Optional[str] = Field(regex=PHONE_REGEX, default=None)
     email: Optional[EmailStr] = None
 
