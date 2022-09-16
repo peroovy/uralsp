@@ -268,9 +268,20 @@ def test_updating_user(
     super_admin_token: str,
 ) -> None:
     body = get_body_for_updating()
+    assert_updating_response(client, user, super_admin_token, body, body)
 
+    body["phone"] = body["email"] = None
+    assert_updating_response(client, user, super_admin_token, body, body)
+
+    del body["phone"], body["email"]
+    expected = get_body_for_updating()
+    expected["phone"] = expected["email"] = None
+    assert_updating_response(client, user, super_admin_token, body, expected)
+
+
+def assert_updating_response(client: Client, user: User, super_admin_token: str, body: dict, expected: dict) -> None:
     assert_success_response(put(client, USER.format(id=user.id), super_admin_token, body))
-    assert_updating(user, body)
+    assert_updating(user, expected)
 
 
 @pytest.mark.integration

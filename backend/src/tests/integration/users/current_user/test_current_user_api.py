@@ -2,7 +2,7 @@ import hashlib
 from datetime import timedelta
 from hmac import HMAC
 from typing import Optional
-from unittest.mock import Mock, patch as mock_patch
+from unittest.mock import Mock
 
 import pytest
 from django.conf import settings
@@ -16,7 +16,6 @@ from tests.integration.conftest import (
     EMAIL__IS_CORRECT,
     INSTITUTION__IS_CORRECT,
     PHONE__IS_CORRECT,
-    assert_401,
     assert_422,
     assert_access,
     assert_success_response,
@@ -78,18 +77,20 @@ def test_updating_profile(
     user_token: str,
 ) -> None:
     body = get_body_for_updating()
-    body["email"] = None
+    assert_updating_response(client, user, user_token, body, body)
 
-    response = put(client, PROFILE, user_token, body)
-    assert_success_response(response)
-    assert_updating(user, body)
+    body["phone"] = body["email"] = None
+    assert_updating_response(client, user, user_token, body, body)
 
-    for key in list(body.keys()):
-        del body[key]
+    del body["phone"], body["email"]
+    expected = get_body_for_updating()
+    expected["phone"] = expected["email"] = None
+    assert_updating_response(client, user, user_token, body, expected)
 
-        response = put(client, PROFILE, user_token, body)
-        assert_validation_error(response)
-        assert_not_updating(user)
+
+def assert_updating_response(client: Client, user: User, user_token: str, body: dict, expected: dict) -> None:
+    assert_success_response(put(client, PROFILE, user_token, body))
+    assert_updating(user, expected)
 
 
 @pytest.mark.integration
@@ -181,11 +182,11 @@ def test_updating_institution_type(
         assert_not_updating(user)
 
 
-def assert_updating(user: User, body: dict) -> None:
+def assert_updating(user: User, expected: dict) -> None:
     not_updated = ["id", "permission", "vkontakte_id", "google_id", "telegram_id"]
     actual = User.objects.get(pk=user.pk)
 
-    assert model_to_dict(actual, exclude=not_updated) == body
+    assert model_to_dict(actual, exclude=not_updated) == expected
     assert model_to_dict(actual, fields=not_updated) == model_to_dict(user, fields=not_updated)
 
 
