@@ -6,8 +6,9 @@ services:
     container_name: nginx
     restart: always
     volumes:
-      - /etc/letsencrypt:/etc/letsencrypt
-      - /var/www/letsencrypt:/var/www/letsencrypt
+      - ssl_secrets:/etc/letsencrypt
+    env_file:
+      - .env
     ports:
       - "80:80"
       - "443:443"
@@ -38,3 +39,6 @@ services:
       - backend/src/config/.env
     volumes:
       - ./pgdata:/var/lib/postgresql/data
+
+volumes:
+  ssl_secrets:

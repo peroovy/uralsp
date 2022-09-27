@@ -10,6 +10,7 @@ before_script:
   - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   - apk add make
   - cat $BACKEND_DOT_ENV > $(pwd)/backend/src/config/.env
+  - cat $CERTBOT_DOT_ENV > $(pwd)/.env
   - cat $FRONTEND_DOT_ENV > $(pwd)/frontend/.env
 
 build:

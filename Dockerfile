@@ -11,7 +11,7 @@ COPY frontend/ .
 
 RUN npm run build
 
-FROM nginx:1.23.1-alpine
+FROM jonasal/nginx-certbot:3.2.0-nginx1.23.1-alpine
 
 EXPOSE 80 443
 
