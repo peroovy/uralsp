@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from django.conf import settings
@@ -7,7 +8,7 @@ from ninja import Body
 from ninja.responses import Response
 
 from api.internal.auth.domain.entities import TokenDetailsOut
-from api.internal.auth.domain.services import JWTService, TokenTypes
+from api.internal.auth.domain.services import JWTService, TokenPairDetails, TokenTypes
 from api.internal.auth.domain.socials.entities import GoogleCredentialsIn, TelegramCredentialsIn, VKCredentialsIn
 from api.internal.auth.domain.socials.services import GoogleAuth, SocialBase, TelegramAuth, VKAuth
 from api.internal.base import HandlersMetaclass
@@ -70,8 +71,7 @@ class AuthHandlers(metaclass=HandlersMetaclass):
         details = self._jwt_service.create_access_and_refresh_tokens(user)
 
         logger.info(log(_operation_id, SETTING_REFRESH_TOKEN))
-        response = Response(data=TokenDetailsOut(access_token=details.access, expires_in=details.expires_in))
-        response.set_cookie(settings.REFRESH_TOKEN_COOKIE, details.refresh, httponly=True)
+        response = self._get_auth_response(details)
 
         logger.success(log(_operation_id, OPERATION_IS_OVER))
         return response
@@ -95,7 +95,16 @@ class AuthHandlers(metaclass=HandlersMetaclass):
         if not (details := self._jwt_service.try_update_access_and_refresh_tokens(token)):
             raise UnprocessableEntityException(self.REFRESH_TOKEN_IS_REVOKED, error=self.REVOKED_TOKEN)
 
-        response = Response(data=TokenDetailsOut(access_token=details.access, expires_in=details.expires_in))
-        response.set_cookie(settings.REFRESH_TOKEN_COOKIE, details.refresh, httponly=True)
+        return self._get_auth_response(details)
+
+    @staticmethod
+    def _get_auth_response(detail: TokenPairDetails) -> Response:
+        response = Response(data=TokenDetailsOut(access_token=detail.access, expires_in=detail.expires_in))
+        response.set_cookie(
+            key=settings.REFRESH_TOKEN_COOKIE,
+            value=detail.refresh,
+            httponly=True,
+            expires=datetime.utcnow() + settings.REFRESH_TOKEN_TTL,
+        )
 
         return response
