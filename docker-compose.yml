@@ -4,9 +4,10 @@ services:
   nginx:
     build: ./
     container_name: nginx
+    restart: always
     volumes:
-      - /etc/letsencrypt/:/etc/letsencrypt/
-      - /var/www/letsencrypt/:/var/www/letsencrypt/
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /var/www/letsencrypt:/var/www/letsencrypt
     ports:
       - "80:80"
       - "443:443"
