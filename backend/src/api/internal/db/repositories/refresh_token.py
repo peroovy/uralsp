@@ -10,7 +10,7 @@ class IRefreshTokenRepository(ABC):
         ...
 
     @abstractmethod
-    def create(self, user_id: int, value: str) -> RefreshToken:
+    def get_or_create(self, user_id: int, value: str) -> RefreshToken:
         ...
 
     @abstractmethod
@@ -22,8 +22,8 @@ class RefreshTokenRepository(IRefreshTokenRepository):
     def try_get(self, value: str) -> Optional[RefreshToken]:
         return RefreshToken.objects.filter(value=value).first()
 
-    def create(self, user_id: int, value: str) -> RefreshToken:
-        return RefreshToken.objects.create(user_id=user_id, value=value)
+    def get_or_create(self, user_id: int, value: str) -> RefreshToken:
+        return RefreshToken.objects.get_or_create(user_id=user_id, value=value)[0]
 
     def revoke_all(self, user_id: int) -> None:
         RefreshToken.objects.filter(user_id=user_id).update(revoked=True)
