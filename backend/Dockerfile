@@ -4,11 +4,11 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
-COPY Pipfile.lock .
+COPY Pipfile .
 RUN apt-get update && \
     apt-get install make && \
     pip install pipenv && \
-    pipenv sync --clear
+    pipenv install --clear
 
 EXPOSE 8000
 
