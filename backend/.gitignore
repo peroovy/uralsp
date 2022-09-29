@@ -5,4 +5,5 @@ __pycache__
 .idea
 .pytest_cache
 .env
-backend/logs
+logs
+Pipfile.lock
