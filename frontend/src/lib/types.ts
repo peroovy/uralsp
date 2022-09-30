@@ -132,3 +132,7 @@ export type SearchParams = {
 	institution_course: string | undefined;
 	permission: string | undefined;
 };
+
+export type TelegramPayload = {
+	first_name: string; last_name: string; username: string; photo_url: 'string'; id: number; auth_date: number; hash: string;
+}

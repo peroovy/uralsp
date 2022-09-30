@@ -1,0 +1,40 @@
+{
+	"": [
+		"src/routes/+layout.ts",
+		"src/routes/+layout.ts"
+	],
+	"admin/contests/[contestId]": [
+		"src/routes/admin/contests/[contestId]/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"admin/requests/[application]": [
+		"src/routes/admin/requests/[application]/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"contests/apply/[application]": [
+		"src/routes/contests/apply/[application]/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"admin/[admin]": [
+		"src/routes/admin/[admin]/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"info/[info]": [
+		"src/routes/info/[info]/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"participant/[participant]": [
+		"src/routes/participant/[participant]/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"admin/[adminId]/users/[...q]": [
+		"src/routes/admin/[adminId]/users/[...q]/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"requests/[application]": [
+		"src/routes/requests/[application]/+page.ts"
+	],
+	"admin/[application]": [
+		"src/routes/admin/[application]/+page.ts"
+	]
+}

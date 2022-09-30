@@ -1,5 +1,5 @@
 export function parsePayload(token: string): {"user_id": number, "expires_in": number, "permission": string} {
-    let arr = token.split('.');
-    let payload = JSON.parse(atob(arr[1]));
-    return payload;
+    let payload = token.split('.')[1];
+    let decoded = atob(payload);
+    return JSON.parse(decoded);
 }

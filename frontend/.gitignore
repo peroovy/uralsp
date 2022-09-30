@@ -1,8 +1,3 @@
-.DS_Store
 node_modules
-/build
-/.svelte-kit
-/package
+# Keep environment variables out of version control
 .env
-.env.*
-!.env.example
