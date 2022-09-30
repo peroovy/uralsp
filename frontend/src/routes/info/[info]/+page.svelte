@@ -7,7 +7,10 @@
   import { Login } from "sveltegram";
   import { sessionDuration } from "$lib/sessionDuration";
   import { browser } from "$app/environment";
+  import { page } from "$app/stores";
+
   sessionDuration();
+  const data = $page.data;
 
   const googleId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const vkAppId = import.meta.env.VITE_VK_CLIENT_ID;
@@ -29,26 +32,11 @@
     tele: null,
     vk: null,
   };
-  export let userInfo: UserData = {
-    id: 0,
-    name: "",
-    surname: "",
-    email: "",
-    phone: "",
-    city: "",
-    region: "",
-    institution_type: "Choose ...",
-    institution_name: "",
-    institution_faculty: "",
-    institution_course: "",
-    vkontakte_id: "",
-    google_id: "",
-    telegram_id: "",
-    patronymic: "",
-    permission: "",
-  };
-  export let real_id: number, real_permission: string;
-  export let API: string = import.meta.env.VITE_API_URL;
+  let userInfo: UserData = data.userInfo;
+  let real_id: number = data.real_id,
+    real_permission: string = data.real_permission;
+
+  let API: string = data.API;
 
   let id = userInfo.id;
   let google: HTMLElement;

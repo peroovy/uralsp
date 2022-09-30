@@ -51,5 +51,6 @@ export let load : Load = async function load({ params, parent }) {
 		real_id,
 		real_permission: permission,
 		userInfo,
+		API
 	};
 }
