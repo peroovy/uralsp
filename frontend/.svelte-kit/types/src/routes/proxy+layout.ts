@@ -1,7 +1,8 @@
+// @ts-nocheck
 import { store_token } from "$lib/stores";
 import type { Load } from "@sveltejs/kit";
 
-export let load: Load = async function load({ fetch }) {
+export let load = async function load({ fetch }: Parameters<Load>[0]) {
     // neglict the login route 
     if (window.location.href === "https://reg.uralsp.ru/") return;
     let API = import.meta.env.VITE_API_URL;

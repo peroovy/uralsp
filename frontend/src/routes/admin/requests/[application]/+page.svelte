@@ -1,15 +1,12 @@
-<!-- <script lang="ts">
+<script lang="ts">
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
-	import type { RequestsIn, CompetitionWithFields, RequestsOut } from '$lib/types';
+	import type { RequestsOut } from '$lib/types';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
 	import { page } from '$app/stores';
-	import type {PageData} from './$types';
 	
 	const { app, permission, real_id, access_token, ownerName, comp, API} = $page.data;
-
-	const data: PageData = $page.data;
-
+	const data = $page.data;
 
 	let loading : HTMLDivElement;
 	let NParticipants = '';
@@ -193,7 +190,6 @@
 		});
 	}
 	onMount(() => {
-
 		NParticipants = app.participants.map((p) => p.user_id).join(' ,');
 		for (let u = 0; u < comp.persons_amount; u++) {
 			saveApp(u, 'silent');
@@ -390,4 +386,4 @@
 		left: 0;
 		z-index: 5;
 	}
-</style> -->
+</style>

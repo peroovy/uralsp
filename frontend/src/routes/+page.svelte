@@ -72,18 +72,6 @@
 						console.log(cookie);
 						localStorage.setItem('access_token', token);
 						localStorage.setItem('expires_in', expiresIn);
-						
-						// remove all the cookies
-						// document.cookie.split(";").forEach(function (c) {
-						// 	document.cookie = c
-						// 		.replace(/^ +/, "")
-						// 		.replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-						// });
-
-						// // store the cookies in the browser
-						// document.cookie = `sp_rt=${token}; path=/`;
-						// document.cookie = `sp_rt=${token}; HttpOnly; path=/`;
-
 						let per = parsePayload(localStorage.getItem('access_token')!).permission;
 						let id = parsePayload(localStorage.getItem('access_token')!).user_id;
 						redirct(per, id);
@@ -151,7 +139,6 @@
 				}
 			}, 1000);
 		}
-		// add event listener to googlePseudo btn
 		loading.style.display = 'none';
 	});
 	function onTelegramAuth(user: TelegramPayload) {

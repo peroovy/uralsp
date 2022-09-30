@@ -1,8 +1,9 @@
+// @ts-nocheck
 import { redirect } from "@sveltejs/kit";
 import { parsePayload } from "$lib/parse";
 import type { Load } from "@sveltejs/kit";
 
-export let load: Load = async function load({ params, parent, fetch }) {
+export let load = async function load({ params, parent, fetch }: Parameters<Load>[0]) {
   let layoutReturn = await parent();
   const token = layoutReturn.access_token;
   const API = layoutReturn.API;

@@ -42,9 +42,6 @@
 			admins: []
 		}
 	];
-	let showContest = () => {
-		contest.set(JSON.stringify(contestObject));
-	};
 
 	// Applications
 	function cancelApplication(id: number) {
@@ -244,8 +241,8 @@
 										</tr>
 									</tbody>
 								</table>
-								<div class="btn btn-group gap-2 on:click={showContest}">
-									<button class="btn btn-primary" on:click={showContest}>
+								<div class="btn btn-group gap-2">
+									<button class="btn btn-primary">
 										<a class="link-light" href={competition.link} target="_blank">
 											<span class="fa fa-eye" />
 											<span> View full Contest</span>
@@ -308,14 +305,14 @@
 											</tr>
 										</tbody>
 									</table>
-									<div class="btn btn-group gap-2 on:click={showContest}">
+									<div class="btn btn-group gap-2">
 										<button class="btn btn-primary">
 											<a class="link-light" href={ApplyLink} target="_blank">
 												<span class="fa fa-check-square-o" />
 												<span class="ptn-count"> Apply </span>
 											</a>
 										</button>
-										<button class="btn btn-primary" on:click={showContest}>
+										<button class="btn btn-primary">
 											<a class="link-light" href={comp.link} target="_blank">
 												<span class="fa fa-eye" />
 												<span> View full Contest</span>
@@ -333,11 +330,11 @@
 			<div class="row justify-content-center align-items-center gap-3 p-0 m-0 " id="past">
 				<div class="col-md">
 					{#if started_competitions.length == 0}
-						<div class="text-center p-3 notFound" style="background: white">
-							<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1"  nocontrols />
-							<h2>No ongoing registerations!</h2>
-							<small style="margin-top:-10px; display:block; opacity: 0.7"> Please, try later. </small>
-						</div>
+					<div class="text-center p-3 notFound" style="width: fit-content ;background: white">
+						<lottie-player src={lottieNotFoundSrc} background="transparent" style="max-width: 500px" speed="1" nocontrols />
+						<h2>No past registerations!</h2>
+						<small style="margin-top:-10px; display:block; opacity: 0.7"> Please, try later. </small>
+					</div>
 					{:else}
 						{#each started_competitions as comp}
 							{@const StartDay = new Date(Date.parse(comp.started_at)).toDateString()}
@@ -366,8 +363,8 @@
 												</tr>
 											</tbody>
 										</table>
-										<div class="btn btn-group gap-2 on:click={showContest}">
-											<button class="btn btn-primary" on:click={showContest}>
+										<div class="btn btn-group gap-2">
+											<button class="btn btn-primary">
 												<a class="link-light" href={comp.link} target="_blank">
 													<span class="fa fa-eye" />
 													<span> View full Contest</span>
