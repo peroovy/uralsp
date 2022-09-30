@@ -61,6 +61,7 @@ export let load = async function load({ params, parent }: Parameters<Load>[0]) {
 	let upComming_competitions = await UpComming_competitions.json();
 	let started_competitions = await Started_competitions.json();
 	let ongoing_competition = await Ongoing_competitions.json();
+	console.log(ongoing_competition);
 	return {
 		userInfo,
 		ongoing_competition,

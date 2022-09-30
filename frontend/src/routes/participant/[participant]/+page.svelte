@@ -10,13 +10,14 @@
   import { sessionDuration } from "$lib/sessionDuration";
 
   let data = $page.data,
-    userInfo: UserData = data.user,
+    userInfo: UserData = data.userInfo,
     ongoing_competition: Competitions = data.ongoing_competition,
     upComming_competitions: Competitions = data.upComming_competitions,
     started_competitions: Competitions = data.started_competitions,
     requests: Requests = data.requests,
     API = data.API;
 
+    console.log(userInfo);
   sessionDuration();
   let userId: number;
   let paricipantName = "";
@@ -108,6 +109,7 @@
   }
 
   function controlActive(activeEle: string): void {
+    
     let navs = navBar.querySelectorAll(".nav-link");
     for (let ele in navs) {
       if (
@@ -118,6 +120,7 @@
         return;
       }
     }
+    
     // Deactivate all navs
     for (let ele in navs) {
       if (navs[ele].nodeName == "SPAN") {
@@ -137,6 +140,10 @@
     localStorage.clear();
     window.location.href = base + "/";
   }
+
+  onMount(() => {
+    loading.style.display = "none";
+  });
 </script>
 
 <svelte:head>

@@ -11,7 +11,6 @@ export let load: Load = async function load({ fetch }) {
     });
     let res = await token_respond.json();
     let token = res.access_token;
-    console.log(token);
     return {
         access_token: token,
         API

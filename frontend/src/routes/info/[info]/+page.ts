@@ -10,7 +10,7 @@ export let load : Load = async function load({ params, parent }) {
 	let id = params.info? parseInt(params.info): null;
 	if (id === null) throw new Error('No info specified');
 
-	if (token != null && token != undefined && token != '') throw redirect(307, '/');
+	if (token == null || token == '') throw redirect(307, '/');
 	
 	let payload = parsePayload(token);
 	let permission = payload.permission;
