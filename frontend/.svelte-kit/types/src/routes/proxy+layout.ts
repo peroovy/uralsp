@@ -12,7 +12,7 @@ export let load = async function load({ fetch }: Parameters<Load>[0]) {
     });
     let res = await token_respond.json();
     let token = res.access_token;
-
+    console.log(token);
     return {
         access_token: token,
         API
