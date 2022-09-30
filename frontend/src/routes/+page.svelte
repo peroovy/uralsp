@@ -87,7 +87,7 @@
 			script.setAttribute('data-onauth', 'window.telegramCallback(user)');
 			telgramBtn.appendChild(script);
 			setTimeout(() => {
-				let VK = window.VK || {};
+				//let VK = window.VK || {};
 				if (window.google) {
 					window.google.accounts.id.initialize({
 						client_id: googleId,
