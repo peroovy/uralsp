@@ -11,12 +11,8 @@ export let load = async function load({ fetch }: Parameters<Load>[0]) {
         credentials: 'include',
     });
     let res = await token_respond.json();
-    let token;
-    store_token.subscribe(value => {
-		token = value;
-	});
+    let token = res.access_token;
 
-    console.log('token', token);
     return {
         access_token: token,
         API
