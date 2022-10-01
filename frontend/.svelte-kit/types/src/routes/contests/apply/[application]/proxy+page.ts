@@ -1,8 +1,9 @@
+// @ts-nocheck
 import { parsePayload } from "$lib/parse";
 import type { Requests } from "$lib/types";
 import { redirect, type Load } from "@sveltejs/kit";
 
-export let load: Load = async function load({ params, parent, fetch }) {
+export let load = async function load({ params, parent, fetch }: Parameters<Load>[0]) {
   if (params.application === undefined)
     throw Error("Application id is not defined");
 

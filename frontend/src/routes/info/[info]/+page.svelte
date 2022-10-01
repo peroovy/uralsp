@@ -65,6 +65,7 @@
         if (window.google) {
           window.google.accounts.id.initialize({
             client_id: googleId,
+            allowed_parent_origin: "https://reg.uralsp.ru/",
             callback: handleCredentialResponse,
           });
           window.google.accounts.id.renderButton(google, {});
@@ -893,9 +894,10 @@
     width: calc(100% + 20px) !important;
     height: 100% !important;
     margin-left: -20px;
-    opacity: 1;
     scale: 20;
-    opacity: 0.00000001;
+    // Yandex compatibility
+    transform: scale(20);
+    opacity: 0.01;
     z-index: 20;
   }
   .vkHolder {
@@ -903,6 +905,8 @@
     margin-left: 30px;
     position: absolute;
     scale: 5;
-    opacity: 0.000001;
+    // Yandex compatibility
+    transform: scale(5);
+    opacity: 0.01;
   }
 </style>
