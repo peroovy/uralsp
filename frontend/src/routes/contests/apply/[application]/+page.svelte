@@ -177,10 +177,7 @@
 			}
 		}
 	}
-
-	let applicationNumber = 1;
-	function next() {}
-	function back() {}
+	
 	onMount(() => {
 		if (!everyThingIsOk) goto(base + '/');
 		if (oldRequest) {
