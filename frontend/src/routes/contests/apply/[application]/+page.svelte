@@ -57,7 +57,12 @@
 	let savedIndex = new Set<number>();
 	function saveApp(index: number, mode = 'msg'): void {
 		savedIndex.add(index);
-		let applicant_id = (requestTemplates[index].children[0].children[1] as HTMLInputElement).value;
+		let applicant_id : string;
+		if(contest.persons_amount > 1){
+			applicant_id = (requestTemplates[index].children[0].children[1] as HTMLInputElement).value;
+		} else {
+			applicant_id = String(userId).valueOf();
+		}
 		let template = requestTemplates[index].children[1].children;
 		let form = [];
 		if (applicant_id == '') {
@@ -153,7 +158,7 @@
 			showMessage('Success', 'Your request has been updated successfully');
 		} else {
 			let e = await response.json();
-			showMessage('Error', e.detail? e.detail.toString(): e.details? e.details.toString() : 'Something went wrong' );
+			showMessage('Error', e.detail? e.detail.toString(): e.details? e.details[0].msg : 'Something went wrong' );
 		}
 	}
 	async function retreiveOldRequest() {
