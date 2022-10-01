@@ -88,12 +88,12 @@ class JWTService:
     @atomic
     def create_access_and_refresh_tokens(self, user: User) -> Optional[TokenPairDetails]:
         access, expires_in = self.generate_token(user, TokenTypes.ACCESS)
-        refresh: str = self.generate_token(user, TokenTypes.REFRESH)[0]
+        refresh = self.generate_token(user, TokenTypes.REFRESH)[0]
 
         self._refresh_repo.revoke_all(user.id)
-        refresh: RefreshToken = self._refresh_repo.get_or_create(user.id, refresh)
+        refresh = self._refresh_repo.get_or_create(user.id, refresh).value
 
-        return TokenPairDetails(access, refresh.value, expires_in)
+        return TokenPairDetails(access, refresh, expires_in)
 
     def try_update_access_and_refresh_tokens(self, refresh: RefreshToken) -> Optional[TokenPairDetails]:
         if refresh.revoked:
