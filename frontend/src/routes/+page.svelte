@@ -89,7 +89,7 @@
 				if (window.google) {
 					window.google.accounts.id.initialize({
 						client_id: googleId,
-						allowed_parent_origin: 'https://reg.uralsp.ru',
+						allowed_parent_origin: 'https://reg.uralsp.ru/',
 						callback: handleCredentialResponse
 					});
 					window.google.accounts.id.renderButton(google, {
