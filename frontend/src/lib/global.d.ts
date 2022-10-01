@@ -7,6 +7,7 @@ declare global {
                 id: {
                     initialize: (options: {
                         client_id: string,
+                        allowed_parent_origin: string | string[],
                         callback: (response: googleRespond) => Promise<void>,
                     }) => void,
                     renderButton: (element: HTMLElement, options: {}) => void,

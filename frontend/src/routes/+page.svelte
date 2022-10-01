@@ -89,6 +89,7 @@
 				if (window.google) {
 					window.google.accounts.id.initialize({
 						client_id: googleId,
+						allowed_parent_origin: 'https://reg.uralsp.ru',
 						callback: handleCredentialResponse
 					});
 					window.google.accounts.id.renderButton(google, {
@@ -358,7 +359,7 @@
 		height: 100% !important;
 		margin-left: -20px;
 		scale: 5;
-		opacity: 0.0000005;
+		opacity: 0.02;
 		z-index: 100;
 	}
 	.telegramBtnHolder {
@@ -373,11 +374,11 @@
 		position: relative;
 	}
 	.vkHolder {
-		margin-top: -100px;
+		margin-top: -110px;
 		margin-left: 50px;
 		position: absolute;
 		scale: 2;
-		opacity: 0.000001;
+		opacity: 0.02;
 		height: fit-content;
 		z-index: 22;
 	}

@@ -76,6 +76,7 @@ declare module '$env/static/private' {
 	export const LC_PAPER: string;
 	export const INIT_CWD: string;
 	export const EDITOR: string;
+	export const NODE_ENV: string;
 	export const VITE_API_URL: string;
 	export const VITE_TELEGRAM_BOT: string;
 	export const VITE_VK_CLIENT_ID: string;
@@ -159,6 +160,7 @@ declare module '$env/dynamic/private' {
 		LC_PAPER: string;
 		INIT_CWD: string;
 		EDITOR: string;
+		NODE_ENV: string;
 		VITE_API_URL: string;
 		VITE_TELEGRAM_BOT: string;
 		VITE_VK_CLIENT_ID: string;
