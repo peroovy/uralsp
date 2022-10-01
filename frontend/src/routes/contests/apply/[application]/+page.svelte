@@ -58,12 +58,14 @@
 	function saveApp(index: number, mode = 'msg'): void {
 		savedIndex.add(index);
 		let applicant_id : string;
+		let template : HTMLCollection;
 		if(contest.persons_amount > 1){
 			applicant_id = (requestTemplates[index].children[0].children[1] as HTMLInputElement).value;
+			template = requestTemplates[index].children[1].children;
 		} else {
 			applicant_id = String(userId).valueOf();
+			template = requestTemplates[index].children[0].children;
 		}
-		let template = requestTemplates[index].children[1].children;
 		let form = [];
 		if (applicant_id == '') {
 			if (mode == 'msg') showMessage('Error', 'Please enter a valid applicant ID');
