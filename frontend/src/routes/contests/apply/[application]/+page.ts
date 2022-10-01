@@ -42,7 +42,7 @@ export let load: Load = async function load({ params, parent, fetch }) {
 
   if (now < contestStart || now > contestEnd) {
     alert("The contest is not open for registration");
-    //return redirect(307, "/");
+    return redirect(307, "/");
   }
   // Check if the user has already made a request for this competition
   const oldRequest = (oldRequestsJson as Requests).find(
