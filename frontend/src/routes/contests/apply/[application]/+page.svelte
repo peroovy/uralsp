@@ -2,17 +2,19 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
+	import { page } from '$app/stores';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
 	import type { RequestsOut, UserRequest, CompetitionWithFields } from '$lib/types';
 	import { sessionDuration } from '$lib/sessionDuration';
 	sessionDuration();
 	
-	export let contest: CompetitionWithFields = {} as CompetitionWithFields,
-		oldRequest: UserRequest = {} as UserRequest,
-		userId: number,
-		accessToken: string,
-		permissions: string,
-		API: string;
+	const data = $page.data;
+	export let contest: CompetitionWithFields = data.contest,
+		oldRequest: UserRequest = data.oldRequest,
+		userId: number = data.userId,
+		accessToken: string = data.accessToken,
+		permissions: string = data.permissions,
+		API: string = data.API;
 
 	let alertCont: HTMLDivElement;
 	let loading: HTMLDivElement;

@@ -13,8 +13,7 @@ export let load: Load = async function load({ fetch }) {
 
     if(!token_respond.ok && window.location.href != "https://reg.uralsp.ru/") {
         document.cookie = "sp_rt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        window.location.href = 'https://reg.uralsp.ru/';
-
+        // window.location.href = 'https://reg.uralsp.ru/';
     }
 
     let res = await token_respond.json();
