@@ -14,7 +14,7 @@ export let load = async function load({ params, parent, fetch }: Parameters<Load
 
   // Check the access token in the local storage
   const accessToken = access_token;
-  if (accessToken == null) return redirect(307, "/");
+  if (accessToken == null) console.error("Access token is not defined");
 
   let payload = parsePayload(accessToken);
   const userId = payload.user_id;
@@ -31,7 +31,7 @@ export let load = async function load({ params, parent, fetch }: Parameters<Load
     },
   });
   if (oldRequests.status != 200 || contest.status != 200) {
-    return redirect(307, "/");
+    console.log("Error while fetching the data");
   }
   const oldRequestsJson = await oldRequests.json();
   const contestJson = await contest.json();
@@ -43,7 +43,7 @@ export let load = async function load({ params, parent, fetch }: Parameters<Load
 
   if (now < contestStart || now > contestEnd) {
     alert("The contest is not open for registration");
-    return redirect(307, "/");
+    //return redirect(307, "/");
   }
   // Check if the user has already made a request for this competition
   const oldRequest = (oldRequestsJson as Requests).find(
