@@ -20,6 +20,7 @@ export let load : Load = async function load({ params, parent }) {
 			throw redirect(307, '/');
 		}
 	}
+
 	let userInfo;
 	if (real_id == id) {
 		let response = await fetch(`${API}/users/current/profile`, {
@@ -35,11 +36,12 @@ export let load : Load = async function load({ params, parent }) {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
-				Authorization: 'Bearer ' + token
+				Authorization: `Bearer ${token}`
 			}
 		});
 		userInfo = await respond.json();
 	}
+
 	if (
 		real_id != id &&
 		((permission == 'admin' && userInfo.permission == 'super_admin') ||
@@ -47,6 +49,7 @@ export let load : Load = async function load({ params, parent }) {
 	) {
 		throw redirect(307, '/');
 	}
+	
 	return {
 		real_id,
 		real_permission: permission,

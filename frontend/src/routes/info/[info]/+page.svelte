@@ -434,7 +434,7 @@
   <script
     async
     defer
-    src="http://userapi.com/js/api/openapi.js"
+    src="https://vk.com/js/api/openapi.js"
     type="text/javascript"
     charset="windows-1251"></script>
 </svelte:head>

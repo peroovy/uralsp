@@ -69,7 +69,6 @@
 						let expiresIn = res.expires_in;
 						let token = res.access_token;
 						let cookie = res.cookie;
-						console.log(cookie);
 						localStorage.setItem('access_token', token);
 						localStorage.setItem('expires_in', expiresIn);
 						let per = parsePayload(localStorage.getItem('access_token')!).permission;
@@ -87,7 +86,6 @@
 			script.setAttribute('data-onauth', 'window.telegramCallback(user)');
 			telgramBtn.appendChild(script);
 			setTimeout(() => {
-				//let VK = window.VK || {};
 				if (window.google) {
 					window.google.accounts.id.initialize({
 						client_id: googleId,
@@ -99,10 +97,12 @@
 						text: 'continue_with_google'
 					});
 				}
+				let VK = window.VK || {};
 				if (VK) {
 					VK.init({
 						apiId: vkAppId
 					});
+					
 					VK.Widgets.Auth('vk_auth', {
 						onAuth: async function (data: { uid: string; hash: string; first_name: string; last_name: string }) {
 							let uid = data.uid;

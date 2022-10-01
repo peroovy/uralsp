@@ -3,8 +3,7 @@ import { base } from "$app/paths";
 
 export let load: Load = async function load({ fetch }) {
     // neglict the login route 
-    console.log(base.toString(), base);
-    if (base.toString() == "/") return;
+    if (window.location.href == "https://reg.uralsp.ru/") return;
     let API = import.meta.env.VITE_API_URL;
     let token_respond= await fetch(`${API}/auth/refresh`, {
         method: 'POST',
