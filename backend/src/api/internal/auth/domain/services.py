@@ -8,7 +8,6 @@ from jwt import PyJWTError, decode, encode
 
 from api.internal.db.models import RefreshToken, User
 from api.internal.db.models.user import Permissions
-from api.internal.db.repositories import refresh_repo, user_repo
 from api.internal.db.repositories.refresh_token import IRefreshTokenRepository
 from api.internal.db.repositories.user import IUserRepository
 
@@ -39,7 +38,7 @@ class Payload:
 
     @property
     def token_type(self) -> str:
-        return self._token_type.value
+        return str(self._token_type.value)
 
     @property
     def expires_in(self) -> int:
@@ -123,6 +122,3 @@ class JWTService:
 
     def get_refresh_token_details(self, value: str) -> Optional[RefreshToken]:
         return self._refresh_repo.try_get(value)
-
-
-jwt_service = JWTService(user_repo, refresh_repo)

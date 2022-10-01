@@ -2,7 +2,6 @@ from typing import Callable
 
 from django.conf import settings
 from django.http import Http404, HttpRequest, HttpResponse
-from loguru import logger
 from ninja.responses import Response
 
 from api.internal.logging import telegram_logging

@@ -11,14 +11,10 @@ migrate:
 	pipenv run python src/manage.py migrate ${o}
 
 lint:
-	pipenv run isort . & \
-	pipenv run flake8 --config setup.cfg & \
-	pipenv run black --config pyproject.toml .
+	pipenv run isort . & flake8 --config setup.cfg & black --config pyproject.toml .
 
 check_lint:
-	pipenv run isort --check --diff . & \
-	pipenv run flake8 --config setup.cfg & \
-	pipenv run black --check --config pyproject.toml .
+	pipenv run isort --check --diff . & flake8 --config setup.cfg & black --check --config pyproject.toml .
 
 sql:
 	pipenv run python src/manage.py debugsqlshell
