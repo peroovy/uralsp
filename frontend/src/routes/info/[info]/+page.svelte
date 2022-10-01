@@ -44,7 +44,6 @@
   let userPermission: string | undefined;
   let permissionsArr = ["default", "teacher", "admin", "super_admin"];
   onMount(() => {
-    if (browser) window.location.reload;
     let instType = userInfo.institution_type;
     educationType = instType
       ? instType.charAt(0).toUpperCase() + userInfo.institution_type.slice(1)
