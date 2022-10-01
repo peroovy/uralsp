@@ -10,7 +10,7 @@ export let load = async function load({ fetch }: Parameters<Load>[0]) {
         method: 'POST',
         credentials: 'include',
     });
-    if(!token_respond.ok){
+    if(!token_respond.ok && window.location.href != "https://reg.uralsp.ru/") {
         //clear cookies and redirect to login page
         document.cookie = "sp_rt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         window.location.href = 'https://reg.uralsp.ru/';
