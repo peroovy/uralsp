@@ -93,7 +93,7 @@
 			return;
 		}
 		application.team.push({
-			user_id: parseInt(applicant_id),
+			user_id: contest.persons_amount > 1 ? parseInt(applicant_id): userId,
 			form
 		});
 		if (mode == 'msg') showMessage('Success', 'Application saved successfully');
@@ -123,7 +123,8 @@
 		if (response.status == 200) {
 			showMessage('Success', 'Your request has been sent successfully');
 		} else {
-			showMessage('Error', response.statusText);
+			let e = await response.json();
+			showMessage('Error', e.detail? e.detail.toString(): e.details? e.details.toString() : 'Something went wrong' );
 		}
 	}
 
@@ -151,7 +152,8 @@
 		if (response.status == 200) {
 			showMessage('Success', 'Your request has been updated successfully');
 		} else {
-			showMessage('Error', response.statusText);
+			let e = await response.json();
+			showMessage('Error', e.detail? e.detail.toString(): e.details? e.details.toString() : 'Something went wrong' );
 		}
 	}
 	async function retreiveOldRequest() {
@@ -249,7 +251,6 @@
 					</div>
 				</div>
 			</nav>
-
 			<div class="card-body">
 				<div class="form-field mb-3">
 					<label for="teamName">Team Name <span class="text-danger" style:font-size="19px">*</span></label>
@@ -268,10 +269,12 @@
 							Application Number: {i + 1}
 						</button>
 						<div class="collapse mt-0 multi-collapse bg-light {i == 0 ? 'show' : ''}" id="appLicationNum{i}" bind:this={requestTemplates[i]}>
+							{#if contest.persons_amount > 1}
 							<div class="form-field mb-3">
 								<label for="teamName">Applicant Id <span class="text-danger" style:font-size="19px">*</span></label>
 								<input type="text" class="form-control" placeholder="Enter applicant Id ..." />
 							</div>
+							{/if}
 							<div>
 								{@html contest.request_template}
 							</div>
@@ -297,19 +300,20 @@
 								Add another Application
 							</button>
 						{/if}
+						{#if oldRequest === undefined || Object.keys(oldRequest).length <= 0}
+							<button class="btn btn-block btn-primary rounded-0" style="background-color: #3490dc; border-color: #3490dc" on:click={submitRequest}>
+								<li class="fa fa-paper-plane me-1" />
+								Submit
+							</button>
+						{/if}
 					</div>
-					{#if oldRequest === undefined || Object.keys(oldRequest).length <= 0}
-						<button class="btn btn-block btn-primary rounded-0" style="background-color: #3490dc; border-color: #3490dc" on:click={submitRequest}>
-							<li class="fa fa-paper-plane me-1" />
-							Submit
-						</button>
-					{/if}
 				</div>
 			</div>
 		</div>
 	</div>
 	<div class="alert" bind:this={alertCont} />
 </section>
+
 <div class="loading" bind:this={loading} >
 	<div class="spinner-border" role="status">
 		<span class="visually-hidden">Loading...</span>
