@@ -12,7 +12,7 @@ export let load: Load = async function load({ fetch }) {
     if(!token_respond.ok){
         //clear cookies and redirect to login page
         document.cookie = "sp_rt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        window.location.href = base;
+        window.location.href = 'https://reg.uralsp.ru/';
     }
     let res = await token_respond.json();
     let token = res.access_token;
