@@ -23,6 +23,7 @@
     req.classList.remove("active");
 
     // activate the active element
+    console.log(activeEle);
     switch (activeEle) {
       case "upcoming":
         up.classList.add("active");
