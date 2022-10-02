@@ -170,7 +170,7 @@
       userInfo.institution_faculty = instFacultyName;
       alertCont.innerHTML = "";
     }
-    
+
     let update = {
       name: userInfo.name,
       surname: userInfo.surname,
@@ -893,7 +893,7 @@
     width: calc(100% + 20px) !important;
     height: 100% !important;
     margin-left: -20px;
-    transform: scale(5);
+    transform: scale(10);
     opacity: 0.02;
     z-index: 100;
     margin-top: 70px !important;
@@ -902,7 +902,7 @@
     margin-top: -370px;
     margin-left: 30px;
     position: absolute;
-    transform: scale(2);
+    transform: scale(4);
     opacity: 0.01;
   }
 </style>
