@@ -22,7 +22,7 @@
 </script>
 
 <svelte:head>
-  <title>Past registrations</title>
+  <title>Upcoming registrations</title>
   <script
     defer
     src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>

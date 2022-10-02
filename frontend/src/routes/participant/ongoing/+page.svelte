@@ -1,142 +1,140 @@
 <script lang="ts">
-    import { page } from "$app/stores";
-    import dotsSrc from "$lib/Assets/imgs/dots.png";
-    import type { Competitions } from "$lib/types";
-    import { onMount } from "svelte";
-    import lottieNotFoundSrc from "$lib/Assets/animations/lottie-notfound2.json?url";
-    import { sessionDuration } from "$lib/sessionDuration";
-    import Navbar from '../navbar.svelte';
+  import { page } from "$app/stores";
+  import dotsSrc from "$lib/Assets/imgs/dots.png";
+  import type { Competitions } from "$lib/types";
+  import { onMount } from "svelte";
+  import lottieNotFoundSrc from "$lib/Assets/animations/lottie-notfound2.json?url";
+  import { sessionDuration } from "$lib/sessionDuration";
+  import Navbar from "../navbar.svelte";
 
-    let data = $page.data,
-        ongoing_competition: Competitions = data.ongoing_competition;
+  let data = $page.data,
+    ongoing_competition: Competitions = data.ongoing_competition;
 
-    sessionDuration();
-    let userId: number;
-    let paricipantName = "";
+  sessionDuration();
+  let userId: number;
+  let paricipantName = "";
 
-    let loading = "" as unknown as HTMLElement;
+  let loading = "" as unknown as HTMLElement;
 
-    onMount(() => {
-        loading.style.display = "none";
-    });
+  onMount(() => {
+    loading.style.display = "none";
+  });
 </script>
 
 <svelte:head>
-    <title> Ongoing registrations </title>
-    <script
-        defer
-        src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+  <title>Ongoing registrations</title>
+  <script
+    defer
+    src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 </svelte:head>
 
 <div class="loading" bind:this={loading}>
-    <lottie-player
-        src={lottieNotFoundSrc}
-        background="transparent"
-        speed="1"
-        style="width: 300px; height: 300px;"
-        loop
-        autoplay></lottie-player>
+  <lottie-player
+    src={lottieNotFoundSrc}
+    background="transparent"
+    speed="1"
+    style="width: 300px; height: 300px;"
+    loop
+    autoplay
+  />
 </div>
 
 <section class="participant-container">
-    <img class="d1" src={dotsSrc} alt="" />
-    <div class="d2" />
-  
-    <Navbar {userId} {paricipantName} />
-  
-    <div class="part_4 d-flex justify-content-center align-items-start">
+  <img class="d1" src={dotsSrc} alt="" />
+  <div class="d2" />
+
+  <Navbar {userId} {paricipantName} />
+
+  <div class="part_4 d-flex justify-content-center align-items-start">
+    <div
+      class="row justify-content-center gap-4 justify-content-center align-items-center gap-3 p-0 m-0"
+      style="flex-flow: column nowrap; gap: 30px; width: max-content"
+      id="ongoing"
+    >
+      {#if ongoing_competition.length == 0}
         <div
-            class="row justify-content-center gap-4 justify-content-center align-items-center gap-3 p-0 m-0"
-            style="flex-flow: column nowrap; gap: 30px; width: max-content"
-            id="ongoing"
+          class="text-center p-3 notFound"
+          style="width: fit-content ;background: white"
         >
-            {#if ongoing_competition.length == 0}
-            <div
-                class="text-center p-3 notFound"
-                style="width: fit-content ;background: white"
-            >
-                <lottie-player
-                src={lottieNotFoundSrc}
-                background="transparent"
-                style="max-width: 500px"
-                speed="1"
-                nocontrols
-                />
-                <h2>No ongoing registerations!</h2>
-                <small style="margin-top:-10px; display:block; opacity: 0.7">
-                Please, try later.
-                </small>
-            </div>
-            {:else}
-            {#each ongoing_competition as comp}
-                {@const diff =
-                Date.parse(comp.registration_end) - Date.parse(Date())}
-                {@const regDay = new Date(
-                Date.parse(comp.registration_start)
-                ).toDateString()}
-                {@const days = Math.floor(diff / (1000 * 60 * 60 * 24))}
-                {@const hours = Math.floor(
-                (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-                )}
-                {@const minutes = Math.floor(
-                (diff % (1000 * 60 * 60)) / (1000 * 60)
-                )}
-                {@const seconds = Math.floor((diff % (1000 * 60)) / 1000)}
-                {@const ApplyLink = "/contests/apply/" + comp.id}
-                <div class="col-md">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-light">
-                    <nav
-                        class="navbar navbar-expand-lg bg-light navbar-light mb-3 align-items-center"
-                    >
-                        <div class="navbar-brand">
-                        <h4 class="m-0">{comp.name}</h4>
-                        </div>
-                    </nav>
-                    </div>
-                    <div class="card-body gap-2">
-                    <table class="table">
-                        <tbody>
-                        <tr>
-                            <th scope="row"><i class="fa-solid fa-calendar" /></th>
-                            <td>Start date</td>
-                            <td colspan="2">{regDay}</td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><i class="fa fa-clock" /></th>
-                            <td>Registeration ends in </td>
-                            <td colspan="2"
-                            >{days} days, {hours} hours, {minutes} mins</td
-                            >
-                        </tr>
-                        <tr>
-                            <th scope="row"><i class="fa fa-group" /></th>
-                            <td colspan="2"> Number of contestants per team</td>
-                            <td>{comp.persons_amount}</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                    <div class="btn btn-group gap-2">
-                        <button class="btn btn-primary">
-                        <a class="link-light" href={ApplyLink} target="_blank">
-                            <span class="fa fa-check-square-o" />
-                            <span class="ptn-count"> Apply </span>
-                        </a>
-                        </button>
-                        <button class="btn btn-primary">
-                        <a class="link-light" href={comp.link} target="_blank">
-                            <span class="fa fa-eye" />
-                            <span> View full Contest</span>
-                        </a>
-                        </button>
-                    </div>
-                    </div>
-                </div>
-                </div>
-            {/each}
-            {/if}
+          <lottie-player
+            src={lottieNotFoundSrc}
+            background="transparent"
+            style="max-width: 500px"
+            speed="1"
+            nocontrols
+          />
+          <h2>No ongoing registerations!</h2>
+          <small style="margin-top:-10px; display:block; opacity: 0.7">
+            Please, try later.
+          </small>
         </div>
+      {:else}
+        {#each ongoing_competition as comp}
+          {@const diff = Date.parse(comp.registration_end) - Date.parse(Date())}
+          {@const regDay = new Date(
+            Date.parse(comp.registration_start)
+          ).toDateString()}
+          {@const days = Math.floor(diff / (1000 * 60 * 60 * 24))}
+          {@const hours = Math.floor(
+            (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+          )}
+          {@const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))}
+          {@const seconds = Math.floor((diff % (1000 * 60)) / 1000)}
+          {@const ApplyLink = "/contests/apply/" + comp.id}
+          <div class="col-md">
+            <div class="card shadow-sm border-0">
+              <div class="card-header bg-light">
+                <nav
+                  class="navbar navbar-expand-lg bg-light navbar-light mb-3 align-items-center"
+                >
+                  <div class="navbar-brand">
+                    <h4 class="m-0">{comp.name}</h4>
+                  </div>
+                </nav>
+              </div>
+              <div class="card-body gap-2">
+                <table class="table">
+                  <tbody>
+                    <tr>
+                      <th scope="row"><i class="fa-solid fa-calendar" /></th>
+                      <td>Start date</td>
+                      <td colspan="2">{regDay}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row"><i class="fa fa-clock" /></th>
+                      <td>Registeration ends in </td>
+                      <td colspan="2"
+                        >{days} days, {hours} hours, {minutes} mins</td
+                      >
+                    </tr>
+                    <tr>
+                      <th scope="row"><i class="fa fa-group" /></th>
+                      <td colspan="2"> Number of contestants per team</td>
+                      <td>{comp.persons_amount}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="btn btn-group gap-2">
+                  <button class="btn btn-primary">
+                    <a class="link-light" href={ApplyLink} target="_blank">
+                      <span class="fa fa-check-square-o" />
+                      <span class="ptn-count"> Apply </span>
+                    </a>
+                  </button>
+                  <button class="btn btn-primary">
+                    <a class="link-light" href={comp.link} target="_blank">
+                      <span class="fa fa-eye" />
+                      <span> View full Contest</span>
+                    </a>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        {/each}
+      {/if}
     </div>
+  </div>
 </section>
 
 <style lang="scss">

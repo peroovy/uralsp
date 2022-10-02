@@ -17,11 +17,11 @@
   let googlePseudo: HTMLElement;
   let loading: HTMLElement;
   let telgramBtn: HTMLElement;
-  function redirct(per: string, user_id: number) {
+  function redirect(per: string, user_id: number) {
     if (per === "super_admin" || per === "admin") {
       window.location.href = `${base}/admin/${user_id}`;
     } else {
-      window.location.href = `${base}/participant/${user_id}`;
+      window.location.href = `${base}/participant/ongoing`;
     }
   }
   onMount(() => {
@@ -40,7 +40,7 @@
           let payload = parsePayload(localStorage.getItem("access_token")!);
           let per = payload.permission;
           let id = payload.user_id;
-          redirct(per, id);
+          redirect(per, id);
         } else {
           localStorage.removeItem("access_token");
           localStorage.removeItem("expires_in");
@@ -79,7 +79,7 @@
             let id = parsePayload(
               localStorage.getItem("access_token")!
             ).user_id;
-            redirct(per, id);
+            redirect(per, id);
           });
         });
       }
@@ -147,7 +147,7 @@
                   let id = parsePayload(
                     localStorage.getItem("access_token")!
                   ).user_id;
-                  redirct(per, id);
+                  redirect(per, id);
                 });
               });
             },
@@ -187,7 +187,7 @@
             localStorage.getItem("access_token")!
           ).permission;
           let id = parsePayload(localStorage.getItem("access_token")!).user_id;
-          redirct(per, id);
+          redirect(per, id);
         });
       })
       .catch((err) => {
