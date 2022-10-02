@@ -38,5 +38,5 @@ def serialize_to_csv(rows: Iterable[Iterable[str]], delimiter: str = ";") -> Byt
     return BytesIO(buffer.read().encode("utf-8"))
 
 
-def to_current_timezone(value: datetime) -> datetime:
+def normalize_datetime(value: datetime) -> datetime:
     return localtime(value) if is_aware(value) else make_aware(value)

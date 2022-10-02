@@ -17,7 +17,7 @@ from api.internal.db.models.user import Permissions
 from api.internal.db.repositories.competition import ICompetitionRepository
 from api.internal.db.repositories.field import IFieldRepository
 from api.internal.db.repositories.user import IUserRepository
-from api.internal.utils import to_current_timezone
+from api.internal.utils import normalize_datetime
 
 
 class CompetitionsService:
@@ -105,10 +105,9 @@ class CompetitionsService:
 
     def validate_dates(self, data: CompetitionIn) -> bool:
         return (
-            now()
-            < to_current_timezone(data.registration_start)
-            < to_current_timezone(data.registration_end)
-            < to_current_timezone(data.started_at)
+            normalize_datetime(data.registration_start)
+            < normalize_datetime(data.registration_end)
+            < normalize_datetime(data.started_at)
         )
 
     def validate_admins(self, ids: List[int]) -> bool:

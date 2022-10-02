@@ -34,21 +34,22 @@ FORM = COMPETITION + "/form"
 
 DATE_DELTAS = [
     [timedelta(milliseconds=1), timedelta(milliseconds=2), timedelta(milliseconds=3), True],
+    [timedelta(milliseconds=-3), timedelta(milliseconds=-2), timedelta(milliseconds=-1), True],
     [timedelta(seconds=1), timedelta(seconds=2), timedelta(seconds=3), True],
     [timedelta(days=300), timedelta(days=500), timedelta(days=800), True],
     [timedelta(milliseconds=2), timedelta(milliseconds=2), timedelta(milliseconds=3), False],
     [timedelta(milliseconds=1), timedelta(milliseconds=2), timedelta(milliseconds=2), False],
     [timedelta(milliseconds=2), timedelta(milliseconds=2), timedelta(milliseconds=2), False],
-    [timedelta(milliseconds=0), timedelta(milliseconds=2), timedelta(milliseconds=3), False],
+    [timedelta(milliseconds=0), timedelta(milliseconds=2), timedelta(milliseconds=3), True],
     [timedelta(milliseconds=0), timedelta(milliseconds=0), timedelta(milliseconds=3), False],
     [timedelta(milliseconds=0), timedelta(milliseconds=0), timedelta(milliseconds=0), False],
     [timedelta(milliseconds=10), timedelta(milliseconds=0), timedelta(milliseconds=0), False],
     [timedelta(milliseconds=10), timedelta(milliseconds=0), timedelta(milliseconds=20), False],
     [timedelta(milliseconds=10), timedelta(milliseconds=0), timedelta(milliseconds=5), False],
-    [timedelta(milliseconds=-10), timedelta(milliseconds=1), timedelta(milliseconds=2), False],
+    [timedelta(milliseconds=-10), timedelta(milliseconds=1), timedelta(milliseconds=2), True],
     [timedelta(milliseconds=-10), timedelta(milliseconds=-20), timedelta(milliseconds=2), False],
     [timedelta(milliseconds=-10), timedelta(milliseconds=-20), timedelta(milliseconds=-30), False],
-    [timedelta(milliseconds=-10), timedelta(milliseconds=-5), timedelta(milliseconds=-1), False],
+    [timedelta(milliseconds=-10), timedelta(milliseconds=-5), timedelta(milliseconds=-1), True],
     [timedelta(milliseconds=-10), timedelta(milliseconds=-5), timedelta(milliseconds=-6), False],
     [timedelta(milliseconds=-1), timedelta(milliseconds=-1), timedelta(milliseconds=-1), False],
 ]
@@ -437,7 +438,7 @@ def _test_validation_dates(
     body["registration_end"] = datetime_to_string(now() + registration_end_delta)
     body["started_at"] = datetime_to_string(now() + start_delta)
 
-    error, details = "bad dates", "Values must be next: now < registration_start < registration_end < started_at"
+    error, details = "bad dates", "Values must be next: registration_start < registration_end < started_at"
     response = func(body)
 
     if is_correct:

@@ -35,7 +35,7 @@ OPERATION_IS_OVER__INVALID_DATES = f"{OPERATION_IS_OVER} (invalid dates)"
 
 
 class CompetitionsHandlers(metaclass=HandlersMetaclass):
-    VALIDATION_DATES_ERROR = "Values must be next: now < registration_start < registration_end < started_at"
+    VALIDATION_DATES_ERROR = "Values must be next: registration_start < registration_end < started_at"
     VALIDATION_FIELDS_ERROR = "Validation fields error"
     VALIDATION_ADMINS_ERROR = "Validation admins error"
 
@@ -81,7 +81,7 @@ class CompetitionsHandlers(metaclass=HandlersMetaclass):
     ) -> SuccessResponse:
         """
         422 error codes:\n
-            "bad dates" - dates must be next: now < registration_start < registration_end < started_at
+            "bad dates" - dates must be next: registration_start < registration_end < started_at
             "bad admins" - admin ids must be unique and exist, amount >= 0
             "bad fields" - field ids must be unique and exist, amount > 0
         """
@@ -108,7 +108,7 @@ class CompetitionsHandlers(metaclass=HandlersMetaclass):
     ) -> SuccessResponse:
         """
         422 error codes:\n
-            "bad dates" - dates must be next: now < registration_start < registration_end < started_at
+            "bad dates" - dates must be next: registration_start < registration_end < started_at
             "bad admins" - admin ids must be unique and exist, amount >= 0
             "bad fields" - field ids must be unique and exist, amount > 0
         """
