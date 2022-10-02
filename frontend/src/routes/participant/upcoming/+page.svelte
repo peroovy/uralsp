@@ -6,7 +6,7 @@
   import lottieNotFoundSrc from "$lib/Assets/animations/lottie-notfound2.json?url";
   import { sessionDuration } from "$lib/sessionDuration";
   import Navbar from "../navbar.svelte";
-  let active = "upcomming";
+  let active = "upcoming";
 
   let data = $page.data,
     upComming_competitions: Competitions = data.upComming_competitions,

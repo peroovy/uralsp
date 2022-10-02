@@ -16,7 +16,7 @@
   const vkAppId = import.meta.env.VITE_VK_CLIENT_ID;
   const telgramBotId = import.meta.env.VITE_TELEGRAM_BOT;
 
-  $: educationType = "Choose ...";
+  $: educationType = "";
   $: instName = "";
   $: instYear = "";
   $: instFacultyName = "";
@@ -43,6 +43,7 @@
   let loading: HTMLElement;
   let userPermission: string | undefined;
   let permissionsArr = ["default", "teacher", "admin", "super_admin"];
+  
   onMount(() => {
     let instType = userInfo.institution_type;
     educationType = instType
