@@ -4,7 +4,7 @@
   import tempPhoto from "$lib/Assets/imgs/temp-photo.png";
   import { page } from "$app/stores";
 
-  let navBar = "" as unknown as HTMLElement;
+  let up : HTMLElement, past : HTMLElement, on : HTMLElement, req : HTMLElement;
 
   function signout(): void {
     localStorage.clear();
@@ -16,24 +16,27 @@
   controlActive(active);
   
   function controlActive(activeEle: string): void {
-		let navs = navBar.querySelectorAll('.nav-link');
-		for (let ele in navs) {
-			if (navs[ele].nodeName == 'SPAN' && navs[ele].id === activeEle && navs[ele].classList.contains('active')) {
-				return;
-			}
-		}
-		// Deactivate all navs
-		for (let ele in navs) {
-			if (navs[ele].nodeName == 'SPAN') {
-				navs[ele].classList.remove('active');
-			}
-		}
-		// Activate the Clicked Nav
-		for (let i = 0; i < navs.length; i++) {
-			if (navs[i].nodeName == 'SPAN' && navs[i].id === activeEle) {
-				navs[i].classList.toggle('active');
-			}
-		}
+		// deactivate all
+    up.classList.remove("active");
+    past.classList.remove("active");
+    on.classList.remove("active");
+    req.classList.remove("active");
+
+    // activate the active element
+    switch (activeEle) {
+      case "upcoming":
+        up.classList.add("active");
+        break;
+      case "past":
+        past.classList.add("active");
+        break;
+      case "ongoing":
+        on.classList.add("active");
+        break;
+      case "requests":
+        req.classList.add("active");
+        break;
+    }
 	}
   
 </script>
@@ -58,7 +61,6 @@
       <div class="collapse navbar-collapse flex-grow-0" id="participant-menu">
         <ul
           class="navbar-nav me-auto mb-20 mb-lg-0 col-12 justify-content-around"
-          bind:this={navBar}
         >
           <li
             class="nav-item"
@@ -66,7 +68,7 @@
               window.location.href = base + "/participant/upcoming";
             }}
           >
-            <span class="nav-link active" id="upcoming"> Upcoming registeration </span>
+            <span class="nav-link active" bind:this={up}> Upcoming registeration </span>
           </li>
           <li
             class="nav-item"
@@ -74,7 +76,7 @@
               window.location.href = base + "/participant/ongoing";
             }}
           >
-            <span class="nav-link" id="onging"> Ongoing registeration </span>
+            <span class="nav-link" bind:this={on}> Ongoing registeration </span>
           </li>
           <li
             class="nav-item"
@@ -82,7 +84,7 @@
               window.location.href = base + "/participant/past";
             }}
           >
-            <span class="nav-link" id="past"> Past registeration </span>
+            <span class="nav-link" id="past" bind:this={past}> Past registeration </span>
           </li>
           <li
             class="nav-item"
@@ -90,7 +92,7 @@
               window.location.href = base + "/participant/requests";
             }}
           >
-            <span class="nav-link" id="requests"> Requests </span>
+            <span class="nav-link" bind:this={req}> Requests </span>
           </li>
           <li class="nav-item dropdown">
             <div
