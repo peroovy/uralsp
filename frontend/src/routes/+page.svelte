@@ -17,6 +17,7 @@
   let googlePseudo: HTMLElement;
   let loading: HTMLElement;
   let telgramBtn: HTMLElement;
+  
   function redirect(per: string, user_id: number) {
     if (per === "super_admin" || per === "admin") {
       window.location.href = `${base}/admin/${user_id}`;

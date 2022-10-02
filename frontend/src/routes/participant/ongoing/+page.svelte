@@ -8,11 +8,13 @@
   import Navbar from "../navbar.svelte";
 
   let data = $page.data,
-    ongoing_competition: Competitions = data.ongoing_competition;
-
+    ongoing_competition: Competitions = data.ongoing_competition,
+    userInfo = data.userInfo;
+    
   sessionDuration();
-  let userId: number;
-  let paricipantName = "";
+
+  let paricipantName = userInfo.name + " " + userInfo.surname;
+  let userId = userInfo.id;
 
   let loading = "" as unknown as HTMLElement;
 
@@ -175,6 +177,11 @@
     padding-bottom: 30px !important;
     margin: 0px !important;
     width: 100vw !important;
+  }
+  nav {
+    position: sticky !important;
+    z-index: 10 !important;
+    background-color: #f8f9fa !important;
   }
   .notFound {
     font-family: "light";

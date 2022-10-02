@@ -8,11 +8,13 @@
   import Navbar from "../navbar.svelte";
 
   let data = $page.data,
-    upComming_competitions: Competitions = data.upComming_competitions;
+    upComming_competitions: Competitions = data.upComming_competitions,
+    userInfo = data.userInfo;
 
   sessionDuration();
-  let userId: number;
-  let paricipantName = "";
+  
+  let paricipantName = userInfo.name + " " + userInfo.surname;
+  let userId = userInfo.id;
 
   let loading = "" as unknown as HTMLElement;
 
@@ -157,6 +159,11 @@
     .link-light {
       text-decoration: none;
     }
+  }
+  nav {
+    position: sticky !important;
+    z-index: 10 !important;
+    background-color: #f8f9fa !important;
   }
   .part_4 {
     flex-shrink: 0;
