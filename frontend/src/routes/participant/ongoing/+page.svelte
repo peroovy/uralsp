@@ -6,7 +6,7 @@
   import lottieNotFoundSrc from "$lib/Assets/animations/lottie-notfound2.json?url";
   import { sessionDuration } from "$lib/sessionDuration";
   import Navbar from "../navbar.svelte";
-
+  let active = "onging";
   let data = $page.data,
     ongoing_competition: Competitions = data.ongoing_competition,
     userInfo = data.userInfo;
@@ -45,7 +45,7 @@
   <img class="d1" src={dotsSrc} alt="" />
   <div class="d2" />
 
-  <Navbar {userId} {paricipantName} />
+  <Navbar {userId} {paricipantName} {active}/>
 
   <div class="part_4 d-flex justify-content-center align-items-start">
     <div

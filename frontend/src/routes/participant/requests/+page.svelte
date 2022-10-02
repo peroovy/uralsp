@@ -7,7 +7,7 @@
   import { sessionDuration } from "$lib/sessionDuration";
   import Navbar from "../navbar.svelte";
   import { base } from "$app/paths";
-
+  let active = "requests";
   let data = $page.data,
     requests: Requests = data.requests,
     API = data.API,
@@ -90,7 +90,7 @@
   <img class="d1" src={dotsSrc} alt="" />
   <div class="d2" />
 
-  <Navbar {userId} {paricipantName} />
+  <Navbar {userId} {paricipantName} {active} />
 
   <div class="part_4 d-flex justify-content-center align-items-start">
     <div

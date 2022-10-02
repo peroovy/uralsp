@@ -11,8 +11,33 @@
     window.location.href = base + "/";
   }
 
-  export let userId: number, paricipantName: string;
+  export let userId: number, paricipantName: string, active: string;
+  
+  controlActive(active);
+  
+  function controlActive(activeEle: string): void {
+		let navs = navBar.querySelectorAll('.nav-link');
+		for (let ele in navs) {
+			if (navs[ele].nodeName == 'SPAN' && navs[ele].id === activeEle && navs[ele].classList.contains('active')) {
+				return;
+			}
+		}
+		// Deactivate all navs
+		for (let ele in navs) {
+			if (navs[ele].nodeName == 'SPAN') {
+				navs[ele].classList.remove('active');
+			}
+		}
+		// Activate the Clicked Nav
+		for (let i = 0; i < navs.length; i++) {
+			if (navs[i].nodeName == 'SPAN' && navs[i].id === activeEle) {
+				navs[i].classList.toggle('active');
+			}
+		}
+	}
+  
 </script>
+
 <div class="participant-container">
   <nav class="navbar navbar-expand-lg navbar-light mb-5 sticky-top shadow">
     <div class="container-fluid p-0 d-flex justify-content-lg-around">
@@ -41,7 +66,7 @@
               window.location.href = base + "/participant/upcoming";
             }}
           >
-            <span class="nav-link active"> Upcoming registeration </span>
+            <span class="nav-link active" id="upcoming"> Upcoming registeration </span>
           </li>
           <li
             class="nav-item"
@@ -49,7 +74,7 @@
               window.location.href = base + "/participant/ongoing";
             }}
           >
-            <span class="nav-link"> Ongoing registeration </span>
+            <span class="nav-link" id="onging"> Ongoing registeration </span>
           </li>
           <li
             class="nav-item"
@@ -57,7 +82,7 @@
               window.location.href = base + "/participant/past";
             }}
           >
-            <span class="nav-link"> Past registeration </span>
+            <span class="nav-link" id="past"> Past registeration </span>
           </li>
           <li
             class="nav-item"
@@ -65,7 +90,7 @@
               window.location.href = base + "/participant/requests";
             }}
           >
-            <span class="nav-link"> Requests </span>
+            <span class="nav-link" id="requests"> Requests </span>
           </li>
           <li class="nav-item dropdown">
             <div
