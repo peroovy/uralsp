@@ -74,6 +74,7 @@
           VK.init({
             apiId: vkAppId,
           });
+
           VK.Widgets.Auth("vk_auth", {
             onAuth: async function (data: {
               uid: string;
@@ -159,13 +160,17 @@
   ];
 
   async function updateUserInfo() {
-    userInfo.institution_type =
-      educationType.charAt(0).toLowerCase() + educationType.slice(1);
-    userInfo.institution_name = instName;
-    userInfo.institution_course = instYear;
-    userInfo.institution_faculty = instFacultyName;
-    alertCont.innerHTML = "";
-
+    if(educationType == undefined || educationType == "Choose ..." || educationType == null || educationType == ""){
+      educationType = '';
+    } else {
+      userInfo.institution_type =
+        educationType.charAt(0).toLowerCase() + educationType.slice(1);
+      userInfo.institution_name = instName;
+      userInfo.institution_course = instYear;
+      userInfo.institution_faculty = instFacultyName;
+      alertCont.innerHTML = "";
+    }
+    
     let update = {
       name: userInfo.name,
       surname: userInfo.surname,
