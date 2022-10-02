@@ -1,7 +1,6 @@
 from typing import List
 from uuid import UUID
 
-from django.conf import settings
 from django.http import HttpRequest
 from loguru import logger
 from ninja import Body, Path, Query
@@ -15,7 +14,6 @@ from api.internal.competitions.domain.entities import (
     CompetitionOut,
     FieldDetailsOut,
     FormIn,
-    NewCompetitionIn,
     RequestTemplateIn,
 )
 from api.internal.competitions.domain.services import CompetitionsService
@@ -38,7 +36,6 @@ OPERATION_IS_OVER__INVALID_DATES = f"{OPERATION_IS_OVER} (invalid dates)"
 
 class CompetitionsHandlers(metaclass=HandlersMetaclass):
     VALIDATION_DATES_ERROR = "Values must be next: now < registration_start < registration_end < started_at"
-    VALIDATION_PERSONS_AMOUNT_ERROR = f"persons_amount must be >= {settings.MIN_PARTICIPANTS_AMOUNT}"
     VALIDATION_FIELDS_ERROR = "Validation fields error"
     VALIDATION_ADMINS_ERROR = "Validation admins error"
 
@@ -46,7 +43,6 @@ class CompetitionsHandlers(metaclass=HandlersMetaclass):
     BAD_FIELDS = "bad fields"
     BAD_ADMINS = "bad admins"
     BAD_DATES = "bad dates"
-    BAD_PERSONS_AMOUNT = "bad persons_amount"
 
     def __init__(self, competitions_service: CompetitionsService, requests_handlers: CompetitionRequestsHandlers):
         self._competitions_service = competitions_service
@@ -81,11 +77,10 @@ class CompetitionsHandlers(metaclass=HandlersMetaclass):
         return self._competitions_service.get_form_details(competition_id)
 
     def create_competition(
-        self, request: HttpRequest, _operation_id: UUID, data: NewCompetitionIn = Body(...)
+        self, request: HttpRequest, _operation_id: UUID, data: CompetitionIn = Body(...)
     ) -> SuccessResponse:
         """
         422 error codes:\n
-            "bad persons_amount" - persons_amount must be >= 1
             "bad dates" - dates must be next: now < registration_start < registration_end < started_at
             "bad admins" - admin ids must be unique and exist, amount >= 0
             "bad fields" - field ids must be unique and exist, amount > 0
@@ -96,16 +91,7 @@ class CompetitionsHandlers(metaclass=HandlersMetaclass):
 
         logger.info(log(_operation_id, STARTING, **log_kwargs))
 
-        if not self._competitions_service.validate_persons_amount(data):
-            logger.success(
-                log(
-                    _operation_id,
-                    OPERATION_IS_OVER__INVALID_PERSONS_AMOUNT,
-                )
-            )
-            raise UnprocessableEntityException(self.VALIDATION_PERSONS_AMOUNT_ERROR, error=self.BAD_PERSONS_AMOUNT)
-
-        self._assert_competition_in(CompetitionIn(**data.dict()), _operation_id)
+        self._assert_competition_in(data, _operation_id)
 
         logger.info(log(_operation_id, PROCESSING))
         self._competitions_service.create_competitions(data)

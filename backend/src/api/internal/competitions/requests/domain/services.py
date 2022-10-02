@@ -42,9 +42,11 @@ class CompetitionRequestsSerializer:
 
     def _get_rows(self, competition: Competition, has_headers: bool) -> List[List[str]]:
         fields = [field.id for field in competition.fields.all()]
-        headers = self.REQUEST_HEADERS + [self.PARTICIPANT_ID, *fields] * competition.persons_amount
+        rows = []
 
-        rows = [headers] if has_headers else []
+        if has_headers:
+            max_amount = max(map(lambda r: r.participation.count(), competition.requests.all()))
+            rows.append(self.REQUEST_HEADERS + [self.PARTICIPANT_ID, *fields] * max_amount)
 
         for request in competition.requests.all():
             row = deque(
