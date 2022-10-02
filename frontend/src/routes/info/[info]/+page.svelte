@@ -160,7 +160,7 @@
   ];
 
   async function updateUserInfo() {
-    if(educationType == undefined || educationType == "Choose ..." || educationType == null || educationType == ""){
+    if(educationType == undefined || educationType == "choose..." || educationType == "Choose..." || educationType == null || educationType == ""){
       educationType = '';
     } else {
       userInfo.institution_type =
