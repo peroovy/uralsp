@@ -433,8 +433,6 @@
     margin-top: -120px;
     margin-left: 50px;
     position: absolute;
-    scale: 2;
-    // Yandex compatibility
     transform: scale(2);
     opacity: 0.02;
     height: fit-content;
