@@ -3,6 +3,7 @@
   import src from "$lib/Assets/imgs/logo.png";
   import tempPhoto from "$lib/Assets/imgs/temp-photo.png";
   import { page } from "$app/stores";
+  import { onMount } from "svelte/types/runtime/internal/lifecycle";
 
   let up : HTMLElement, past : HTMLElement, on : HTMLElement, req : HTMLElement;
 
@@ -13,7 +14,6 @@
 
   export let userId: number, paricipantName: string, active: string;
   
-  controlActive(active);
   
   function controlActive(activeEle: string): void {
 		// deactivate all
@@ -39,6 +39,9 @@
     }
 	}
   
+  onMount(() => {
+    controlActive(active);
+  });
 </script>
 
 <div class="participant-container">
