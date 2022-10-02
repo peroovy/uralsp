@@ -1,10 +1,9 @@
-from typing import List, Optional, Set
+from typing import List, Optional
 
 from django.conf import settings
 from ninja import Field as F, ModelSchema, Schema
 
-from api.internal.db.models import Competition, Field, Request
-from api.internal.db.models.request import RequestStatus
+from api.internal.db.models import Competition, Field
 
 
 class CompetitionFilters(Schema):
@@ -20,22 +19,14 @@ class CompetitionOut(ModelSchema):
         model_exclude = ["fields", "admins"]
 
 
-class NewCompetitionIn(ModelSchema):
+class CompetitionIn(ModelSchema):
+    persons_amount: int = F(default=settings.MIN_PARTICIPANTS_AMOUNT, gte=settings.MIN_PARTICIPANTS_AMOUNT)
     fields: List[str]
     admins: List[int]
 
     class Config:
         model = Competition
         model_exclude = ["id", "fields", "admins"]
-
-
-class CompetitionIn(ModelSchema):
-    fields: List[str]
-    admins: List[int]
-
-    class Config:
-        model = Competition
-        model_exclude = ["id", "persons_amount", "fields", "admins"]
 
 
 class CompetitionFieldOut(ModelSchema):

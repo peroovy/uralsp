@@ -230,20 +230,6 @@ def test_creating__validation_dates(
 
 @pytest.mark.integration
 @pytest.mark.django_db
-@pytest.mark.parametrize(["amount", "is_correct"], PERSONS_AMOUNTS)
-def test_creating__validation_persons_amount(
-    client: Client, super_admin_token: str, amount: int, is_correct: bool
-) -> None:
-    _test_validation_persons_amount(
-        lambda body: post(client, COMPETITIONS, super_admin_token, body), amount, is_correct
-    )
-
-    if not is_correct:
-        assert not Competition.objects.exists()
-
-
-@pytest.mark.integration
-@pytest.mark.django_db
 def test_creating__validation_fields(
     client: Client, admin: User, field: Field, another_field: Field, super_admin_token: str
 ) -> None:
@@ -460,19 +446,6 @@ def _test_validation_dates(
         assert_422(response, error, details)
 
 
-def _test_validation_persons_amount(func: Callable[[dict], Response], amount: int, is_correct: bool) -> None:
-    body = get_body_for_creating_or_updating()
-    body["persons_amount"] = amount
-
-    error, details = "bad persons_amount", "persons_amount must be >= 1"
-    response = func(body)
-
-    if is_correct:
-        assert_not_422_body(response, error, details)
-    else:
-        assert_422(response, error, details)
-
-
 def _test_validation_admins(
     func: Callable[[dict], Response], user: User, admin: User, another_admin: User, super_admin: User, field: Field
 ) -> None:
@@ -519,8 +492,6 @@ def test_updating(
     super_admin_token: str,
 ) -> None:
     body = get_body_for_creating_or_updating()
-    competition.persons_amount = body["persons_amount"]
-    competition.save()
 
     competition.fields.add(field, another_field)
     value = FormValue.objects.create(participation=participation, field=another_field, value="123")

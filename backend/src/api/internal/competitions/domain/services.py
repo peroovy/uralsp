@@ -1,6 +1,5 @@
 from typing import List, Optional
 
-from django.conf import settings
 from django.db.transaction import atomic
 from django.forms import model_to_dict
 from django.utils.timezone import now
@@ -11,7 +10,6 @@ from api.internal.competitions.domain.entities import (
     CompetitionIn,
     FieldDetailsOut,
     FormIn,
-    NewCompetitionIn,
     RequestTemplateIn,
 )
 from api.internal.db.models import Competition, User
@@ -46,7 +44,7 @@ class CompetitionsService:
         return self._competition_repo.delete(competition_id)
 
     @atomic
-    def create_competitions(self, data: NewCompetitionIn) -> None:
+    def create_competitions(self, data: CompetitionIn) -> None:
         competition = self._competition_repo.create(
             data.name,
             data.registration_start,
@@ -69,6 +67,7 @@ class CompetitionsService:
         competition.started_at = data.started_at
         competition.request_template = data.request_template
         competition.link = data.link
+        competition.persons_amount = data.persons_amount
 
         competition.fields.clear()
         competition.admins.clear()
@@ -103,9 +102,6 @@ class CompetitionsService:
             )
             for field in fields
         ]
-
-    def validate_persons_amount(self, data: NewCompetitionIn) -> bool:
-        return data.persons_amount >= settings.MIN_PARTICIPANTS_AMOUNT
 
     def validate_dates(self, data: CompetitionIn) -> bool:
         return (
