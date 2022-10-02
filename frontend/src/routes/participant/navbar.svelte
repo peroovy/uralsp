@@ -4,7 +4,7 @@
   import tempPhoto from "$lib/Assets/imgs/temp-photo.png";
   import { page } from "$app/stores";
 
-  let navBar: HTMLElement;
+  let navBar = "" as unknown as HTMLElement;
 
   function signout(): void {
     localStorage.clear();
