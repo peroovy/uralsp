@@ -888,19 +888,15 @@
     width: calc(100% + 20px) !important;
     height: 100% !important;
     margin-left: -20px;
-    scale: 5;
-    // Yandex compatibility
     transform: scale(5);
     opacity: 0.02;
     z-index: 100;
     margin-top: 70px !important;
   }
   .vkHolder {
-    margin-top: -200px;
+    margin-top: -370px;
     margin-left: 30px;
     position: absolute;
-    scale: 2;
-    // Yandex compatibility
     transform: scale(2);
     opacity: 0.01;
   }
