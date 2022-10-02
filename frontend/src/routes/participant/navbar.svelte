@@ -3,7 +3,7 @@
   import src from "$lib/Assets/imgs/logo.png";
   import tempPhoto from "$lib/Assets/imgs/temp-photo.png";
   import { page } from "$app/stores";
-  import { onMount } from "svelte/types/runtime/internal/lifecycle";
+  import { onMount } from "svelte";
 
   let up : HTMLElement, past : HTMLElement, on : HTMLElement, req : HTMLElement;
 
