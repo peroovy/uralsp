@@ -178,7 +178,7 @@
       phone: userInfo.phone,
       city: userInfo.city,
       region: userInfo.region,
-      institution_type: userInfo.institution_type,
+      institution_type: userInfo.institution_type == ''? null : userInfo.institution_type,
       institution_name: userInfo.institution_name,
       institution_course: userInfo.institution_course,
       institution_faculty: userInfo.institution_faculty,
