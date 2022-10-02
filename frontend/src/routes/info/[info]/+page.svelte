@@ -160,15 +160,15 @@
   ];
 
   async function updateUserInfo() {
-    if(educationType == undefined || educationType == "choose..." || educationType == "Choose..." || educationType == null || educationType == ""){
-      educationType = '';
-    } else {
-      userInfo.institution_type =
-        educationType.charAt(0).toLowerCase() + educationType.slice(1);
-      userInfo.institution_name = instName;
-      userInfo.institution_course = instYear;
-      userInfo.institution_faculty = instFacultyName;
-      alertCont.innerHTML = "";
+    userInfo.institution_type =
+      educationType.charAt(0).toLowerCase() + educationType.slice(1);
+    userInfo.institution_name = instName;
+    userInfo.institution_course = instYear;
+    userInfo.institution_faculty = instFacultyName;
+    alertCont.innerHTML = "";
+
+    if (educationType != userInfo.institution_type){
+      userInfo.institution_type = ''
     }
 
     let update = {

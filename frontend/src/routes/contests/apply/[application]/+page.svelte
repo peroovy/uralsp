@@ -205,7 +205,7 @@
 <section class="container-fluid p-0 m-0 pt-5 contestForm d-flex justify-content-center align-items-start">
 	<img class="d1" src={dotsSrc} alt="" />
 	<div class="d2" />
-
+	
 	<div class="row col-12 m-0 p-0 justify-content-center">
 		<div class="card col-md-5 p-0" style="max-width: 500px">
 			<nav class="navbar card-header">
