@@ -82,14 +82,14 @@
       template = requestTemplates[index].children[0].children;
     }
     let form = [];
-    if (applicant_id == "") {
+    if (applicant_id == "" && contest.persons_amount > 1) {
       if (mode == "msg")
         showMessage("Error", "Please enter a valid applicant ID");
       return "error";
-    } else if (isNaN(parseInt(applicant_id))) {
+    } else if (isNaN(parseInt(applicant_id)) && contest.persons_amount > 1) {
       if (mode == "msg")
         showMessage("Error", "Please enter a valid applicant ID");
-      return;
+      return "error";
     }
     for (let i = 0; i < template.length; i++) {
       let fieldId = (template[i] as HTMLElement).dataset.id;
@@ -326,11 +326,11 @@
                     <strong>Ends in:</strong>
                   </td>
                   <td>
-                    { Math.floor(Date.parse(contest.registration_end) - Date.parse(Date()) / (1000 * 60 * 60 * 24))} days,
+                    { Math.floor(( Date.parse(contest.registration_end) - Date.parse(Date()) )/ (1000 * 60 * 60 * 24))} days,
                     { Math.floor(
-                      (Date.parse(contest.registration_end) - Date.parse(Date()) % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+                      ( (Date.parse(contest.registration_end) - Date.parse(Date()) ) % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
                     ) } hours,
-                    { Math.floor((Date.parse(contest.registration_end) - Date.parse(Date()) % (1000 * 60 * 60)) / (1000 * 60))} minutes
+                    { Math.floor(((Date.parse(contest.registration_end) - Date.parse(Date())) % (1000 * 60 * 60)) / (1000 * 60))} minutes
                   </td>
                 </tr>
                 <tr>
