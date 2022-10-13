@@ -508,9 +508,8 @@
 			});
 	}
 	function viewApplication(id: number) {
-		console.log(`http://localhost/admin/requests/${id}`);
 		let a = document.createElement('a');
-		a.href = `http://localhost/admin/requests/${id}`;
+		a.href = `${base}/admin/requests/${id}`;
 		a.click();
 	}
 	// Signout

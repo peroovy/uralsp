@@ -157,6 +157,9 @@
     });
     if (response.status == 200) {
       showMessage("Success", "Your request has been sent successfully");
+      setTimeout(() => {
+        window.location.href = `${base}/participant/requests`;
+      }, 2000);
     } else {
       let e = await response.json();
       showMessage(
@@ -250,15 +253,15 @@
   <title>App Name | {contest.name}-form</title>
 </svelte:head>
 
-<section class="container-fluid contestForm justify-content-center align-items-start">
+<section class="container-fluid p-0 contestForm justify-content-center align-items-start">
   <img class="d1" src={dotsSrc} alt="" />
   <div class="d2" />
 
-  <nav class="navbar navbar-expand-sm col-12 navbar-light sticky-top shadow-sm mb-3">
+  <nav class="navbar navbar-expand-sm col-12 navbar-light sticky-top shadow-sm mb-3 p-0">
     <div class="container">
       <div class="navbar-brand d-flex col align-items-center">
         <span class="fa-brands fa-wpforms ms-3 me-3" />
-        <h4 class="p-0 m-0">Contest appliation</h4>
+        <h4 class="p-0 m-0">Contest application</h4>
       </div>
       <div class="navbar-nav">
         <button
@@ -314,16 +317,9 @@
                     <strong>Ends in:</strong>
                   </td>
                   <td>
-                    {new Date(
-                      Date.parse(contest.registration_end) - Date.now()
-                    ).getDate() /
-                      (1000 * 60 * 60 * 24)} days,
-                    {new Date(
-                      Date.parse(contest.registration_end) - Date.now()
-                    ).getHours()} hours,
-                    {new Date(
-                      Date.parse(contest.registration_end) - Date.now()
-                    ).getMinutes()} minutes
+                    {Math.floor(Date.parse(contest.registration_end) - Date.parse(Date()) / (1000 * 60 * 60 * 24))} days,
+                    {Math.floor( (Date.parse(contest.registration_end) - Date.parse(Date())) % (1000 * 60 * 60 * 24))  / (1000 * 60 * 60)} hours,
+                    {Math.floor((Date.parse(contest.registration_end) - Date.parse(Date()) % (1000 * 60 * 60)) / (1000 * 60)) } minutes
                   </td>
                 </tr>
                 <tr>

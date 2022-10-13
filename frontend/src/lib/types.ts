@@ -91,6 +91,7 @@ export type UserRequest = {
 	description: string;
 	created_at: string;
 	participants: Array<number>;
+	competition_name: string | null;
 };
 
 export type RequestsOut = {

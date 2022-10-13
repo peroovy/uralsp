@@ -81,7 +81,6 @@
             (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
           )}
           {@const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))}
-          {@const seconds = Math.floor((diff % (1000 * 60)) / 1000)}
           {@const ApplyLink = "/contests/apply/" + comp.id}
           <div class="col-md">
             <div class="card shadow-sm border-0">

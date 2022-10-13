@@ -123,7 +123,7 @@
           >
             <h4 class="card-header p-4 m-0">
               <li class="fa fa-paper-plane me-1" />
-              {request.team_name}
+              {request.team_name || request.competition_name || "No name"}
             </h4>
             <div class="card-body">
               <p class="request-description">

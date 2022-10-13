@@ -27,7 +27,19 @@ export let load: Load = async function load({ parent }) {
 			Authorization: 'Bearer ' + token
 		}
 	}).then((res) => res.json());
-	
+	if(requests.length > 0){
+		for(let i = 0; i < requests.length; i++){
+			let competition_id = requests[i].competition;
+			let competition = await fetch(`${API}/competitions/${competition_id}`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: 'Bearer ' + token
+				}
+			}).then((res) => res.json());
+			requests[i].competition_name = competition.name;
+		}
+	}
 	let userInfo = await userData.json();
 	return {
 		userInfo,
