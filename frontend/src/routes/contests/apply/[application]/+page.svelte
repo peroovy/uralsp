@@ -85,10 +85,12 @@
     if (applicant_id == "" && contest.persons_amount > 1) {
       if (mode == "msg")
         showMessage("Error", "Please enter a valid applicant ID");
+        console.log("1")
       return "error";
     } else if (isNaN(parseInt(applicant_id)) && contest.persons_amount > 1) {
       if (mode == "msg")
         showMessage("Error", "Please enter a valid applicant ID");
+      console.log("2")
       return "error";
     }
     for (let i = 0; i < template.length; i++) {
@@ -100,6 +102,7 @@
       if (isRequired && fieldValue == "") {
         if (mode == "msg") alert("Please fill all the required fields");
         alertCont.style.display = "block";
+        console.log("3")
         return "error";
       }
       form.push({
@@ -118,6 +121,7 @@
           "Error",
           "You can't add more than the allowed number of participants"
         );
+        console.log("4")
       return "error";
     }
     application.team.push({
@@ -131,8 +135,8 @@
   async function submitRequest() {
     for (let i = 0; i < contest.persons_amount; i++) {
       let status = saveApp(i, "noMsg");
-      if (status == "error") {
-        alert("Please fill all the required fields");
+      if (status === "error") {
+        alert("Please fill all the required fields ya 3mena");
         return;
       }
     }
@@ -179,7 +183,7 @@
     for (let i = 0; i < contest.persons_amount; i++) {
       let status = saveApp(i, "noMsg");
       if (status == "error") {
-        alert("Please fill all the required fields");
+        alert("Please fill all the required fields ya 3mena");
         return;
       }
     }
