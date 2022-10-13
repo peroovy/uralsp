@@ -67,32 +67,9 @@
     }, 2000);
   }
 
-  let savedIndex = new Set<number>();
   function saveApp(index: number, mode = "msg"): string {
-    savedIndex.add(index);
-    let applicant_id: string;
-    let template: HTMLCollection;
-    if (contest.persons_amount > 1) {
-      applicant_id = (
-        requestTemplates[index].children[0].children[1] as HTMLInputElement
-      ).value;
-      template = requestTemplates[index].children[1].children;
-    } else {
-      applicant_id = String(userId).valueOf();
-      template = requestTemplates[index].children[0].children;
-    }
     let form = [];
-    if (applicant_id == "" && contest.persons_amount > 1) {
-      if (mode == "msg")
-        showMessage("Error", "Please enter a valid applicant ID");
-        console.log("1")
-      return "error";
-    } else if (isNaN(parseInt(applicant_id)) && contest.persons_amount > 1) {
-      if (mode == "msg")
-        showMessage("Error", "Please enter a valid applicant ID");
-      console.log("2")
-      return "error";
-    }
+    let template = requestTemplates[index].children[0].children;
     for (let i = 0; i < template.length; i++) {
       let fieldId = (template[i] as HTMLElement).dataset.id;
       let fieldValue = (template[i].children[1] as HTMLInputElement).value;
@@ -100,9 +77,7 @@
         (field) => field.id == fieldId
       )!.is_required;
       if (isRequired && fieldValue == "") {
-        if (mode == "msg") alert("Please fill all the required fields");
         alertCont.style.display = "block";
-        console.log("3")
         return "error";
       }
       form.push({
@@ -110,16 +85,38 @@
         value: fieldValue,
       });
     }
-    // check if the user saved this application before
-    if (savedIndex.has(index)) {
-      application.team[index].user_id = parseInt(applicant_id);
-      application.team[index].form = form;
+    let contestants = contest.persons_amount;
+    if(contestants == 1){
+      application.team = [{
+        user_id: userId,
+        form,
+      }];
+    } else if (contestants > 1){
+      let applicant_id = (
+        requestTemplates[index].children[0].children[1] as HTMLInputElement
+      ).value;
+      if (applicant_id == "") {
+        return "error";
+      } else if (isNaN(parseInt(applicant_id))) {
+        return "error";
+      }
+      let alreadySaved = application.team.find((member) => member.user_id == parseInt(applicant_id));
+      if(alreadySaved){
+        let app_index = 0;
+        application.team.every((member, index)=>{ 
+        if(member.user_id == parseInt(applicant_id)){
+          index = app_index;
+        }});
+        application.team[app_index].form = form;
+      } else if(!alreadySaved && application.team.length < contestants){
+        application.team.push({
+          user_id: parseInt(applicant_id),
+          form,
+        });
+      } else {
+        return "error";
+      }
     }
-    application.team.push({
-      user_id: contest.persons_amount > 1 ? parseInt(applicant_id) : userId,
-      form,
-    });
-    if (mode == "msg") showMessage("Success", "Application saved successfully");
     return "success";
   }
 
