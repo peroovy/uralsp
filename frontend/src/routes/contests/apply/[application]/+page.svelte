@@ -212,6 +212,7 @@
       );
     }
   }
+  
   async function retreiveOldRequest() {
     // Reterive the old request and fill the form
     let old_respond = await fetch(`${API}/requests/` + oldRequest.id, {

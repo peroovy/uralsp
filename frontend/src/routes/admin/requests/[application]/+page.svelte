@@ -105,70 +105,102 @@
 		team: [],
 		competition: comp.id
 	};
-	function saveApp(index: number, mode = 'msg'): void {
-		let applicant_id = (requestTemplates[index].children[0].children[1] as HTMLInputElement).value;
-		let template = requestTemplates[index].children[1].children;
+	function saveApp(index: number, mode = "msg"): string {
 		let form = [];
-		if (applicant_id == '') {
-			if (mode == 'msg') showMessage('Error', 'Please enter a valid applicant ID');
-			return;
-		} else if (isNaN(parseInt(applicant_id))) {
-			if (mode == 'msg') showMessage('Error', 'Please enter a valid applicant ID');
-			return;
-		}
+		let template = requestTemplates[index].children[0].children;
 		for (let i = 0; i < template.length; i++) {
-			let fieldId = (template[i] as HTMLElement).dataset.id;
-			let fieldValue = (template[i].children[1] as HTMLInputElement).value;
-			let isRequired = comp.fields.find((field) => field.id == fieldId)!.is_required;
-			if (isRequired && fieldValue == '') {
-				alert('Please fill all the required fields');
-				alertCont.style.display = 'block';
-				return;
-			}
-			form.push({
-				field_id: fieldId,
-				value: fieldValue
-			});
+		let fieldId = (template[i] as HTMLElement).dataset.id;
+		let fieldValue = (template[i].children[1] as HTMLInputElement).value;
+		let isRequired = comp.fields.find(
+			(field) => field.id == fieldId
+		)!.is_required;
+		if (isRequired && fieldValue == "") {
+			alertCont.style.display = "block";
+			return "error";
 		}
-		// check if the user saved this application before
-		for (let i = 0; i < application.team.length; i++) {
-			if (application.team[i].user_id == parseInt(applicant_id)) {
-				application.team[i].form = form;
-				if (mode == 'msg') showMessage('Success', 'Application saved successfully');
-				return;
-			}
-		}
-		application.team.push({
-			user_id: parseInt(applicant_id),
-			form
+		form.push({
+			field_id: fieldId,
+			value: fieldValue,
 		});
-		if (mode == 'msg') showMessage('Success', 'Application saved successfully');
+		}
+		let contestants = comp.persons_amount;
+		if(contestants == 1){
+		application.team = [{
+			user_id: app.id,
+			form,
+		}];
+		} else if (contestants > 1){
+		let applicant_id = (
+			requestTemplates[index].children[0].children[1] as HTMLInputElement
+		).value;
+		if (applicant_id == "") {
+			return "error";
+		} else if (isNaN(parseInt(applicant_id))) {
+			return "error";
+		}
+		let alreadySaved = application.team.find((member) => member.user_id == parseInt(applicant_id));
+		if(alreadySaved){
+			let app_index = 0;
+			application.team.every((member, index)=>{ 
+			if(member.user_id == parseInt(applicant_id)){
+			index = app_index;
+			}});
+			application.team[app_index].form = form;
+		} else if(!alreadySaved && application.team.length < contestants){
+			application.team.push({
+			user_id: parseInt(applicant_id),
+			form,
+			});
+		} else {
+			return "error";
+		}
+		}
+		return "success";
 	}
+	
 	async function updateRequest() {
+		for (let i = 0; i < comp.persons_amount; i++) {
+			let status = saveApp(i, "noMsg");
+			if (status == "error") {
+				alert("Please fill all the required fields");
+				return;
+			}
+		}
 		// Validate the application
 		if (application.team.length < comp.persons_amount) {
-			alert('Please add save all the applications first');
-			return;
+		alert("Please add save all the applications first");
+		return;
 		}
 		application.team_name = team_name;
 
-		if (application.team_name === '' && comp.persons_amount > 1) {
-			alert('Please enter a team name');
-			return;
+		if (application.team_name === "" && comp.persons_amount > 1) {
+		alert("Please enter a team name");
+		return;
 		}
 		// send the request to the server and validate the response
 		const response = await fetch(`${API}/requests/${app.id}`, {
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${access_token}`
-			},
-			body: JSON.stringify(application)
+		method: "PUT",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${access_token}`,
+		},
+		body: JSON.stringify(application),
 		});
 		if (response.status == 200) {
-			showMessage('Success', 'Your request has been sent successfully');
+		showMessage("Success", "Your request has been updated successfully");
+		setTimeout(() => {
+			window.location.href = `${base}/participant/requests`;
+		}, 1000);
 		} else {
-			showMessage('Error', response.statusText);
+		let e = await response.json();
+		showMessage(
+			"Error",
+			Array.isArray(e.detail)
+			? e.detail[0]
+				? e.detail[0].msg
+				: "Something went wrong!"
+			: e.detail
+		);
 		}
 	}
 
@@ -300,10 +332,12 @@
 					Application Form
 				</h3>
 				<div class="card-body" style="position: relative;">
+					{#if comp.persons_amount > 1}	
 					<div class="form-field mb-3">
 						<label for="teamName">Team Name <span class="text-danger" style:font-size="19px">*</span></label>
 						<input type="text" id="teamName" class="form-control" placeholder="Team Name" bind:value={team_name} />
 					</div>
+					{/if}
 					<div class="row gap-1">
 						{#each Array(comp.persons_amount) as _, i}
 							<button
@@ -324,14 +358,14 @@
 								<div>
 									{@html comp.request_template}
 								</div>
-								<button
+								<!-- <button
 									class="btn btn-sm btn-primary m-2 ms-0 border-0"
 									style="max-width: max-content; background-color: #3490dc"
 									on:click={() => saveApp(i)}
 								>
 									<i class="fas fa-save me-1" />
 									Save application
-								</button>
+								</button> -->
 							</div>
 						{/each}
 					</div>
