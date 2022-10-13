@@ -785,7 +785,7 @@
 				} else if ( i == 0 ){
 					nextSlide("basicInfo");
 				} else if ( i == 1 ){
-					nextSlide("admins");
+					nextSlide("formFields");
 				}
 			});
 		});
