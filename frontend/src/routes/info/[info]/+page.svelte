@@ -43,12 +43,11 @@
   let loading: HTMLElement;
   let googleBtnHolder: HTMLElement;
   let VKBtnHolder: HTMLElement;
-  let TelegramBtnHolder: HTMLElement;
+  let TeleBtnHolder: HTMLElement;
   let userPermission: string | undefined;
   let permissionsArr = ["default", "teacher", "admin", "super_admin"];
 
   onMount(() => {
-
     // destructuring the object
     let instType = userInfo.institution_type;
     educationType = instType
@@ -61,20 +60,21 @@
     instYear = userInfo.institution_course;
     instFacultyName = userInfo.institution_faculty;
     userPermission = userInfo.permission;
-
+    console.log(userInfo.telegram_id);
     // if ids are not availabile, then disable the buttons
     if(ids.google === null || ids.google === undefined || ids.google === "") {
       googleBtnHolder.classList.add("disabled");
-    } else if (ids.tele === null || ids.tele === undefined || ids.tele === "") {
-      TelegramBtnHolder.classList.add("disabled");
-    } else if (ids.vk === null || ids.vk === undefined || ids.vk === "") {
+    }
+    if (ids.tele === null || ids.tele === undefined || ids.tele === "") {
+      TeleBtnHolder.classList.add("disabled");
+    if (ids.vk === null || ids.vk === undefined || ids.vk === "") {
       VKBtnHolder.classList.add("disabled");
     }
 
     if (real_permission == "admin") {
       permissionsArr = ["default", "teacher"];
     }
-    
+
     if (browser) {
       setTimeout(() => {
         let VK = window.VK || {};
@@ -100,7 +100,7 @@
             }) {
               if (real_id != userInfo.id) {
                 alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
-										<strong> You can't link social networks fom other users! </strong>
+										<strong> You can't link social networks for other users! </strong>
 										<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 									</div>`;
                 return;
@@ -759,7 +759,7 @@
             </button>
             <button
               class="btn social btn-sm mt-2 mb-2 p-2"
-              bind:this={TelegramBtnHolder}
+              bind:this={TeleBtnHolder}
             >
               <i class="fa fa-telegram me-3" />
               {#if ids.tele == null}
