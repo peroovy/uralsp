@@ -712,7 +712,7 @@
           class="card-body pt-0 mt-0 d-flex justify-content-center align-items-center"
         >
           <div class="btn-group gap-2 form-group col-md-11">
-            <button class="btn social btn-sm mt-2 mb-2 p-2" {(real_id != userInfo.id)? "disabled": "" }>
+            <button class="btn social btn-sm mt-2 mb-2 p-2">
               <i class="fa fa-google me-3" />
               {#if ids.google == null}
                 <span class="me-2"> Link your Google </span>
@@ -723,7 +723,7 @@
                 </span>
               {/if}
             </button>
-            <button class="btn social btn-sm mt-2 mb-2 p-2" {(real_id != userInfo.id)? "disabled": "" }>
+            <button class="btn social btn-sm mt-2 mb-2 p-2">
               <i class="fa fa-vk me-3" />
               {#if ids.vk == null}
                 <span class="me-2"> Link your VK </span>
@@ -734,7 +734,7 @@
                 </span>
               {/if}
             </button>
-            <button class="btn social btn-sm mt-2 mb-2 p-2" {(real_id != userInfo.id)? "disabled": "" }>
+            <button class="btn social btn-sm mt-2 mb-2 p-2">
               <i class="fa fa-telegram me-3" />
               {#if ids.tele == null}
                 <div class="telegramBtnHolder">

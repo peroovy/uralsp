@@ -440,8 +440,30 @@
 		}
 		monitorId = undefined;
 	}
-	function nextSlide(): void {
+	function nextSlide(part_name: string): void {
 		let marginAmount = parseInt(sliderCont.style.marginLeft.split('vw')[0]);
+		// Validate the data before moving to the next slide
+		if (part_name === 'basicInfo') {
+			let basic_info = {contestName, contestLink, startOn, startAt, regStartOn, regStartAt, regEndOn, regEndAt, contestantsPerTeam};
+			let valid = true;
+			
+			for (let key in basic_info) {
+				if (basic_info[key] === undefined) {
+					valid = false;
+				}
+			}
+
+			if (!valid) {
+				showMessage('Error', 'Please fill all the fields');
+				return;
+			}
+		} else if (part_name === 'formFields') {
+			if (formFields.length === 0) {
+				showMessage('Error', 'Please add at least one field');
+				return;
+			}
+		}
+
 		if (isNaN(marginAmount)) {
 			marginAmount = 0;
 		}
@@ -535,11 +557,14 @@
 			.then((res) => {
 				if (res.status === 200) {
 					showMessage('Success', 'Competition created successfully.');
+					setTimeout(() => {
+						window.location.href = `${base}/admin/${id}`;
+					}, 1000);
 				} else {
 					// show the error message
 					showMessage('Error', 'Something went wrong.');
 					res.json().then((data) => {
-						showMessage(res.statusText, data.details !== undefined ? data.details : 'Please fill the form correctly!');
+						showMessage(res.statusText, (data.details === undefined) ? (data.detail ? (Array.isArray(data.detail) ? data.detail[0].msg : data.detail) : data.detail): data.details);
 					});
 				}
 			})
@@ -644,12 +669,11 @@
 						// show the error message
 						showMessage('Error', 'Something went wrong.');
 						res.json().then((data) => {
-							showMessage(res.statusText, data.details !== undefined ? data.details : 'Please fill the form correctly!');
+							showMessage(res.statusText, (data.details === undefined) ? (data.detail ? (Array.isArray(data.detail) ? data.detail[0].msg : data.detail) : data.detail): data.details);
 						});
 					}
 				})
 				.catch((err) => {
-					let error = '';
 					showMessage('Error', 'Something went wrong: ' + err);
 				});
 		}
@@ -669,12 +693,11 @@
 						// show the error message
 						showMessage('Error', 'Something went wrong.');
 						res.json().then((data) => {
-							showMessage(res.statusText, data.details !== undefined ? data.details : 'Please fill the form correctly!');
+							showMessage(res.statusText, (data.details === undefined) ? (data.detail ? (Array.isArray(data.detail) ? data.detail[0].msg : data.detail) : data.detail): data.details);
 						});
 					}
 				})
 				.catch((err) => {
-					let error = '';
 					showMessage('Error', 'Something went wrong: ' + err);
 				});
 		}
@@ -694,12 +717,11 @@
 						// show the error message
 						showMessage('Error', 'Something went wrong.');
 						res.json().then((data) => {
-							showMessage(res.statusText, data.details !== undefined ? data.details : 'Please fill the form correctly!');
+							showMessage(res.statusText, (data.details === undefined) ? (data.detail ? (Array.isArray(data.detail) ? data.detail[0].msg : data.detail) : data.detail): data.details);
 						});
 					}
 				})
 				.catch((err) => {
-					let error = '';
 					showMessage('Error', 'Something went wrong: ' + err);
 				});
 		}
@@ -743,11 +765,23 @@
 				return;
 			}
 			let sliderBtns = control.children[0].children[0].children;
+			if(i == 0){
+				sliderBtns[0].classList.add('disabled');
+			}
 			sliderBtns[0].addEventListener('click', () => {
+				if (i == 0) {
+					return;
+				}
 				prevSlide();
 			});
 			sliderBtns[1].addEventListener('click', () => {
-				nextSlide();
+				if(i == 2){
+					return;
+				} else if ( i == 0 ){
+					nextSlide("basicInfo");
+				} else if ( i == 1 ){
+					nextSlide("admins");
+				}
 			});
 		});
 		if (contest !== undefined) {
@@ -823,7 +857,6 @@
 			// Add create contest button to final button
 			controlsCont[2].children[0].children[0].appendChild(createContestBtn);
 		}
-
 		loading.style.display = 'none';
 	});
 </script>
