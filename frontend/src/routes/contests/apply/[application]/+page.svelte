@@ -115,15 +115,15 @@
       application.team[index].user_id = parseInt(applicant_id);
       application.team[index].form = form;
     }
-    if (application.team.length >= contest.persons_amount) {
-      if (mode == "msg")
-        showMessage(
-          "Error",
-          "You can't add more than the allowed number of participants"
-        );
-        console.log("4")
-      return "error";
-    }
+    // if (application.team.length >= contest.persons_amount) {
+    //   if (mode == "msg")
+    //     showMessage(
+    //       "Error",
+    //       "You can't add more than the allowed number of participants"
+    //     );
+    //     console.log("4")
+    //   return "error";
+    // }
     application.team.push({
       user_id: contest.persons_amount > 1 ? parseInt(applicant_id) : userId,
       form,
@@ -136,7 +136,7 @@
     for (let i = 0; i < contest.persons_amount; i++) {
       let status = saveApp(i, "noMsg");
       if (status === "error") {
-        alert("Please fill all the required fields ya 3mena");
+        alert("Please fill all the required fields");
         return;
       }
     }
@@ -183,7 +183,7 @@
     for (let i = 0; i < contest.persons_amount; i++) {
       let status = saveApp(i, "noMsg");
       if (status == "error") {
-        alert("Please fill all the required fields ya 3mena");
+        alert("Please fill all the required fields");
         return;
       }
     }
