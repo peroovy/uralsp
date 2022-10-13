@@ -50,7 +50,7 @@
 	$: regEndOn = '';
 	$: regEndAt = '';
 	$: category = '';
-
+	$: flag_update = false;
 	let formFields = [] as Field[];
 
 	function filterFields() {
@@ -196,7 +196,6 @@
 		addToPreview();
 	}
 	async function updateField() {
-		// TODO: SEND updates to server
 		let questionTypeNum = 0;
 		if (questionType === 'Short answer question/ Single-line text input field') {
 			questionTypeNum = 0;
@@ -257,6 +256,7 @@
 				suggestions.classList.remove('show');
 			}
 		});
+		flag_update = false;
 	}
 	async function removeField(): Promise<void> {
 		if (selectedOldField) {
@@ -302,6 +302,7 @@
 			}
 		}
 		addToPreview();
+		flag_update = false;
 	}
 	function addToPreview(): void {
 		formPreview.innerHTML = '';
@@ -360,6 +361,7 @@
 			editBtn.addEventListener('click', () => {
 				if ((editBtn as HTMLElement).dataset.click) {
 					let id = (editBtn as HTMLElement).dataset.click;
+					flag_update = true;
 					if (!id) return;
 					chooseField(id);
 				}
@@ -1040,8 +1042,8 @@
 								</div>
 							</div>
 							<div class="btn-group gap-1 col-12 justify-content-center align-items-center">
-								<button class="btn btn-primary btn-sm btn-block mt-3" on:click={addFormField}>Add field</button>
-								{#if selectedOldField}
+								<button class="btn btn-primary btn-sm btn-block mt-3 {flag_update? "disabled": ""}" on:click={addFormField}>Add field</button>
+								{#if flag_update}
 									<button class="btn btn-secondary btn-sm btn-block mt-3" on:click={updateField}>Update field</button>
 									<button class="btn btn-danger btn-sm btn-block mt-3" on:click={removeField}>Remove field</button>
 								{/if}

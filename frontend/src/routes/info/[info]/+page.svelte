@@ -41,10 +41,15 @@
   let id = userInfo.id;
   let google: HTMLElement;
   let loading: HTMLElement;
+  let googleBtnHolder: HTMLElement;
+  let VKBtnHolder: HTMLElement;
+  let TelegramBtnHolder: HTMLElement;
   let userPermission: string | undefined;
   let permissionsArr = ["default", "teacher", "admin", "super_admin"];
-  
+
   onMount(() => {
+
+    // destructuring the object
     let instType = userInfo.institution_type;
     educationType = instType
       ? instType.charAt(0).toUpperCase() + userInfo.institution_type.slice(1)
@@ -56,9 +61,20 @@
     instYear = userInfo.institution_course;
     instFacultyName = userInfo.institution_faculty;
     userPermission = userInfo.permission;
+
+    // if ids are not availabile, then disable the buttons
+    if(ids.google === null || ids.google === undefined || ids.google === "") {
+      googleBtnHolder.classList.add("disabled");
+    } else if (ids.tele === null || ids.tele === undefined || ids.tele === "") {
+      TelegramBtnHolder.classList.add("disabled");
+    } else if (ids.vk === null || ids.vk === undefined || ids.vk === "") {
+      VKBtnHolder.classList.add("disabled");
+    }
+
     if (real_permission == "admin") {
       permissionsArr = ["default", "teacher"];
     }
+    
     if (browser) {
       setTimeout(() => {
         let VK = window.VK || {};
@@ -167,8 +183,8 @@
     userInfo.institution_faculty = instFacultyName;
     alertCont.innerHTML = "";
 
-    if (educationType != userInfo.institution_type){
-      userInfo.institution_type = ''
+    if (educationType != userInfo.institution_type) {
+      userInfo.institution_type = "";
     }
 
     let update = {
@@ -178,7 +194,8 @@
       phone: userInfo.phone,
       city: userInfo.city,
       region: userInfo.region,
-      institution_type: userInfo.institution_type == ''? null : userInfo.institution_type,
+      institution_type:
+        userInfo.institution_type == "" ? null : userInfo.institution_type,
       institution_name: userInfo.institution_name,
       institution_course: userInfo.institution_course,
       institution_faculty: userInfo.institution_faculty,
@@ -712,7 +729,10 @@
           class="card-body pt-0 mt-0 d-flex justify-content-center align-items-center"
         >
           <div class="btn-group gap-2 form-group col-md-11">
-            <button class="btn social btn-sm mt-2 mb-2 p-2">
+            <button
+              class="btn social btn-sm mt-2 mb-2 p-2"
+              bind:this={googleBtnHolder}
+            >
               <i class="fa fa-google me-3" />
               {#if ids.google == null}
                 <span class="me-2"> Link your Google </span>
@@ -723,7 +743,10 @@
                 </span>
               {/if}
             </button>
-            <button class="btn social btn-sm mt-2 mb-2 p-2">
+            <button
+              class="btn social btn-sm mt-2 mb-2 p-2"
+              bind:this={VKBtnHolder}
+            >
               <i class="fa fa-vk me-3" />
               {#if ids.vk == null}
                 <span class="me-2"> Link your VK </span>
@@ -734,7 +757,10 @@
                 </span>
               {/if}
             </button>
-            <button class="btn social btn-sm mt-2 mb-2 p-2">
+            <button
+              class="btn social btn-sm mt-2 mb-2 p-2"
+              bind:this={TelegramBtnHolder}
+            >
               <i class="fa fa-telegram me-3" />
               {#if ids.tele == null}
                 <div class="telegramBtnHolder">
