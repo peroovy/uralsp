@@ -337,6 +337,8 @@
 						<label for="teamName">Team Name <span class="text-danger" style:font-size="19px">*</span></label>
 						<input type="text" id="teamName" class="form-control" placeholder="Team Name" bind:value={team_name} />
 					</div>
+					{:else}
+					<div></div>
 					{/if}
 					<div class="row gap-1">
 						{#each Array(comp.persons_amount) as _, i}
