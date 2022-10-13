@@ -98,7 +98,7 @@
         (field) => field.id == fieldId
       )!.is_required;
       if (isRequired && fieldValue == "") {
-        alert("Please fill all the required fields");
+        if (mode == "msg") alert("Please fill all the required fields");
         alertCont.style.display = "block";
         return;
       }
@@ -129,8 +129,12 @@
     });
     if (mode == "msg") showMessage("Success", "Application saved successfully");
   }
+
   async function submitRequest() {
     // Validate the application
+    for (let i = 0; i < contest.persons_amount; i++) {
+      saveApp(i, "noMsg");
+    }
     if (application.team.length < contest.persons_amount) {
       alert("Please add save all the applications first");
       return;
@@ -157,11 +161,11 @@
       let e = await response.json();
       showMessage(
         "Error",
-        e.detail
-          ? e.detail.toString()
-          : e.details
-          ? e.details.toString()
-          : "Something went wrong"
+        Array.isArray(e.detail)
+          ? e.detail[0]
+            ? e.detail[0].msg
+            : "Something went wrong!"
+          : e.detail
       );
     }
   }
@@ -193,11 +197,11 @@
       let e = await response.json();
       showMessage(
         "Error",
-        e.detail
-          ? e.detail.toString()
-          : e.details
-          ? e.details[0].msg
-          : "Something went wrong"
+        Array.isArray(e.detail)
+          ? e.detail[0]
+            ? e.detail[0].msg
+            : "Something went wrong!"
+          : e.detail
       );
     }
   }
@@ -249,8 +253,23 @@
   <img class="d1" src={dotsSrc} alt="" />
   <div class="d2" />
 
-  <nav>
-	
+  <nav class="navbar navbar-expand-sm col-12 navbar-light sticky-top shadow-sm">
+    <div class="container">
+      <div class="navbar-brand d-flex col align-items-center">
+        <span class="fa fa-wpforms ms-3 me-3" />
+        <h4 class="p-0 m-0">Contest appliation</h4>
+      </div>
+      <div class="navbar-nav">
+        <button
+          class="btn d-flex gap-3 align-items-center"
+          on:click={() =>
+            (window.location.href = `${base}/participant/ongoing`)}
+        >
+          <i class="fa fa-arrow-left" />
+          Back
+        </button>
+      </div>
+    </div>
   </nav>
 
   <div class="row col-12 m-0 p-0 justify-content-center">
@@ -296,7 +315,8 @@
                   <td>
                     {new Date(
                       Date.parse(contest.registration_end) - Date.now()
-                    ).getDay()} days,
+                    ).getDate() /
+                      (1000 * 60 * 60 * 24)} days,
                     {new Date(
                       Date.parse(contest.registration_end) - Date.now()
                     ).getHours()} hours,
@@ -373,14 +393,14 @@
               <div>
                 {@html contest.request_template}
               </div>
-              <button
+              <!-- <button
                 class="btn btn-sm btn-secondary m-2 ms-0"
                 style="max-width: max-content;"
                 on:click={() => saveApp(i)}
               >
                 <i class="fas fa-save me-1" />
                 Save application
-              </button>
+              </button> -->
             </div>
           {/each}
         </div>

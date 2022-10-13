@@ -152,7 +152,7 @@
 		}
 		application.team_name = team_name;
 
-		if (application.team_name === '') {
+		if (application.team_name === '' && comp.persons_amount > 1) {
 			alert('Please enter a team name');
 			return;
 		}
