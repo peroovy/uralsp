@@ -115,15 +115,6 @@
       application.team[index].user_id = parseInt(applicant_id);
       application.team[index].form = form;
     }
-    // if (application.team.length >= contest.persons_amount) {
-    //   if (mode == "msg")
-    //     showMessage(
-    //       "Error",
-    //       "You can't add more than the allowed number of participants"
-    //     );
-    //     console.log("4")
-    //   return "error";
-    // }
     application.team.push({
       user_id: contest.persons_amount > 1 ? parseInt(applicant_id) : userId,
       form,
@@ -236,7 +227,6 @@
     if (old_respond.ok) {
       let old_request = await old_respond.json();
       for (let u = 0; u < contest.persons_amount; u++) {
-        saveApp(u, "silent");
         let template =
           requestTemplates[u].children[contest.persons_amount > 1 ? 1 : 0]
             .children;
