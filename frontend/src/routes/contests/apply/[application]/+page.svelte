@@ -326,7 +326,7 @@
                   </td>
                 </tr>
                 <tr>
-                  <td class="d-flex justify-content-center align-items-center">
+                  <td class="d-flex">
                     <i class="fa fa-group" />
                     <strong>Contestants:</strong>
                   </td>
