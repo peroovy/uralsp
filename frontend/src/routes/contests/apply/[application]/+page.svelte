@@ -69,7 +69,7 @@
 
   function saveApp(index: number, mode = "msg"): string {
     let form = [];
-    let template = requestTemplates[index].children[0].children;
+    let template = requestTemplates[index].children[contest.persons_amount > 1 ? 1 : 0].children;
     for (let i = 0; i < template.length; i++) {
       let fieldId = (template[i] as HTMLElement).dataset.id;
       let fieldValue = (template[i].children[1] as HTMLInputElement).value;

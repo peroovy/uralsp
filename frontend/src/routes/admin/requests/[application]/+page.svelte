@@ -107,21 +107,26 @@
 	};
 	function saveApp(index: number, mode = "msg"): string {
 		let form = [];
-		let template = requestTemplates[index].children[0].children;
-		for (let i = 0; i < template.length; i++) {
-		let fieldId = (template[i] as HTMLElement).dataset.id;
-		let fieldValue = (template[i].children[1] as HTMLInputElement).value;
-		let isRequired = comp.fields.find(
-			(field) => field.id == fieldId
-		)!.is_required;
-		if (isRequired && fieldValue == "") {
-			alertCont.style.display = "block";
-			return "error";
+		let template;
+		if(comp.persons_amount > 1){
+			template = requestTemplates[index].children[1].children;
+		} else {
+			template = requestTemplates[index].children[0].children;
 		}
-		form.push({
-			field_id: fieldId,
-			value: fieldValue,
-		});
+		for (let i = 0; i < template.length; i++) {
+			let fieldId = (template[i] as HTMLElement).dataset.id;
+			let fieldValue = (template[i].children[1] as HTMLInputElement).value;
+			let isRequired = comp.fields.find(
+				(field) => field.id == fieldId
+			)!.is_required;
+			if (isRequired && fieldValue == "") {
+				alertCont.style.display = "block";
+				return "error";
+			}
+			form.push({
+				field_id: fieldId,
+				value: fieldValue,
+			});
 		}
 		let contestants = comp.persons_amount;
 		if(contestants == 1){
@@ -224,11 +229,12 @@
 	onMount(() => {
 		NParticipants = app.participants.map((p) => p.user_id).join(' ,');
 		for (let u = 0; u < comp.persons_amount; u++) {
-			saveApp(u, 'silent');
-			let template = requestTemplates[u].children[1].children;
+			let template = requestTemplates[u].children[comp.persons_amount > 1 ? 1 : 0].children;
 			team_name = app.team_name;
 			for (let i = 0; i < template.length; i++) {
-				(requestTemplates[i].children[0].children[1] as HTMLInputElement).value = app.participants[i].user_id.toString();
+				if(comp.persons_amount > 1){
+					(requestTemplates[i].children[1] as HTMLInputElement).value = app.participants[i].user_id.toString();
+				}
 				let fieldId = (template[i] as HTMLElement).dataset.id;
 				let fieldValue = app.participants[i].form.find((field) => field.field_id == fieldId)!.value;
 				if (!fieldValue) fieldValue = '';
@@ -337,11 +343,10 @@
 						<label for="teamName">Team Name <span class="text-danger" style:font-size="19px">*</span></label>
 						<input type="text" id="teamName" class="form-control" placeholder="Team Name" bind:value={team_name} />
 					</div>
-					{:else}
-					<div></div>
 					{/if}
 					<div class="row gap-1">
 						{#each Array(comp.persons_amount) as _, i}
+							{#if comp.persons_amount > 1}
 							<button
 								class="btn btn-light border-0 rounded-0 btn-block"
 								type="button"
@@ -352,11 +357,14 @@
 							>
 								Application Number: {i + 1}
 							</button>
+							{/if}
 							<div class="collapse multi-collapse {i == 0 ? 'show' : ''}" id="appLicationNum{i}" bind:this={requestTemplates[i]}>
+								{#if comp.persons_amount > 1}
 								<div class="form-field mb-3">
 									<label for="teamName">Applicant Id <span class="text-danger" style:font-size="19px">*</span></label>
 									<input type="text" class="form-control" placeholder="Enter applicant Id ..." />
 								</div>
+								{/if}
 								<div>
 									{@html comp.request_template}
 								</div>
