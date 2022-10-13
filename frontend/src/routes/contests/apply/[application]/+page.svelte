@@ -68,7 +68,7 @@
   }
 
   let savedIndex = new Set<number>();
-  function saveApp(index: number, mode = "msg"): void {
+  function saveApp(index: number, mode = "msg"): string {
     savedIndex.add(index);
     let applicant_id: string;
     let template: HTMLCollection;
@@ -85,7 +85,7 @@
     if (applicant_id == "") {
       if (mode == "msg")
         showMessage("Error", "Please enter a valid applicant ID");
-      return;
+      return "error";
     } else if (isNaN(parseInt(applicant_id))) {
       if (mode == "msg")
         showMessage("Error", "Please enter a valid applicant ID");
@@ -100,7 +100,7 @@
       if (isRequired && fieldValue == "") {
         if (mode == "msg") alert("Please fill all the required fields");
         alertCont.style.display = "block";
-        return;
+        return "error";
       }
       form.push({
         field_id: fieldId,
@@ -111,9 +111,6 @@
     if (savedIndex.has(index)) {
       application.team[index].user_id = parseInt(applicant_id);
       application.team[index].form = form;
-      if (mode == "msg")
-        showMessage("Success", "Application saved successfully");
-      return;
     }
     if (application.team.length >= contest.persons_amount) {
       if (mode == "msg")
@@ -121,18 +118,23 @@
           "Error",
           "You can't add more than the allowed number of participants"
         );
-      return;
+      return "error";
     }
     application.team.push({
       user_id: contest.persons_amount > 1 ? parseInt(applicant_id) : userId,
       form,
     });
     if (mode == "msg") showMessage("Success", "Application saved successfully");
+    return "success";
   }
 
   async function submitRequest() {
     for (let i = 0; i < contest.persons_amount; i++) {
-      saveApp(i, "noMsg");
+      let status = saveApp(i, "noMsg");
+      if (status == "error") {
+        alert("Please fill all the required fields");
+        return;
+      }
     }
     // Validate the application
     if (application.team.length < contest.persons_amount) {
@@ -159,7 +161,7 @@
       showMessage("Success", "Your request has been sent successfully");
       setTimeout(() => {
         window.location.href = `${base}/participant/requests`;
-      }, 2000);
+      }, 1000);
     } else {
       let e = await response.json();
       showMessage(
@@ -175,7 +177,11 @@
 
   async function updateRequest() {
     for (let i = 0; i < contest.persons_amount; i++) {
-      saveApp(i, "noMsg");
+      let status = saveApp(i, "noMsg");
+      if (status == "error") {
+        alert("Please fill all the required fields");
+        return;
+      }
     }
     // Validate the application
     if (application.team.length < contest.persons_amount) {
@@ -199,6 +205,9 @@
     });
     if (response.status == 200) {
       showMessage("Success", "Your request has been updated successfully");
+      setTimeout(() => {
+        window.location.href = `${base}/participant/requests`;
+      }, 1000);
     } else {
       let e = await response.json();
       showMessage(
@@ -317,9 +326,11 @@
                     <strong>Ends in:</strong>
                   </td>
                   <td>
-                    {Math.floor(Date.parse(contest.registration_end) - Date.parse(Date()) / (1000 * 60 * 60 * 24))} days,
-                    {Math.floor( (Date.parse(contest.registration_end) - Date.parse(Date())) % (1000 * 60 * 60 * 24))  / (1000 * 60 * 60)} hours,
-                    {Math.floor((Date.parse(contest.registration_end) - Date.parse(Date()) % (1000 * 60 * 60)) / (1000 * 60)) } minutes
+                    { Math.floor(Date.parse(contest.registration_end) - Date.parse(Date()) / (1000 * 60 * 60 * 24))} days,
+                    { Math.floor(
+                      (Date.parse(contest.registration_end) - Date.parse(Date()) % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+                    ) } hours,
+                    { Math.floor((Date.parse(contest.registration_end) - Date.parse(Date()) % (1000 * 60 * 60)) / (1000 * 60))} minutes
                   </td>
                 </tr>
                 <tr>
