@@ -60,13 +60,14 @@
     instYear = userInfo.institution_course;
     instFacultyName = userInfo.institution_faculty;
     userPermission = userInfo.permission;
-    console.log(userInfo.telegram_id);
+
     // if ids are not availabile, then disable the buttons
     if(ids.google === null || ids.google === undefined || ids.google === "") {
       googleBtnHolder.classList.add("disabled");
     }
     if (ids.tele === null || ids.tele === undefined || ids.tele === "") {
       TeleBtnHolder.classList.add("disabled");
+    }
     if (ids.vk === null || ids.vk === undefined || ids.vk === "") {
       VKBtnHolder.classList.add("disabled");
     }
