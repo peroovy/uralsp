@@ -2,7 +2,6 @@ from abc import abstractmethod
 
 from ninja.responses import Response
 
-from api.internal.auth.domain.services import TokenTypes
 from api.internal.responses import ErrorResponse
 
 
@@ -19,7 +18,7 @@ class BadRequestException(APIException):
 
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(ErrorResponse(error="bad request", details=exc.message), status=400)
+        return Response(ErrorResponse(error="bad request", detail=exc.message), status=400)
 
 
 class NotFoundException(APIException):
@@ -28,7 +27,7 @@ class NotFoundException(APIException):
 
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(ErrorResponse(error="not found", details=f"Not found {exc.what}"), status=404)
+        return Response(ErrorResponse(error="not found", detail=f"Not found {exc.what}"), status=404)
 
 
 class UnprocessableEntityException(APIException):
@@ -38,7 +37,7 @@ class UnprocessableEntityException(APIException):
 
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(ErrorResponse(details=exc.message, error=exc.error), status=422)
+        return Response(ErrorResponse(detail=exc.message, error=exc.error), status=422)
 
 
 class ServerException(APIException):
@@ -47,7 +46,7 @@ class ServerException(APIException):
 
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(ErrorResponse(details=exc.message), status=500)
+        return Response(ErrorResponse(detail=exc.message), status=500)
 
 
 class UnauthorizedException(APIException):
@@ -57,13 +56,13 @@ class UnauthorizedException(APIException):
 
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(ErrorResponse(error=exc.error, details=exc.message), status=401)
+        return Response(ErrorResponse(error=exc.error, detail=exc.message), status=401)
 
 
 class ForbiddenException(APIException):
     @classmethod
     def get_response(cls, exc) -> Response:
-        return Response(ErrorResponse(error="forbidden", details="Permission denied"), status=403)
+        return Response(ErrorResponse(error="forbidden", detail="Permission denied"), status=403)
 
 
 API_EXCEPTIONS = (

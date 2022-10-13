@@ -93,39 +93,39 @@ def get_headers(token: Optional[str]) -> dict:
 
 
 def assert_401(response, error: str = "bad token") -> None:
-    assert response.status_code == 401 and response.json() == {"error": error, "details": "Unauthorized"}
+    assert response.status_code == 401 and response.json() == {"error": error, "detail": "Unauthorized"}
 
 
 def assert_403(response) -> None:
-    assert response.status_code == 403 and response.json() == {"error": "forbidden", "details": "Permission denied"}
+    assert response.status_code == 403 and response.json() == {"error": "forbidden", "detail": "Permission denied"}
 
 
 def assert_400(response, message: str = "Check entered values") -> None:
-    assert response.status_code == 400 and response.json() == {"error": "bad request", "details": message}
+    assert response.status_code == 400 and response.json() == {"error": "bad request", "detail": message}
 
 
 def assert_404(response, what: str) -> None:
-    assert response.status_code == 404 and response.json() == {"error": "not found", "details": f"Not found {what}"}
+    assert response.status_code == 404 and response.json() == {"error": "not found", "detail": f"Not found {what}"}
 
 
 def assert_validation_error(response) -> None:
     assert response.status_code == 422
 
 
-def assert_422(response, error: str, details: str) -> None:
-    assert response.status_code == 422 and response.json() == {"error": error, "details": details}
+def assert_422(response, error: str, detail: str) -> None:
+    assert response.status_code == 422 and response.json() == {"error": error, "detail": detail}
 
 
-def assert_not_422_body(response, error: str, details: str) -> None:
-    assert response.json() != {"error": error, "details": details}
+def assert_not_422_body(response, error: str, detail: str) -> None:
+    assert response.json() != {"error": error, "detail": detail}
 
 
 def assert_success_response(response) -> None:
-    assert response.status_code == 200 and response.json() == {"details": "Success"}
+    assert response.status_code == 200 and response.json() == {"detail": "Success"}
 
 
 def assert_not_200(response) -> None:
-    assert response.status_code != 200 and response.json() != {"details": "Success"}
+    assert response.status_code != 200 and response.json() != {"detail": "Success"}
 
 
 def assert_access(

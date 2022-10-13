@@ -320,7 +320,7 @@ def test_updating_self(
 
     response = put(client, USER.format(id=super_admin.id), super_admin_token, body)
 
-    assert_422(response, error="updating self", details="Updating self is not allowed")
+    assert_422(response, error="updating self", detail="Updating self is not allowed")
     assert_not_updating(super_admin)
 
 
@@ -364,17 +364,17 @@ def test_updating_permission(
 def test_updating__permissions_comparison(client: Client, user: User, admin_token: str, super_admin_token: str) -> None:
     order = [Permissions.DEFAULT, Permissions.TEACHER, Permissions.ADMIN, Permissions.SUPER_ADMIN]
     body = get_body_for_updating()
-    error, details = "permissions comparison", "Permission must be lte than the updater permission"
+    error, detail = "permissions comparison", "Permission must be lte than the updater permission"
 
     for token, bad_permissions in [[super_admin_token, order], [admin_token, order[:-1]]]:
         for bad in bad_permissions:
             body["permission"] = bad
 
             response = put(client, USER.format(id=user.id), token, body)
-            assert_not_422_body(response, error, details)
+            assert_not_422_body(response, error, detail)
 
     body["permission"] = Permissions.SUPER_ADMIN
-    assert_422(put(client, USER.format(id=user.id), admin_token, body), error, details)
+    assert_422(put(client, USER.format(id=user.id), admin_token, body), error, detail)
 
 
 @pytest.mark.integration
@@ -383,14 +383,14 @@ def test_updating__competition_has_the_admin(
     client: Client, user: User, admin: User, super_admin_token: str, competition: Competition
 ) -> None:
     body = get_body_for_updating()
-    error, details = "competition admin", "Some competition has this admin"
+    error, detail = "competition admin", "Some competition has this admin"
 
     competition.admins.add(admin)
 
     assert_422(
         put(client, USER.format(id=admin.id), super_admin_token, body),
         error=error,
-        details=details,
+        detail=detail,
     )
 
 
@@ -449,7 +449,7 @@ def test_updating_email__already_exists(client: Client, user: User, another: Use
     assert_422(
         put(client, USER.format(id=user.id), super_admin_token, body),
         error="bad email",
-        details="The email already exists",
+        detail="The email already exists",
     )
     assert_not_updating(user)
 
@@ -657,7 +657,7 @@ def test_merging__permissions_not_equal(
 ) -> None:
     for from_id, to_id in permutations([user.id, admin.id, super_admin.id], r=2):
         response = post(client, MERGE, super_admin_token, get_body_for_merging(from_id, to_id))
-        assert_422(response, error="bad permissions", details="Permissions must be equal")
+        assert_422(response, error="bad permissions", detail="Permissions must be equal")
 
 
 @pytest.mark.integration
@@ -668,7 +668,7 @@ def test_merging__requests_intersect(
     request = Request.objects.create(owner=another, competition=user_request.competition)
 
     response = post(client, MERGE, super_admin_token, get_body_for_merging(user.id, another.id))
-    assert_422(response, error="requests", details="Exists intersection of requests")
+    assert_422(response, error="requests", detail="Exists intersection of requests")
 
     assert User.objects.get(pk=user.pk) == user
     assert User.objects.get(pk=another.pk) == another
@@ -685,7 +685,7 @@ def test_merging__participation_intersect(
     participation_another = Participation.objects.create(request=participation.request, user=another)
 
     response = post(client, MERGE, super_admin_token, get_body_for_merging(user.id, another.id))
-    assert_422(response, error="participants", details="Exists intersection of participants")
+    assert_422(response, error="participants", detail="Exists intersection of participants")
 
     assert User.objects.get(pk=user.pk) == user
     assert User.objects.get(pk=another.pk) == another

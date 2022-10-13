@@ -103,7 +103,7 @@ def test_creating(client: Client, super_admin_token: str) -> None:
         assert DefaultValue.objects.filter(field__id=body["id"], value=value).exists()
 
     body["name"] = "another_name"
-    assert_422(post(client, FIELDS, super_admin_token, body), error="unique id", details="Field id already exists")
+    assert_422(post(client, FIELDS, super_admin_token, body), error="unique id", detail="Field id already exists")
     assert not Field.objects.filter(id=body["id"], name=body["name"]).exists()
 
 
@@ -202,12 +202,12 @@ def test_deleting(
     assert_422(
         delete(client, FIELD.format(id=field.id), super_admin_token),
         error="form",
-        details="The field is used in some form",
+        detail="The field is used in some form",
     )
 
     competition.fields.clear()
     FormValue.objects.create(participation=participation, field=field, value="123")
-    assert_422(delete(client, FIELD.format(id=field.id), super_admin_token), error="value", details="Form value exists")
+    assert_422(delete(client, FIELD.format(id=field.id), super_admin_token), error="value", detail="Form value exists")
 
     FormValue.objects.all().delete()
     assert_success_response(delete(client, FIELD.format(id=field.id), super_admin_token))
