@@ -448,7 +448,12 @@
 			let valid = true;
 			
 			for (let key in basic_info) {
-				if (basic_info[key] === undefined) {
+				if(key === 'contestantsPerTeam') {
+					if (basic_info[key] === undefined || basic_info[key] === null || basic_info[key] === 0) {
+						valid = false;
+						break;
+					}
+				} else if (basic_info[key] === undefined || basic_info[key] === null || basic_info[key] === '') {
 					valid = false;
 				}
 			}
