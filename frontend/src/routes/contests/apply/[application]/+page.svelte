@@ -131,17 +131,17 @@
   }
 
   async function submitRequest() {
-    // Validate the application
     for (let i = 0; i < contest.persons_amount; i++) {
       saveApp(i, "noMsg");
     }
+    // Validate the application
     if (application.team.length < contest.persons_amount) {
       alert("Please add save all the applications first");
       return;
     }
     application.team_name = team_name;
 
-    if (application.team_name === "") {
+    if (application.team_name === "" && contest.persons_amount > 1 ) {
       alert("Please enter a team name");
       return;
     }
@@ -171,6 +171,9 @@
   }
 
   async function updateRequest() {
+    for (let i = 0; i < contest.persons_amount; i++) {
+      saveApp(i, "noMsg");
+    }
     // Validate the application
     if (application.team.length < contest.persons_amount) {
       alert("Please add save all the applications first");
@@ -178,7 +181,7 @@
     }
     application.team_name = team_name;
 
-    if (application.team_name === "") {
+    if (application.team_name === "" && contest.persons_amount > 1) {
       alert("Please enter a team name");
       return;
     }
@@ -247,16 +250,14 @@
   <title>App Name | {contest.name}-form</title>
 </svelte:head>
 
-<section
-  class="container-fluid p-0 m-0 pt-5 contestForm d-flex justify-content-center align-items-start"
->
+<section class="container-fluid contestForm justify-content-center align-items-start">
   <img class="d1" src={dotsSrc} alt="" />
   <div class="d2" />
 
-  <nav class="navbar navbar-expand-sm col-12 navbar-light sticky-top shadow-sm">
+  <nav class="navbar navbar-expand-sm col-12 navbar-light sticky-top shadow-sm mb-3">
     <div class="container">
       <div class="navbar-brand d-flex col align-items-center">
-        <span class="fa fa-wpforms ms-3 me-3" />
+        <span class="fa-brands fa-wpforms ms-3 me-3" />
         <h4 class="p-0 m-0">Contest appliation</h4>
       </div>
       <div class="navbar-nav">
@@ -461,6 +462,10 @@
     align-items: center;
     background-image: $bg-color;
     @include bg;
+    .navbar {
+      background-color: white;
+      @include navbar;
+    }
     position: relative;
     z-index: 1;
     padding-bottom: 30px;
