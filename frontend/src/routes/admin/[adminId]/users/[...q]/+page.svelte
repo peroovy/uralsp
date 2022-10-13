@@ -143,12 +143,14 @@
 				: undefined;
 			userPermission = searchParams.get('permission') ? searchParams.get('permission')! : undefined;
 		}
+		loading.style.display = 'none';
+		
 		// Intilize userBinds
 		userBinds = Array(resultsNumber).fill(document.createElement('div'));
+		if(users === undefined) return;
 		Object.keys(users[0]).map((key) => (headers += `${key},`));
 		// remove last comma
 		headers = headers.slice(0, -1);
-		loading.style.display = 'none';
 		setTimeout(() => {
 			// Hide all the items except the first 5
 			for (let i = 0; i < itemPerpage; i++) {
