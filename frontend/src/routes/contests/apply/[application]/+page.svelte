@@ -245,7 +245,7 @@
         let template =
           requestTemplates[u].children[contest.persons_amount > 1 ? 1 : 0]
             .children;
-        let user_id = old_request.team[u].user_id;
+        let user_id = old_request.participants[u].team[u].user_id;
         if(contest.persons_amount > 1){
           (requestTemplates[u].children[0] as HTMLInputElement).value = user_id.toString();
         }
