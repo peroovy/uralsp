@@ -8,7 +8,6 @@
     RequestsOut,
     UserRequest,
     CompetitionWithFields,
-    Field,
   } from "$lib/types";
   import { sessionDuration } from "$lib/sessionDuration";
   sessionDuration();
@@ -459,7 +458,7 @@
                 Add another Application
               </button>
             {/if}
-            {#if oldRequest === undefined || Object.keys(oldRequest).length <= 0}
+            {#if update_flag }
               <button
                 class="btn btn-block btn-primary rounded-0"
                 style="background-color: #3490dc; border-color: #3490dc"
