@@ -5,6 +5,7 @@ import { redirect, type Load } from "@sveltejs/kit";
 export let load: Load = async function load({ params, parent, fetch }) {
   if (params.application === undefined)
     throw Error("Application id is not defined");
+    redirect(307, "/");
 
   const contestId = parseInt(params.application);
   if (isNaN(contestId)) return redirect(307, "/");
@@ -13,7 +14,7 @@ export let load: Load = async function load({ params, parent, fetch }) {
 
   // Check the access token in the local storage
   const accessToken = access_token;
-  if (accessToken == null) console.error("Access token is not defined");
+  if (accessToken == null) redirect(307, "/");
 
   let payload = parsePayload(accessToken);
   const userId = payload.user_id;
@@ -30,7 +31,7 @@ export let load: Load = async function load({ params, parent, fetch }) {
     },
   });
   if (oldRequests.status != 200 || contest.status != 200) {
-    console.log("Error while fetching the data");
+    redirect(307, "/");
   }
   const oldRequestsJson = await oldRequests.json();
   const contestJson = await contest.json();

@@ -8,6 +8,7 @@
     RequestsOut,
     UserRequest,
     CompetitionWithFields,
+    Field
   } from "$lib/types";
   import { sessionDuration } from "$lib/sessionDuration";
   sessionDuration();
@@ -93,7 +94,7 @@
       }];
     } else if (contestants > 1){
       let applicant_id = (
-        requestTemplates[index].children[0].children[1] as HTMLInputElement
+        requestTemplates[index].children[1].children[1] as HTMLInputElement
       ).value;
       if (applicant_id == "") {
         return "error";
@@ -175,11 +176,6 @@
         return;
       }
     }
-    // Validate the application
-    if (application.team.length < contest.persons_amount) {
-      alert("Please add save all the applications first");
-      return;
-    }
     application.team_name = team_name;
 
     if (application.team_name === "" && contest.persons_amount > 1) {
@@ -215,7 +211,7 @@
   
   async function retreiveOldRequest() {
     // Reterive the old request and fill the form
-    let old_respond = await fetch(`${API}/requests/` + oldRequest.id, {
+    let old_respond = await fetch(`${API}/requests/` + contest.id, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -224,6 +220,12 @@
     });
     if (old_respond.ok) {
       let old_request = await old_respond.json();
+
+      // Check if the user applied for this contest
+      let applied = old_request.competition == contest.id;
+      if(!applied) return;
+
+      // Fill the form
       for (let u = 0; u < contest.persons_amount; u++) {
         let template =
           requestTemplates[u].children[contest.persons_amount > 1 ? 1 : 0]
@@ -231,9 +233,9 @@
         team_name = old_request.team_name;
         for (let i = 0; i < template.length; i++) {
           let fieldId = (template[i] as HTMLElement).dataset.id;
-          // @ts-ignore
+
           let fieldValue = old_request.participants[i].form.find(
-            (field) => field.field_id == fieldId
+            (field: {field_id: string}) => field.field_id == fieldId
           )!.value;
           (template[i].children[1] as HTMLInputElement).value = fieldValue;
         }
