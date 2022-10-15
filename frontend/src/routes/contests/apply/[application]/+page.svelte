@@ -458,7 +458,7 @@
                 Add another Application
               </button>
             {/if}
-            {#if update_flag }
+            {#if !update_flag }
               <button
                 class="btn btn-block btn-primary rounded-0"
                 style="background-color: #3490dc; border-color: #3490dc"
