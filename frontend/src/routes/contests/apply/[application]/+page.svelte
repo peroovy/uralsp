@@ -220,7 +220,12 @@
 
   async function retreiveOldRequest() {
     // Reterive the old request and fill the form
-    let old_respond = await fetch(`${API}/requests/` + contest.id, {
+    let old_index = oldRequest.findIndex(
+      (request) => request.competition == contest.id
+    );
+
+    let request_index = oldRequest[old_index].id;
+    let old_respond = await fetch(`${API}/requests/` + request_index, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
