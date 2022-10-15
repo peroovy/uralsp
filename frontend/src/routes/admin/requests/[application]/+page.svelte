@@ -231,12 +231,17 @@
 		for (let u = 0; u < comp.persons_amount; u++) {
 			let template = requestTemplates[u].children[comp.persons_amount > 1 ? 1 : 0].children;
 			team_name = app.team_name;
+			let user_id = app.participants[u].user_id;
+			if(comp.persons_amount > 1){
+				(requestTemplates[u].children[0].children[1] as HTMLInputElement).value = user_id.toString();
+			}
+			
 			for (let i = 0; i < template.length; i++) {
 				if(comp.persons_amount > 1){
 					(requestTemplates[i].children[1] as HTMLInputElement).value = app.participants[i].user_id.toString();
 				}
 				let fieldId = (template[i] as HTMLElement).dataset.id;
-				let fieldValue = app.participants[i].form.find((field) => field.field_id == fieldId)!.value;
+				let fieldValue = app.participants[u].form.find((field : {field_id: string}) => field.field_id == fieldId)!.value;
 				if (!fieldValue) fieldValue = '';
 				(template[i].children[1] as HTMLInputElement).value = fieldValue;
 			}
