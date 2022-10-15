@@ -14,7 +14,7 @@
 
   const data = $page.data;
   export let contest: CompetitionWithFields = data.contest,
-    oldRequest: Array<UserRequest> = data.oldRequest,
+    oldRequest: Array<UserRequest> = data.oldRequests,
     userId: number = data.userId,
     accessToken: string = data.accessToken,
     permissions: string = data.permissions,
@@ -454,7 +454,7 @@
                 Add another Application
               </button>
             {/if}
-            {#if !update_flag }
+            {#if !update_flag}
               <button
                 class="btn btn-block btn-primary rounded-0"
                 style="background-color: #3490dc; border-color: #3490dc"
