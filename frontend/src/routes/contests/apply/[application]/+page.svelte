@@ -192,7 +192,12 @@
       return;
     }
     // send the request to the server and validate the response
-    const response = await fetch(`${API}/requests/${oldRequest.id}`, {
+    let old_index = oldRequest.findIndex(
+      (request) => request.competition == contest.id
+    );
+    
+    let request_id = oldRequest[old_index].id;
+    const response = await fetch(`${API}/requests/${request_id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
