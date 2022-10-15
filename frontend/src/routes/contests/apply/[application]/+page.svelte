@@ -14,7 +14,7 @@
 
   const data = $page.data;
   export let contest: CompetitionWithFields = data.contest,
-    oldRequest: UserRequest = data.oldRequest,
+    oldRequest: Array<UserRequest> = data.oldRequest,
     userId: number = data.userId,
     accessToken: string = data.accessToken,
     permissions: string = data.permissions,
@@ -42,11 +42,6 @@
   interface TeamMember {
     user_id: number;
     form: { field_id: string | undefined; value: string | undefined }[];
-  }
-  let demoField = {} as TeamMember;
-
-  for (let i = 0; i < contest.persons_amount; i++) {
-    application.team.push(demoField);
   }
 
   let requestTemplates: HTMLElement[] = [];
@@ -91,6 +86,7 @@
         value: fieldValue,
       });
     }
+
     let contestants = contest.persons_amount;
     if (contestants == 1) {
       application.team = [
@@ -127,7 +123,7 @@
           form,
         });
       } else {
-        console.log("too many applicants");
+        console.log("too many applicants", application.team);
         return "error";
       }
     }
@@ -258,7 +254,7 @@
 
   onMount(() => {
     if (!everyThingIsOk) goto(base + "/");
-    if (oldRequest) {
+    if (oldRequest.find((req) => req.competition == contest.id)) {
       retreiveOldRequest();
     }
     loading.style.display = "none";
