@@ -240,15 +240,18 @@
       if (!applied) return;
       update_flag = true;
       // Fill the form
+      team_name = old_request.team_name;
       for (let u = 0; u < contest.persons_amount; u++) {
         let template =
           requestTemplates[u].children[contest.persons_amount > 1 ? 1 : 0]
             .children;
-        team_name = old_request.team_name;
+        let user_id = old_request.team[u].user_id;
+        if(contest.persons_amount > 1){
+          (requestTemplates[u].children[0] as HTMLInputElement).value = user_id.toString();
+        }
         for (let i = 0; i < template.length; i++) {
           let fieldId = (template[i] as HTMLElement).dataset.id;
-
-          let fieldValue = old_request.participants[i].form.find(
+          let fieldValue = old_request.participants[u].form.find(
             (field: { field_id: string }) => field.field_id == fieldId
           )!.value;
           (template[i].children[1] as HTMLInputElement).value = fieldValue;
@@ -402,7 +405,7 @@
             {/if}
 
             <div
-              class="collapse mt-0 multi-collapse bg-light {i == 0
+              class="collapse mt-0 pb-1 multi-collapse bg-light {i == 0
                 ? 'show'
                 : ''}"
               id="appLicationNum{i}"
