@@ -7,7 +7,7 @@ export type RequiredKeys<T> = { [K in keyof T]-?: {} extends { [P in K]: T[K] } 
 type OutputDataShape<T> = MaybeWithVoid<Omit<App.PageData, RequiredKeys<T>> & Partial<Pick<App.PageData, keyof T & keyof App.PageData>> & Record<string, any>>
 type EnsureDefined<T> = T extends null | undefined ? {} : T;
 type PageParentData = EnsureDefined<LayoutData>;
-type LayoutParams = RouteParams & { adminId?: string,q?: string,admin?: string,contestId?: string,application?: string,info?: string,participant?: string }
+type LayoutParams = RouteParams & { adminId?: string,q?: string,admin?: string,contestId?: string,application?: string,info?: string }
 type LayoutParentData = EnsureDefined<{}>;
 
 export type PageServerData = null;

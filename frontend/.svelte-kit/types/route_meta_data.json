@@ -36,5 +36,21 @@
 	],
 	"admin/[application]": [
 		"src/routes/admin/[application]/+page.ts"
+	],
+	"participant/ongoing": [
+		"src/routes/participant/ongoing/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"participant/past": [
+		"src/routes/participant/past/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"participant/requests": [
+		"src/routes/participant/requests/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"participant/upcoming": [
+		"src/routes/participant/upcoming/+page.ts",
+		"src/routes/+layout.ts"
 	]
 }

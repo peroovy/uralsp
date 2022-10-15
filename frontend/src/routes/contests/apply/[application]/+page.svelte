@@ -8,7 +8,7 @@
     RequestsOut,
     UserRequest,
     CompetitionWithFields,
-    Field
+    Field,
   } from "$lib/types";
   import { sessionDuration } from "$lib/sessionDuration";
   sessionDuration();
@@ -23,7 +23,7 @@
 
   let alertCont: HTMLDivElement;
   let loading: HTMLDivElement;
-
+  let update_flag = false;
   let everyThingIsOk = true;
   if (
     Object.keys(contest).length == 0 ||
@@ -70,7 +70,9 @@
 
   function saveApp(index: number, mode = "msg"): string {
     let form = [];
-    let template = requestTemplates[index].children[contest.persons_amount > 1 ? 1 : 0].children;
+    let template =
+      requestTemplates[index].children[contest.persons_amount > 1 ? 1 : 0]
+        .children;
     for (let i = 0; i < template.length; i++) {
       let fieldId = (template[i] as HTMLElement).dataset.id;
       let fieldValue = (template[i].children[1] as HTMLInputElement).value;
@@ -79,6 +81,10 @@
       )!.is_required;
       if (isRequired && fieldValue == "") {
         alertCont.style.display = "block";
+        showMessage(
+          "Error",
+          `Please fill all required fields before submitting`
+        );
         return "error";
       }
       form.push({
@@ -87,34 +93,42 @@
       });
     }
     let contestants = contest.persons_amount;
-    if(contestants == 1){
-      application.team = [{
-        user_id: userId,
-        form,
-      }];
-    } else if (contestants > 1){
+    if (contestants == 1) {
+      application.team = [
+        {
+          user_id: userId,
+          form,
+        },
+      ];
+    } else if (contestants > 1) {
       let applicant_id = (
-        requestTemplates[index].children[1].children[1] as HTMLInputElement
+        requestTemplates[index].children[0].children[1] as HTMLInputElement
       ).value;
       if (applicant_id == "") {
+        console.log("applicant_id is empty");
         return "error";
       } else if (isNaN(parseInt(applicant_id))) {
+        console.log("applicant_id is not a number");
         return "error";
       }
-      let alreadySaved = application.team.find((member) => member.user_id == parseInt(applicant_id));
-      if(alreadySaved){
+      let alreadySaved = application.team.find(
+        (member) => member.user_id == parseInt(applicant_id)
+      );
+      if (alreadySaved) {
         let app_index = 0;
-        application.team.every((member, index)=>{ 
-        if(member.user_id == parseInt(applicant_id)){
-          index = app_index;
-        }});
+        application.team.every((member, index) => {
+          if (member.user_id == parseInt(applicant_id)) {
+            index = app_index;
+          }
+        });
         application.team[app_index].form = form;
-      } else if(!alreadySaved && application.team.length < contestants){
+      } else if (!alreadySaved && application.team.length < contestants) {
         application.team.push({
           user_id: parseInt(applicant_id),
           form,
         });
       } else {
+        console.log("too many applicants");
         return "error";
       }
     }
@@ -136,7 +150,7 @@
     }
     application.team_name = team_name;
 
-    if (application.team_name === "" && contest.persons_amount > 1 ) {
+    if (application.team_name === "" && contest.persons_amount > 1) {
       alert("Please enter a team name");
       return;
     }
@@ -208,7 +222,7 @@
       );
     }
   }
-  
+
   async function retreiveOldRequest() {
     // Reterive the old request and fill the form
     let old_respond = await fetch(`${API}/requests/` + contest.id, {
@@ -223,8 +237,8 @@
 
       // Check if the user applied for this contest
       let applied = old_request.competition == contest.id;
-      if(!applied) return;
-
+      if (!applied) return;
+      update_flag = true;
       // Fill the form
       for (let u = 0; u < contest.persons_amount; u++) {
         let template =
@@ -235,7 +249,7 @@
           let fieldId = (template[i] as HTMLElement).dataset.id;
 
           let fieldValue = old_request.participants[i].form.find(
-            (field: {field_id: string}) => field.field_id == fieldId
+            (field: { field_id: string }) => field.field_id == fieldId
           )!.value;
           (template[i].children[1] as HTMLInputElement).value = fieldValue;
         }
@@ -256,11 +270,15 @@
   <title>App Name | {contest.name}-form</title>
 </svelte:head>
 
-<section class="container-fluid p-0 contestForm justify-content-center align-items-start">
+<section
+  class="container-fluid p-0 contestForm justify-content-center align-items-start"
+>
   <img class="d1" src={dotsSrc} alt="" />
   <div class="d2" />
 
-  <nav class="navbar navbar-expand-sm col-12 navbar-light sticky-top shadow-sm mb-3 p-0">
+  <nav
+    class="navbar navbar-expand-sm col-12 navbar-light sticky-top shadow-sm mb-3 p-0"
+  >
     <div class="container">
       <div class="navbar-brand d-flex col align-items-center">
         <span class="fa-brands fa-wpforms ms-3 me-3" />
@@ -320,11 +338,23 @@
                     <strong>Ends in:</strong>
                   </td>
                   <td>
-                    { Math.floor(( Date.parse(contest.registration_end) - Date.parse(Date()) )/ (1000 * 60 * 60 * 24))} days,
-                    { Math.floor(
-                      ( (Date.parse(contest.registration_end) - Date.parse(Date()) ) % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-                    ) } hours,
-                    { Math.floor(((Date.parse(contest.registration_end) - Date.parse(Date())) % (1000 * 60 * 60)) / (1000 * 60))} minutes
+                    {Math.floor(
+                      (Date.parse(contest.registration_end) -
+                        Date.parse(Date())) /
+                        (1000 * 60 * 60 * 24)
+                    )} days,
+                    {Math.floor(
+                      ((Date.parse(contest.registration_end) -
+                        Date.parse(Date())) %
+                        (1000 * 60 * 60 * 24)) /
+                        (1000 * 60 * 60)
+                    )} hours,
+                    {Math.floor(
+                      ((Date.parse(contest.registration_end) -
+                        Date.parse(Date())) %
+                        (1000 * 60 * 60)) /
+                        (1000 * 60)
+                    )} minutes
                   </td>
                 </tr>
                 <tr>
@@ -370,6 +400,7 @@
                 Application Number: {i + 1}
               </button>
             {/if}
+
             <div
               class="collapse mt-0 multi-collapse bg-light {i == 0
                 ? 'show'
@@ -379,12 +410,10 @@
             >
               {#if contest.persons_amount > 1}
                 <div class="form-field mb-3">
-                  <label for="teamName"
-                    >Applicant Id <span
-                      class="text-danger"
-                      style:font-size="19px">*</span
-                    ></label
-                  >
+                  <label for="teamName">
+                    Applicant Id
+                    <span class="text-danger" style:font-size="19px">*</span>
+                  </label>
                   <input
                     type="text"
                     class="form-control"
@@ -411,7 +440,7 @@
           <div
             class="btn-group col-12 gap-1 d-flex justify-content-center align-items-center"
           >
-            {#if oldRequest != undefined && Object.keys(oldRequest).length > 0}
+            {#if update_flag}
               <button
                 class="btn btn-block btn-primary rounded-0"
                 style="background-color: #3490dc; border-color: #3490dc"
