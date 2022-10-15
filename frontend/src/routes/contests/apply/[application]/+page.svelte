@@ -247,7 +247,7 @@
             .children;
         let user_id = old_request.participants[u].user_id;
         if(contest.persons_amount > 1){
-          (requestTemplates[u].children[0] as HTMLInputElement).value = user_id.toString();
+          (requestTemplates[u].children[0].children[1] as HTMLInputElement).value = user_id.toString();
         }
         for (let i = 0; i < template.length; i++) {
           let fieldId = (template[i] as HTMLElement).dataset.id;
