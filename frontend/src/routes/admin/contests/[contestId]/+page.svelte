@@ -449,8 +449,9 @@
 		if (part_name === 'basicInfo') {
 			let basic_info = {contestName, contestLink, startOn, startAt, regStartOn, regStartAt, regEndOn, regEndAt, contestantsPerTeam};
 			let valid = true;
-			
-			for (let key in basic_info) {
+			let key : keyof typeof basic_info;
+
+			for (key in basic_info) {
 				if(key === 'contestantsPerTeam') {
 					if (basic_info[key] === undefined || basic_info[key] === null || basic_info[key] === 0) {
 						valid = false;

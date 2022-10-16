@@ -31,9 +31,8 @@
       let token = localStorage.getItem("access_token");
       let exp = localStorage.getItem("expires_in");
       if (token != null && exp != null) {
-        // @ts-ignore
         let date = new Date(
-          parseInt(localStorage.getItem("expires_in")) * 1000
+          parseInt(exp) * 1000
         );
         let now = new Date();
         if (now < date) {

@@ -81,8 +81,8 @@
 									</div>`;
 			return;
 		}
-
-		for (let key in searchParams) {
+		let key : keyof typeof searchParams;
+		for (key in searchParams) {
 			// @ts-ignore
 			if (searchParams[key] === '' || searchParams[key] == 'Choose...' || searchParams[key] == null)
 				searchParams[key] = undefined;

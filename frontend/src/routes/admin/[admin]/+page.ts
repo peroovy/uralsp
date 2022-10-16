@@ -1,31 +1,16 @@
 import { redirect } from "@sveltejs/kit";
 import { parsePayload } from "$lib/parse";
-import { browser } from "$app/environment";
 import type { PageLoad } from "./$types";
 
-const API = import.meta.env.VITE_API_URL;
-
-interface TokenResponse {
-  token_type: "bearer";
-  access_token: string;
-  expires_in: number;
-}
-
 export const load: PageLoad = async function load({ params, fetch, parent }) {
-// 	await parent();
-//   const res = await fetch(`${API}/auth/refresh`);
-//   const token: TokenResponse = await res.json();
-//   if (res.ok) {
-// }
-// tokenStore.set(token.access_token);
+  let id = parseInt(params.admin);
+  if (isNaN(id)) throw redirect(307, "/");
+  let layoutReturn = await parent();
+  let token = layoutReturn.access_token;
+  let API = layoutReturn.API;
 
-
-  if (!browser) return;
-  let id = params.admin;
-  // @ts-ignore
-  let token = localStorage.getItem("access_token");
   if (token == null) {
-throw redirect(307, "/");
+    throw redirect(307, "/");
   }
   let payload = parsePayload(token);
   let real_id = payload.user_id;

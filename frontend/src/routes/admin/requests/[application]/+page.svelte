@@ -4,10 +4,9 @@
 	import type { RequestsOut } from '$lib/types';
 	import dotsSrc from '$lib/Assets/imgs/dots.png';
 	import { page } from '$app/stores';
-	
-	const { app, permission, real_id, access_token, ownerName, comp, API} = $page.data;
-	const data = $page.data;
+	import type { CompetitionWithFields, RequestsIn } from "$lib/types";
 
+	const { app, permission, real_id, access_token, ownerName, comp, API} = $page.data;
 	let loading : HTMLDivElement;
 	let NParticipants = '';
 	let alertCont = '' as unknown as HTMLDivElement;
@@ -116,7 +115,7 @@
 		for (let i = 0; i < template.length; i++) {
 			let fieldId = (template[i] as HTMLElement).dataset.id;
 			let fieldValue = (template[i].children[1] as HTMLInputElement).value;
-			let isRequired = comp.fields.find(
+			let isRequired = (comp as CompetitionWithFields).fields.find(
 				(field) => field.id == fieldId
 			)!.is_required;
 			if (isRequired && fieldValue == "") {
@@ -227,7 +226,7 @@
 		});
 	}
 	onMount(() => {
-		NParticipants = app.participants.map((p) => p.user_id).join(' ,');
+		NParticipants = (app as RequestsIn).participants.map((p) => p.user_id).join(' ,');
 		for (let u = 0; u < comp.persons_amount; u++) {
 			let template = requestTemplates[u].children[comp.persons_amount > 1 ? 1 : 0].children;
 			team_name = app.team_name;
@@ -235,7 +234,7 @@
 			if(comp.persons_amount > 1){
 				(requestTemplates[u].children[0].children[1] as HTMLInputElement).value = user_id.toString();
 			}
-			
+
 			for (let i = 0; i < template.length; i++) {
 				if(comp.persons_amount > 1){
 					(requestTemplates[i].children[1] as HTMLInputElement).value = app.participants[i].user_id.toString();
