@@ -8,6 +8,7 @@
 	import { sessionDuration } from '$lib/sessionDuration';
 	import { page } from '$app/stores';
 	import { browser } from '$app/environment';
+  import { redirect } from '@sveltejs/kit';
 
 	sessionDuration();
 	const data = $page.data;
@@ -672,6 +673,9 @@
 				.then((res) => {
 					if (res.status === 200) {
 						showMessage('Success', 'Form fields updated successfully.');
+						setTimeout(() => {
+							window.location.href = `${base}/admin/${id}`;
+						}, 1000)
 					} else {
 						// show the error message
 						showMessage('Error', 'Something went wrong.');
@@ -696,6 +700,9 @@
 				.then((res) => {
 					if (res.status === 200) {
 						showMessage('Success', "monitors' list updated successfully.");
+						setTimeout(() => {
+							window.location.href = `${base}/admin/${id}`;
+						}, 1000)
 					} else {
 						// show the error message
 						showMessage('Error', 'Something went wrong.');
@@ -720,6 +727,9 @@
 				.then((res) => {
 					if (res.status === 200) {
 						showMessage('Success', 'competition updated successfully.');
+						setTimeout(() => {
+							window.location.href = `${base}/admin/${id}`;
+						}, 1000)
 					} else {
 						// show the error message
 						showMessage('Error', 'Something went wrong.');
