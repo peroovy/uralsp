@@ -1,4 +1,4 @@
-import type { Load } from "@sveltejs/kit";
+import { redirect, type Load } from "@sveltejs/kit";
 
 export let load: Load = async function load({ fetch }) {
     // neglict the login route 
@@ -10,9 +10,10 @@ export let load: Load = async function load({ fetch }) {
         credentials: 'include',
     });
 
-    if(!token_respond.ok && window.location.href != "https://reg.uralsp.ru/") {
+    if(!token_respond.ok) {
         document.cookie = "sp_rt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         localStorage.clear();
+        redirect(307, '/');
     }
 
     let res = await token_respond.json();
