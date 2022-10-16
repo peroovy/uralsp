@@ -10,7 +10,7 @@ export let load: Load = async function load({ fetch }) {
         credentials: 'include',
     });
 
-    if(!token_respond.ok) {
+    if(!token_respond.ok && window.location.href != `https://reg.uralsp.ru/`) {
         document.cookie = "sp_rt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         localStorage.clear();
         redirect(307, '/');

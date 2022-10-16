@@ -62,16 +62,17 @@
     userPermission = userInfo.permission;
 
     // if ids are not availabile, then disable the buttons
-    if(ids.google === null || ids.google === undefined || ids.google === "") {
-      googleBtnHolder.classList.add("disabled");
+    if(userInfo.id != real_id){
+      if(ids.google === null || ids.google === undefined || ids.google === "") {
+        googleBtnHolder.classList.add("disabled");
+      }
+      if (ids.tele === null || ids.tele === undefined || ids.tele === "") {
+        TeleBtnHolder.classList.add("disabled");
+      }
+      if (ids.vk === null || ids.vk === undefined || ids.vk === "") {
+        VKBtnHolder.classList.add("disabled");
+      }
     }
-    if (ids.tele === null || ids.tele === undefined || ids.tele === "") {
-      TeleBtnHolder.classList.add("disabled");
-    }
-    if (ids.vk === null || ids.vk === undefined || ids.vk === "") {
-      VKBtnHolder.classList.add("disabled");
-    }
-
     if (real_permission == "admin") {
       permissionsArr = ["default", "teacher"];
     }
@@ -254,10 +255,19 @@
 								</div>`;
               // Reload
               window.location.reload();
+            } else if (res.status === 401){
+              alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+                  <strong> You don't have permission to update this user! </strong>
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+              
+              setTimeout(() => {
+                window.location.href = "/";
+              }, 2000);
             } else {
               res.json().then((data) => {
                 alertCont.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
-									<strong> ${data.detail ? data.detail[0].msg : data.error} </strong>
+									<strong> ${Array.isArray(data.detail) ? data.detail[0].msg : data.detail} </strong>
 									<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 								</div>`;
               });
