@@ -108,10 +108,14 @@
 									</div>`;
 			return;
 		}
-
-		for (let key in searchParams) {
-			//@ts-ignore
-			if (searchParams[key] === '' || searchParams[key] == 'Choose...' || searchParams[key] == null) searchParams[key] = undefined;
+		let key : keyof SearchParams;
+		for (key in searchParams) {
+			if (searchParams[key] === '' || searchParams[key] == 'Choose...' || searchParams[key] == null){
+				searchParams[key] = undefined
+			} else  if ( searchParams[key] != undefined) {
+				searchParams[key] = searchParams[key]?.trim();
+				searchParams[key] = searchParams[key]?.toLowerCase();
+			}
 		}
 
 		alertCont.innerHTML = '';

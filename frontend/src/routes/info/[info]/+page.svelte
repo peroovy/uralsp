@@ -11,7 +11,6 @@
 
   sessionDuration();
   const data = $page.data;
-
   const googleId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const vkAppId = import.meta.env.VITE_VK_CLIENT_ID;
   const telgramBotId = import.meta.env.VITE_TELEGRAM_BOT;
