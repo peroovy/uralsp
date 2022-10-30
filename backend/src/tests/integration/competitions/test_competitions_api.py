@@ -135,48 +135,6 @@ def test_filtering_by_admin(
     assert_validation_error(get(client, COMPETITIONS + "?admin="))
 
 
-@pytest.mark.integration
-@pytest.mark.django_db
-@pytest.mark.parametrize(
-    ["start_delta", "end_delta", "is_opened"],
-    [
-        [timedelta(milliseconds=1), timedelta(milliseconds=1), True],
-        [timedelta(days=365), timedelta(days=365), True],
-        [timedelta(0), timedelta(0), False],
-        [timedelta(0), timedelta(milliseconds=1), True],
-        [timedelta(milliseconds=1), timedelta(0), False],
-        [timedelta(milliseconds=-1), timedelta(milliseconds=2), False],
-        [timedelta(milliseconds=2), timedelta(milliseconds=-1), False],
-    ],
-)
-@freezegun.freeze_time(now())
-def test_filtering_opened(
-    client: Client, competition: Competition, start_delta: timedelta, end_delta: timedelta, is_opened: bool
-) -> None:
-    competition.registration_start = now() - start_delta
-    competition.registration_end = now() + end_delta
-    competition.save(update_fields=["registration_start", "registration_end"])
-
-    assert_bool_filter(client, "opened", is_opened, competition)
-
-
-@pytest.mark.integration
-@pytest.mark.django_db
-@pytest.mark.parametrize(
-    ["delta", "is_started"],
-    [
-        *product(BEFORE_NOW + [timedelta(0)], [True]),
-        *product(AFTER_NOW, [False]),
-    ],
-)
-@freezegun.freeze_time(now())
-def test_filtering_started(client: Client, competition: Competition, delta: timedelta, is_started: bool) -> None:
-    competition.started_at = now() + delta
-    competition.save(update_fields=["started_at"])
-
-    assert_bool_filter(client, "started", is_started, competition)
-
-
 def assert_bool_filter(client: Client, filter: str, flag: bool, competition: Competition) -> None:
     response = get(client, COMPETITIONS + f"?{filter}={flag}")
     assert response.status_code == 200

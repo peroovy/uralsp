@@ -5,6 +5,7 @@ from typing import Optional, Set
 from django.db.models import Prefetch, Q, QuerySet
 from django.utils.timezone import now
 
+from api.internal.competitions.domain.entities import RegistrationState
 from api.internal.db.models import Competition, Field, FormValue
 from api.internal.db.models.request import Request, RequestStatus
 from api.internal.utils import get_strip_filters
@@ -25,7 +26,7 @@ class ICompetitionRepository(ABC):
 
     @abstractmethod
     def get_filtered(
-        self, name: Optional[str], admin_id: Optional[int], is_opened: Optional[bool], is_started: Optional[bool]
+        self, name: Optional[str], admin_id: Optional[int], registration: Optional[RegistrationState]
     ) -> QuerySet[Competition]:
         ...
 
@@ -93,7 +94,7 @@ class CompetitionRepository(ICompetitionRepository):
         return Competition.objects.filter(id=competition_id).exists()
 
     def get_filtered(
-        self, name: Optional[str], admin_id: Optional[int], is_opened: Optional[bool], is_started: Optional[bool]
+        self, name: Optional[str], admin_id: Optional[int], registration: Optional[RegistrationState]
     ) -> QuerySet[Competition]:
         now_ = now()
         filters = get_strip_filters(name__istartswith=name)
@@ -101,14 +102,15 @@ class CompetitionRepository(ICompetitionRepository):
         if admin_id is not None:
             filters["admins__id"] = admin_id
 
-        if is_started is not None:
-            filters[f"started_at__{'lte' if is_started else 'gt'}"] = now_
-
         queryset = Competition.objects.filter(**filters)
 
-        if is_opened is not None:
-            opened = Q(registration_start__lte=now_) & Q(registration_end__gt=now_)
-            queryset = queryset.filter(opened if is_opened else ~opened)
+        match registration:
+            case RegistrationState.UPCOMING:
+                queryset = queryset.filter(registration_start__gt=now_)
+            case RegistrationState.ONGOING:
+                queryset = queryset.filter(Q(registration_start__lte=now_) & Q(registration_end__gt=now_))
+            case RegistrationState.PAST:
+                queryset = queryset.filter(registration_end__lte=now_)
 
         return queryset
 

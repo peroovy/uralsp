@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import List, Optional
 
 from django.conf import settings
@@ -6,11 +7,16 @@ from ninja import Field as F, ModelSchema, Schema
 from api.internal.db.models import Competition, Field
 
 
+class RegistrationState(str, Enum):
+    UPCOMING = "upcoming"
+    ONGOING = "ongoing"
+    PAST = "past"
+
+
 class CompetitionFilters(Schema):
     name: Optional[str] = None
     admin: Optional[int] = None
-    opened: Optional[bool] = None
-    started: Optional[bool] = None
+    registration: Optional[RegistrationState] = None
 
 
 class CompetitionOut(ModelSchema):

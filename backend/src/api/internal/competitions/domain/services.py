@@ -32,7 +32,7 @@ class CompetitionsService:
         self._field_repo = field_repo
 
     def get_competitions_by_filters(self, filters: CompetitionFilters) -> List[Competition]:
-        return list(self._competition_repo.get_filtered(filters.name, filters.admin, filters.opened, filters.started))
+        return list(self._competition_repo.get_filtered(filters.name, filters.admin, filters.registration))
 
     def get_competition(self, competition_id: int) -> Optional[Competition]:
         return self._competition_repo.get(competition_id)
