@@ -1,5 +1,4 @@
 import { parsePayload } from "$lib/parse";
-import type { Requests } from "$lib/types";
 import { redirect, type Load } from "@sveltejs/kit";
 
 export let load: Load = async function load({ params, parent, fetch }) {
@@ -42,7 +41,6 @@ export let load: Load = async function load({ params, parent, fetch }) {
   const contestEnd = Date.parse(contestJson.registration_end);
 
   if (now < contestStart || now > contestEnd) {
-    alert("The contest is not open for registration");
     return redirect(307, "/");
   }
 
