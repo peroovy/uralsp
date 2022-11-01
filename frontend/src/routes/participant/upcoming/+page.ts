@@ -20,7 +20,7 @@ export let load: Load = async function load({ parent }) {
 			Authorization: 'Bearer ' + token
 		}
 	});
-	let UpComming_competitions = await fetch(`${API}/competitions?opened=false`, {
+	let UpComming_competitions = await fetch(`${API}/competitions?registration=upcoming`, {
 		method: 'GET',
 		headers: {
 			'Content-Type': 'application/json'

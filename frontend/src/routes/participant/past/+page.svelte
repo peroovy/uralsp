@@ -49,10 +49,10 @@
 
   <div class="part_4 d-flex justify-content-center align-items-start">
     <div
-      class="row justify-content-center align-items-center gap-3 p-0 m-0 "
+      class="row justify-content-center align-items-center gap-3 p-0 m-0"
+      style="flex-flow: column nowrap; gap: 30px; width: max-content"
       id="past"
     >
-      <div class="col-md">
         {#if started_competitions.length == 0}
           <div
             class="text-center p-3 notFound"
@@ -76,7 +76,7 @@
               Date.parse(comp.started_at)
             ).toDateString()}
 
-            <div class="col-md-5" style:width="fit-content">
+            <div class="col-md">
               <div class="card shadow-sm border-0">
                 <div class="card-header bg-light">
                   <nav
@@ -117,7 +117,6 @@
         {/if}
       </div>
     </div>
-  </div>
 </section>
 
 <style lang="scss">
