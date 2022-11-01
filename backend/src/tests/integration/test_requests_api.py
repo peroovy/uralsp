@@ -64,7 +64,7 @@ def test_access_creating(client: Client, user_token: str, admin_token: str, supe
 @pytest.mark.django_db
 def test_creating__unknown_competition(client: Client, user_token: str) -> None:
     body = {"competition": 0, "team_name": "SUPER-PUPER TEAM", "team": []}
-    assert_422(post(client, REQUESTS, user_token, body), error="competition", detail="Unknown competition")
+    assert_422(post(client, REQUESTS, user_token, body), error="competition", message="Unknown competition")
     assert not Request.objects.exists()
 
 
@@ -74,15 +74,15 @@ def test_creating__request_already_created(
     client: Client, competition: Competition, user: User, user_token: str
 ) -> None:
     request = Request.objects.create(competition=competition, owner=user, status=RequestStatus.CANCELED)
-    error, detail = "request", "Request has already created"
+    error, message = "request", "Request has already created"
     body = {"competition": competition.id, "team_name": "SUPER-PUPER TEAM", "team": []}
 
-    assert_422(post(client, REQUESTS, user_token, body), error, detail)
+    assert_422(post(client, REQUESTS, user_token, body), error, message)
     assert not Request.objects.filter(~Q(id=request.id)).exists()
 
     user.permission = Permissions.TEACHER
     user.save(update_fields=["permission"])
-    assert_not_422_body(post(client, REQUESTS, user_token, body), error, detail)
+    assert_not_422_body(post(client, REQUESTS, user_token, body), error, message)
 
 
 @pytest.mark.integration
@@ -97,7 +97,7 @@ def test_creating__competition_registration_has_not_started_yet(
 
     body = {"competition": competition.id, "team_name": "SUPER-PUPER TEAM", "team": []}
     assert_422(
-        post(client, REQUESTS, user_token, body), error="registration start", detail="Registration has not started yet"
+        post(client, REQUESTS, user_token, body), error="registration start", message="Registration has not started yet"
     )
     assert not Request.objects.exists()
 
@@ -113,7 +113,7 @@ def test_creating__competition_registration_is_over(
     competition.save(update_fields=["registration_end"])
 
     body = {"competition": competition.id, "team_name": "SUPER-PUPER TEAM", "team": []}
-    assert_422(post(client, REQUESTS, user_token, body), error="registration end", detail="Registration is over")
+    assert_422(post(client, REQUESTS, user_token, body), error="registration end", message="Registration is over")
     assert not Request.objects.exists()
 
 
@@ -381,7 +381,7 @@ def test_updating__competition_registration_is_over(
     assert_422(
         put(client, REQUEST.format(request_id=user_request.id), user_token, body),
         error="registration end",
-        detail="Registration is over",
+        message="Registration is over",
     )
     assert Request.objects.get(pk=user_request.pk) == user_request
     assert not Participation.objects.filter(request=user_request).exists()
@@ -399,7 +399,7 @@ def _test_invalid_users(
 
     for ids in [[], [user.id], [user.id, 0], [0, 0], [user.id, user.id], [user.id, admin.id, super_admin.id]]:
         body["team"] = [{"user_id": id_, "form": []} for id_ in ids]
-        assert_422(func(body), error="bad users", detail="Team validation error")
+        assert_422(func(body), error="bad users", message="Team validation error")
 
 
 def _test_invalid_forms(
@@ -427,7 +427,7 @@ def _test_invalid_forms(
     ]
     for ids in field_ids:
         body["team"][0]["form"] = [{"field_id": id_, "value": "123"} for id_ in ids]
-        assert_422(func(body), error="bad forms", detail="Forms validation error")
+        assert_422(func(body), error="bad forms", message="Forms validation error")
 
 
 def get_body_for_updating() -> dict:

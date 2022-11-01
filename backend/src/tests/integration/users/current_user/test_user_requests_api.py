@@ -64,7 +64,7 @@ def test_canceling__competition_has_already_started(
     assert_422(
         patch(client, CANCEL_REQUEST.format(request_id=user_request.id), user_token),
         error="started competition",
-        detail="The competition has already started",
+        message="The competition has already started",
     )
     assert Request.objects.get(pk=user_request.pk).status == user_request.status
 
@@ -137,9 +137,9 @@ def test_renewing__registration_is_over(
     user_request.status = RequestStatus.CANCELED
     user_request.save()
 
-    error, detail = "registration end", "Registration is over"
+    error, message = "registration end", "Registration is over"
     response = patch(client, RENEW_REQUEST.format(request_id=user_request.id), user_token)
-    assert_422(response, error, detail)
+    assert_422(response, error, message)
 
 
 @pytest.mark.integration
@@ -149,9 +149,9 @@ def test_renewing__bad_status(client: Client, user_request: Request, user_token:
     user_request.status = status
     user_request.save()
 
-    error, detail = "bad status", "The request was not canceled"
+    error, message = "bad status", "The request was not canceled"
     response = patch(client, RENEW_REQUEST.format(request_id=user_request.id), user_token)
-    assert_422(response, error, detail)
+    assert_422(response, error, message)
 
 
 @pytest.mark.integration

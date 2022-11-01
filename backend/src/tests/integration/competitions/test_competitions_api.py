@@ -396,13 +396,13 @@ def _test_validation_dates(
     body["registration_end"] = datetime_to_string(now() + registration_end_delta)
     body["started_at"] = datetime_to_string(now() + start_delta)
 
-    error, detail = "bad dates", "Values must be next: registration_start < registration_end < started_at"
+    error, message = "bad dates", "Values must be next: registration_start < registration_end < started_at"
     response = func(body)
 
     if is_correct:
-        assert_not_422_body(response, error, detail)
+        assert_not_422_body(response, error, message)
     else:
-        assert_422(response, error, detail)
+        assert_422(response, error, message)
 
 
 def _test_validation_admins(
@@ -411,30 +411,30 @@ def _test_validation_admins(
     body = get_body_for_creating_or_updating()
     body["fields"] = [field.id]
 
-    error, detail = "bad admins", "Validation admins error"
+    error, message = "bad admins", "Validation admins error"
 
     for bad_admins in get_bad_admin_ids(user, admin, super_admin):
         body["admins"] = bad_admins
-        assert_422(func(body), error, detail)
+        assert_422(func(body), error, message)
 
     for admins in get_correct_admin_ids(admin, another_admin):
         body["admins"] = admins
-        assert_not_422_body(func(body), error, detail)
+        assert_not_422_body(func(body), error, message)
 
 
 def _test_validation_fields(func: Callable[[dict], Response], admin: User, field: Field, another_field: Field) -> None:
     body = get_body_for_creating_or_updating()
     body["admins"] = [admin.id]
 
-    error, detail = "bad fields", "Validation fields error"
+    error, message = "bad fields", "Validation fields error"
 
     for bad_fields in get_bad_field_ids(field):
         body["fields"] = bad_fields
-        assert_422(func(body), error, detail)
+        assert_422(func(body), error, message)
 
     for fields in get_correct_field_ids(field, another_field):
         body["fields"] = fields
-        assert_not_422_body(func(body), error, detail)
+        assert_not_422_body(func(body), error, message)
 
 
 @pytest.mark.integration
@@ -614,7 +614,7 @@ def test_updating_admins(
         assert_422(
             put(client, ADMINS.format(id=competition.id), super_admin_token, body),
             error="bad admins",
-            detail="Validation admins error",
+            message="Validation admins error",
         )
         assert sorted(competition.admins.all(), key=lambda usr: usr.id) == sorted(
             [admin, another_admin], key=lambda usr: usr.id
@@ -714,7 +714,7 @@ def test_updating_form(
         assert_422(
             put(client, FORM.format(id=competition.id), super_admin_token, body),
             error="bad fields",
-            detail="Validation fields error",
+            message="Validation fields error",
         )
         assert sorted(competition.fields.all(), key=lambda f: f.id) == sorted(
             [field, another_field], key=lambda f: f.id

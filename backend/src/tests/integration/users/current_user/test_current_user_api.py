@@ -137,7 +137,7 @@ def test_updating_email__already_exists(
     assert_422(
         put(client, PROFILE, user_token, body),
         error="bad email",
-        detail="The email already exists",
+        message="The email already exists",
     )
     assert_not_updating(user)
 
@@ -290,7 +290,7 @@ def test_linking_vkontakte(client: Client, user: User, user_token: str, admin_to
     for uid, hash_ in [[228, body["hash"]], [social_id, "invalid"], [228, "invalid"]]:
         body["uid"] = uid
         body["hash"] = hash_
-        assert_422(patch(client, uri, user_token, body), error="bad credentials", detail="Invalid credentials")
+        assert_422(patch(client, uri, user_token, body), error="bad credentials", message="Invalid credentials")
 
 
 @pytest.mark.integration
@@ -305,7 +305,7 @@ def test_linking_google(client: Client, user: User, user_token: str, admin_token
     assert_linking_social(client, uri, body, google_data["sub"], "google_id", user, user_token, admin_token)
 
     google_api.verify_oauth2_token = Mock(side_effect=ValueError())
-    assert_422(patch(client, uri, user_token, body), error="bad credentials", detail="Invalid credentials")
+    assert_422(patch(client, uri, user_token, body), error="bad credentials", message="Invalid credentials")
 
 
 @pytest.mark.integration
@@ -338,7 +338,7 @@ def test_linking_telegram(client: Client, user: User, user_token: str, admin_tok
         assert User.objects.get(pk=user.pk) == user
 
     hmac.hexdigest.return_value = body["hash"][::-1]
-    assert_422(patch(client, uri, user_token, body), error="bad credentials", detail="Invalid credentials")
+    assert_422(patch(client, uri, user_token, body), error="bad credentials", message="Invalid credentials")
     assert User.objects.get(pk=user.pk) == user
 
 
@@ -361,7 +361,7 @@ def assert_linking_social(
         assert model_to_dict(actual, fields=[social_field])[social_field] == str(social_id)
 
     response = patch(client, uri, admin_token, body)
-    assert_422(response, error="bad social id", detail="Social id already exists")
+    assert_422(response, error="bad social id", message="Social id already exists")
 
 
 @pytest.mark.integration
@@ -383,12 +383,12 @@ def test_unlinking_telegram(client: Client, user: User, user_token: str) -> None
 
 
 def assert_unlinking_social(client: Client, uri: str, social_field: str, user: User, user_token: str) -> None:
-    error, detail = "socials amount", "Min amount of socials is 1"
+    error, message = "socials amount", "Min amount of socials is 1"
 
-    assert_422(patch(client, uri, user_token), error=error, detail=detail)
+    assert_422(patch(client, uri, user_token), error=error, message=message)
 
     User.objects.filter(pk=user.pk).update(**{social_field: "228"})
-    assert_422(patch(client, uri, user_token), error=error, detail=detail)
+    assert_422(patch(client, uri, user_token), error=error, message=message)
     assert model_to_dict(User.objects.get(pk=user.pk), fields=[social_field])[social_field] == "228"
 
     user.vkontakte_id = "228"

@@ -3,8 +3,8 @@ from ninja import Schema
 
 class ErrorResponse(Schema):
     error: str = "error"
-    detail: str = "info"
+    message: str = "info"
 
 
 class SuccessResponse(Schema):
-    detail: str = "Success"
+    message: str = "Success"
