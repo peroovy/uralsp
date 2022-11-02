@@ -1,4 +1,4 @@
-import { parsePayload } from "$lib/parse";
+import { parsePayload } from "$lib/helpers";
 import { redirect, type Load } from "@sveltejs/kit";
 
 export let load: Load = async function load({ params, parent, fetch }) {

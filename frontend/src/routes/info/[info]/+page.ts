@@ -1,4 +1,4 @@
-import { parsePayload } from '$lib/parse';
+import { parsePayload } from '$lib/helpers';
 import { redirect } from '@sveltejs/kit';
 import type { Load } from '@sveltejs/kit';
 

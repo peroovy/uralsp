@@ -1,5 +1,5 @@
 import { redirect } from '@sveltejs/kit';
-import { parsePayload } from '$lib/parse';
+import { parsePayload } from '$lib/helpers';
 import { browser } from '$app/environment';
 
 //@ts-ignore

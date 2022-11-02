@@ -4,7 +4,7 @@
   import { base } from "$app/paths";
   import { browser } from "$app/environment";
   import { onMount } from "svelte";
-  import { parsePayload } from "$lib/parse";
+  import { parsePayload } from "$lib/helpers";
   import type { TelegramPayload } from "$lib/types";
   import { store_token } from "$lib/stores";
 

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { redirect } from "@sveltejs/kit";
-import { parsePayload } from "$lib/parse";
+import { parsePayload } from "$lib/helpers";
 import type { PageLoad } from "./$types";
 
 export const load = async function load({ params, fetch, parent }: Parameters<PageLoad>[0]) {

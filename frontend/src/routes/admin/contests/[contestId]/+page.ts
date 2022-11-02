@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { browser } from '$app/environment';
-import { parsePayload } from '$lib/parse';
+import { parsePayload } from '$lib/helpers';
 
 // @ts-ignore
 export async function load({ params }) {
