@@ -1,6 +1,4 @@
 async function load({ params }) {
-  return;
+    return;
 }
-export {
-  load
-};
+export { load };

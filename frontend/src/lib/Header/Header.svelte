@@ -1,15 +1,15 @@
 <script lang="ts">
-    import src from '$lib/Assets/imgs/logo.png';
+    import src from "$lib/Assets/imgs/logo.png";
 </script>
 
 <header>
-    <img src={src} alt="Logo"/>
+    <img {src} alt="Logo" />
 </header>
 
 <style lang="scss">
-    @import '../Assets/common.scss';
+    @import "../Assets/common.scss";
 
-    header{
+    header {
         width: 100vw;
         min-height: fit-content;
         align-items: center;
@@ -18,12 +18,11 @@
         position: relative;
         z-index: 1;
 
-        img{
+        img {
             width: 130px;
             display: block;
             margin: auto;
             padding: 20px;
         }
     }
-    
 </style>

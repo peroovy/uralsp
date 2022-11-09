@@ -27,67 +27,67 @@ $bg-color: #f0f5fa;
 
 @mixin navbar {
     nav {
-		position: fixed;
-		top: 0px;
-		z-index: 100;
-		flex-shrink: 0;
-		padding: 10px 20px;
-		font-family: 'Light';
-		font-size: 15px !important;
-		.navbar-brand {
-			align-items: center !important;
-		}
-		.navbar-brand > img {
-			height: 20px;
-		}
-		.part-photo {
-			width: 30px;
-			height: 30px;
-			border-radius: 50%;
-			margin-right: 10px;
-		}
-		.nav-item {
-			cursor: pointer;
-		}
-		.dropdown-menu {
-			border: none;
-			position: absolute;
-			z-index: 20;
-			border-top: 3px solid $primary-color !important;
-			padding: 10px;
-			max-width: fit-content;
-			.dropdown-item {
-				cursor: pointer;
-				display: flex;
-				justify-content: left;
-				align-items: center;
-				&:hover {
-					background-color: transparent;
-					color: $primary-color;
-				}
-				.fa {
-					margin-right: 10px;
-				}
-			}
-		}
-	}
+        position: fixed;
+        top: 0px;
+        z-index: 100;
+        flex-shrink: 0;
+        padding: 10px 20px;
+        font-family: "Light";
+        font-size: 15px !important;
+        .navbar-brand {
+            align-items: center !important;
+        }
+        .navbar-brand > img {
+            height: 20px;
+        }
+        .part-photo {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .nav-item {
+            cursor: pointer;
+        }
+        .dropdown-menu {
+            border: none;
+            position: absolute;
+            z-index: 20;
+            border-top: 3px solid $primary-color !important;
+            padding: 10px;
+            max-width: fit-content;
+            .dropdown-item {
+                cursor: pointer;
+                display: flex;
+                justify-content: left;
+                align-items: center;
+                &:hover {
+                    background-color: transparent;
+                    color: $primary-color;
+                }
+                .fa {
+                    margin-right: 10px;
+                }
+            }
+        }
+    }
 }
 
 .loading {
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100vw;
-	height: 100vh;
-	background-color: white;
-	z-index: 1000;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	.spinner-border {
-		width: 3rem;
-		height: 3rem;
-		border-width: 0.25rem;
-		color: $primary-color;
-	}
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: white;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+        border-width: 0.25rem;
+        color: $primary-color;
+    }
 }

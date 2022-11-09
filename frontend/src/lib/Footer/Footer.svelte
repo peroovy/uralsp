@@ -1,24 +1,24 @@
 <script lang="ts">
     let date = new Date();
-    let year : number = date.getFullYear();
+    let year: number = date.getFullYear();
 </script>
 
 <footer>
-    <p> © {year} AppName </p>
+    <p>© {year} AppName</p>
 </footer>
 
 <style lang="scss">
-    footer{
+    footer {
         color: white;
         background-color: black;
         padding: 10px 0px;
         text-align: center;
         font-size: 12px;
-        font-family: 'light';
+        font-family: "light";
         margin: 0px;
         position: relative;
         z-index: 10;
-        p{
+        p {
             padding: 0px;
             margin: 0px;
         }

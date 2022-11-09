@@ -1,1 +1,16 @@
-{"prerendered":{"pages":[],"assets":[],"redirects":[],"paths":[]},"prerender_map":[["",false],["participant/ongoing",false],["participant/past",false],["participant/requests",false],["participant/upcoming",false],["admin/contests/[contestId]",false],["admin/requests/[application]",false],["contests/apply/[application]",false],["admin/[admin]",false],["info/[info]",false],["admin/[adminId]/users/[...q]",false]]}
+{
+    "prerendered": { "pages": [], "assets": [], "redirects": [], "paths": [] },
+    "prerender_map": [
+        ["", false],
+        ["participant/ongoing", false],
+        ["participant/past", false],
+        ["participant/requests", false],
+        ["participant/upcoming", false],
+        ["admin/contests/[contestId]", false],
+        ["admin/requests/[application]", false],
+        ["contests/apply/[application]", false],
+        ["admin/[admin]", false],
+        ["info/[info]", false],
+        ["admin/[adminId]/users/[...q]", false]
+    ]
+}

@@ -1,7 +1,5 @@
 import "./index.js";
 function sessionDuration() {
-  new Date().getTime();
+    new Date().getTime();
 }
-export {
-  sessionDuration as s
-};
+export { sessionDuration as s };
