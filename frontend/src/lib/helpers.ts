@@ -14,8 +14,6 @@ interface ErrorObject {
 }
 
 export function handleErrorMsg(msg: ErrorObject): string {
-
-    console.log(msg);
     let error_message = msg.message;
     if (typeof error_message === "string") {
         return error_message;

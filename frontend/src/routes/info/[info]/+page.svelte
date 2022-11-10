@@ -180,12 +180,12 @@
                     },
                     body: JSON.stringify(update),
                 });
-
+                let profile_request_data = await profile_request.json();
                 if (profile_request.ok) {
                     printMsg("Your profile has been updated successfully", "success",  alertCont);
                     window.location.reload();
                 } else {
-                    printMsg("Something went wrong, please try again later", "error", alertCont);
+                    printMsg(handleErrorMsg(profile_request_data), "error", alertCont);
                 }
             } else {
                 update.permission = userPermission;
@@ -244,7 +244,7 @@
             printMsg(`Your ${socailID} account has been unlinked successfully`, "success", alertCont);
             window.location.reload();
         } else {
-            printMsg("Something went wrong, please try again later", "error", alertCont);
+            printMsg(handleErrorMsg(unlink_respond), "error", alertCont);
         }
     }
 
@@ -332,7 +332,7 @@
             window.location.reload();
             return;
         } else {
-            printMsg("Something went wrong, please try again later", "error", alertCont);
+            printMsg(handleErrorMsg(link_google_respond), "error", alertCont);
         }
     }
 </script>
