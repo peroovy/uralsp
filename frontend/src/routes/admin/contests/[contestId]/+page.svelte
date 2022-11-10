@@ -8,7 +8,7 @@
     import { sessionDuration } from "$lib/sessionDuration";
     import { page } from "$app/stores";
     import { browser } from "$app/environment";
-    import { printMsg } from "$lib/helpers";
+    import { handleErrorMsg, printMsg } from "$lib/helpers";
 
     sessionDuration();
     const data = $page.data;
@@ -166,7 +166,7 @@
             if (field_response.ok) {
                 fields.push(newField);
             } else {
-                printMsg(field_response.message, "error", alertCont);
+                printMsg(handleErrorMsg(field_response), "error", alertCont);
             }
 
             questionId = "";
@@ -222,7 +222,7 @@
         if (questionId_response.ok) {
             printMsg("Field updated successfully!", "success", alertCont);
         } else {
-            printMsg(questionId_response.message, "error", alertCont);
+            printMsg(handleErrorMsg(questionId_response), "error", alertCont);
         }
 
         // update the selected old field
@@ -280,7 +280,7 @@
                 if (delteFiled_response.ok) {
                     printMsg("Field deleted successfully!", "success", alertCont);
                 } else {
-                    printMsg(delteFiled_response.message, "error", alertCont);
+                    printMsg(handleErrorMsg(delteFiled_response), "error", alertCont);
                     return;
                 }
 
@@ -557,7 +557,7 @@
         if (comp_request_data.ok) {
             printMsg("Competition created successfully", "success", alertCont);
         } else {
-            printMsg(comp_request_data.message, "error", alertCont);
+            printMsg(handleErrorMsg(comp_request_data), "error", alertCont);
         }
     }
 
@@ -628,7 +628,7 @@
             if (temp_request_data.ok) {
                 printMsg("Request template updated successfully", "success", alertCont);
             } else {
-                printMsg(temp_request_data.message, "error", alertCont);
+                printMsg(handleErrorMsg(temp_request_data), "error", alertCont);
             }
 
             // update the fields
@@ -647,7 +647,7 @@
                 printMsg("Form updated successfully", "success", alertCont);
                 window.location.reload();
             } else {
-                printMsg(form_request_data.message, "error", alertCont);
+                printMsg(handleErrorMsg(form_request_data), "error", alertCont);
             }
         }
         if (whatToupdate.admins) {
@@ -666,7 +666,7 @@
                 printMsg("Admins list updated successfully", "success", alertCont);
                 window.location.reload();
             } else {
-                printMsg(admins_list_request_data.message, "error", alertCont);
+                printMsg(handleErrorMsg(admins_list_request_data), "error", alertCont);
             }
         }
 
@@ -688,7 +688,7 @@
                     window.location.reload();
                 }, 1000);
             } else {
-                printMsg(comp_update_request_data.message, "error", alertCont);
+                printMsg(handleErrorMsg(comp_update_request_data), "error", alertCont);
             }
         }
     }

@@ -8,7 +8,7 @@
     import { sessionDuration } from "$lib/sessionDuration";
     import { browser } from "$app/environment";
     import { page } from "$app/stores";
-    import { printMsg } from "$lib/helpers";
+    import { handleErrorMsg, printMsg } from "$lib/helpers";
 
     sessionDuration();
     const data = $page.data;
@@ -96,7 +96,7 @@
                     VK.Widgets.Auth("vk_auth", {
                         onAuth: async function (data: { uid: string; hash: string; first_name: string; last_name: string }) {
                             if (real_id != userInfo.id) {
-                                printMsg("error", "You can't change the social account of another user", alertCont);
+                                printMsg("You can't change the social account of another user", "error", alertCont);
                                 return;
                             }
                             let uid = data.uid;
@@ -118,7 +118,7 @@
                                 body: JSON.stringify(authData),
                             });
                             if (link_vk.ok) {
-                                printMsg("success", "Your VK account has been linked successfully", alertCont);
+                                printMsg("Your VK account has been linked successfully", "success", alertCont);
                                 window.location.reload();
                             } else {
                                 printMsg("error", "Something went wrong, please try again later", alertCont);
@@ -185,7 +185,7 @@
                     printMsg("Your profile has been updated successfully", "success",  alertCont);
                     window.location.reload();
                 } else {
-                    printMsg("Error!", "Something went wrong, please try again later", alertCont);
+                    printMsg("Something went wrong, please try again later", "error", alertCont);
                 }
             } else {
                 update.permission = userPermission;
@@ -201,10 +201,10 @@
                 let info_respond = await info_put_request.json();
 
                 if (info_put_request.ok) {
-                    printMsg("success", "User info has been updated successfully", alertCont);
+                    printMsg("User info has been updated successfully", "success",  alertCont);
                     window.location.reload();
                 } else {
-                    printMsg("error", "Something went wrong, please try again later", alertCont);
+                    printMsg(handleErrorMsg(info_respond), "error",  alertCont);
                 }
             }
         }
@@ -294,7 +294,7 @@
             window.location.reload();
             return;
         } else {
-            printMsg(link_tele_respond.message, "error", alertCont);
+            printMsg(handleErrorMsg(link_tele_respond), "error", alertCont);
         }
     }
 

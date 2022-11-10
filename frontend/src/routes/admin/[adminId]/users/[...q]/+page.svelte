@@ -7,7 +7,7 @@
     import { page } from "$app/stores";
     import { republics } from "$lib/Assets/republics.json";
     import { sessionDuration } from "$lib/sessionDuration";
-    import { printMsg } from "$lib/helpers";
+    import { handleErrorMsg, printMsg } from "$lib/helpers";
 
     sessionDuration();
 
@@ -224,7 +224,7 @@
                     }
                 }
             } else {
-                printMsg(merege.message, "error", alertCont);
+                printMsg(handleErrorMsg(merege), "error", alertCont);
             }
         }
     }
@@ -252,7 +252,7 @@
             if (userdata_request.ok) {
                 selectedUsersArray.push(userData);
             } else {
-                printMsg(userData.message, "error", alertCont);
+                printMsg(handleErrorMsg(userData), "error", alertCont);
             }
         }
     }

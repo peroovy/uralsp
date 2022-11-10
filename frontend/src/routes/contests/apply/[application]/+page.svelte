@@ -3,7 +3,7 @@
     import { goto } from "$app/navigation";
     import { base } from "$app/paths";
     import { page } from "$app/stores";
-    import { printMsg } from "$lib/helpers";
+    import { handleErrorMsg, printMsg } from "$lib/helpers";
     import dotsSrc from "$lib/Assets/imgs/dots.png";
     import type { RequestsOut, UserRequest, CompetitionWithFields } from "$lib/types";
     import { sessionDuration } from "$lib/sessionDuration";
@@ -42,7 +42,7 @@
             let isRequired = contest.fields.find((field) => field.id == fieldId)!.is_required;
             if (isRequired && fieldValue == "") {
                 alertCont.style.display = "block";
-                printMsg("Error", `Please fill all required fields before submitting`, alertCont);
+                printMsg(`Please fill all required fields before submitting`, "error",  alertCont);
                 return "error";
             }
             form.push({
@@ -117,7 +117,7 @@
             body: JSON.stringify(application),
         });
         if (response.status == 200) {
-            printMsg("Success", "Your request has been sent successfully", alertCont);
+            printMsg("Your request has been sent successfully", "success", alertCont);
             setTimeout(() => {
                 window.location.href = `${base}/participant/requests`;
             }, 1000);
@@ -160,7 +160,7 @@
             }, 1000);
         } else {
             let e = await response.json();
-            printMsg(e.message, "error", alertCont);
+            printMsg(handleErrorMsg(e), "error", alertCont);
         }
     }
 

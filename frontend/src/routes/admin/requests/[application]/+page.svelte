@@ -4,7 +4,7 @@
     import type { RequestsOut } from "$lib/types";
     import dotsSrc from "$lib/Assets/imgs/dots.png";
     import { page } from "$app/stores";
-    import { printMsg } from "$lib/helpers";
+    import { handleErrorMsg, printMsg } from "$lib/helpers";
     import type { CompetitionWithFields, RequestsIn } from "$lib/types";
 
     const { app, permission, real_id, access_token, ownerName, comp, API } = $page.data;
@@ -35,7 +35,7 @@
         if (app_process_request_json.ok) {
             printMsg("Application accepted", "success", alertCont);
         } else {
-            printMsg(app_process_request_json.error, "error", alertCont);
+            printMsg(handleErrorMsg(app_process_request_json), "error", alertCont);
         }
     }
 
@@ -55,10 +55,11 @@
             }),
         });
 
+        let procces_update_requests_json = await procces_update_requests.json();
         if (procces_update_requests.ok) {
             printMsg("Application rejected", "success", alertCont);
         } else {
-            printMsg("Error", "error", alertCont);
+            printMsg(handleErrorMsg(procces_update_requests_json), "error", alertCont);
         }
     }
 
@@ -161,7 +162,7 @@
             }, 1000);
         } else {
             let e = await response.json();
-            printMsg(e.message, "error", alertCont);
+            printMsg(handleErrorMsg(e), "error", alertCont);
         }
     }
 
@@ -184,7 +185,7 @@
                 window.location.href = `${base}/participant/requests`;
             }, 1000);
         } else {
-            printMsg(del_app_request_json.message, "error", alertCont);
+            printMsg(handleErrorMsg(del_app_request_json), "error", alertCont);
         }
     }
 
