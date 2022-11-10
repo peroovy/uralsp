@@ -14,6 +14,8 @@ interface ErrorObject {
 }
 
 export function handleErrorMsg(msg: ErrorObject): string {
+
+    console.log(msg);
     let error_message = msg.message;
     if (typeof error_message === "string") {
         return error_message;
@@ -26,7 +28,7 @@ export function handleErrorMsg(msg: ErrorObject): string {
 
 export function printMsg(msg: string, type: string, alertCont: HTMLElement): void {
     let alert = `<div class="alert ${type === "success" ? "alert-success" : "alert-danger"} alert-dismissible fade show" role="alert">
-                    <strong>${type}!</strong> ${msg}
+                    ${msg}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>`;
 
