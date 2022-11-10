@@ -6,7 +6,6 @@
     import { onMount } from "svelte";
     import { parsePayload } from "$lib/helpers";
     import type { TelegramPayload } from "$lib/types";
-    import { store_token } from "$lib/stores";
 
     const API = import.meta.env.VITE_API_URL;
     const googleId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -34,7 +33,6 @@
                 let date = new Date(parseInt(exp) * 1000);
                 let now = new Date();
                 if (now < date) {
-                    store_token.set(token);
                     let payload = parsePayload(localStorage.getItem("access_token")!);
                     let per = payload.permission;
                     let id = payload.user_id;
@@ -129,7 +127,6 @@
                                     let token = res.access_token;
                                     localStorage.setItem("access_token", token);
                                     localStorage.setItem("expires_in", expiresIn);
-                                    store_token.set(token);
                                     let per = parsePayload(localStorage.getItem("access_token")!).permission;
                                     let id = parsePayload(localStorage.getItem("access_token")!).user_id;
                                     redirect(per, id);
@@ -167,7 +164,6 @@
                     let token = res.access_token;
                     localStorage.setItem("access_token", token);
                     localStorage.setItem("expires_in", expiresIn);
-                    store_token.set(token);
                     let per = parsePayload(localStorage.getItem("access_token")!).permission;
                     let id = parsePayload(localStorage.getItem("access_token")!).user_id;
                     redirect(per, id);
