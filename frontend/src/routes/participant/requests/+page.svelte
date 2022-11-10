@@ -7,6 +7,7 @@
     import { sessionDuration } from "$lib/sessionDuration";
     import Navbar from "../navbar.svelte";
     import { base } from "$app/paths";
+    import { handleErrorMsg, printMsg } from "$lib/helpers";
     let active = "requests";
     let data = $page.data,
         requests: Requests = data.requests,
@@ -19,44 +20,55 @@
     let userId = userInfo.id;
 
     let loading = "" as unknown as HTMLElement;
-    function renewApplication(id: number) {
+    let alertCont : HTMLElement;
+    async function renewApplication(id: number) {
         let confirmation = confirm("Are you sure you want to renew your application?");
         if (!confirmation) return;
-        fetch(`${API}/users/current/requests/${id}/renew`, {
+        let renew_request = await fetch(`${API}/users/current/requests/${id}/renew`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: "Bearer " + localStorage.getItem("access_token"),
             },
-        }).then((res) => {
-            if (res.status == 200) {
-                location.reload();
-            } else {
-                console.error(res);
-            }
         });
+        
+        let renew_request_data = await renew_request.json();
+
+        if (renew_request.ok) {
+            printMsg("Your application has been renewed successfully", "success", alertCont);
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+            return;
+        } else {
+            printMsg(handleErrorMsg(renew_request_data), "error", alertCont);
+        }
     }
 
     function editApplication(id: number) {
         window.location.href = `${base}/contests/apply/${id}`;
     }
 
-    function cancelApplication(id: number) {
+    async function cancelApplication(id: number) {
         let confirmation = confirm("Are you sure you want to cancel your application?");
         if (!confirmation) return;
-        fetch(`${API}/users/current/requests/${id}/cancel`, {
+        let cancel_request = await fetch(`${API}/users/current/requests/${id}/cancel`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: "Bearer " + localStorage.getItem("access_token"),
             },
-        }).then((res) => {
-            if (res.status == 200) {
-                location.reload();
-            } else {
-                console.error(res);
-            }
         });
+        let cancel_response = await cancel_request.json();
+        if (cancel_request.ok) {
+            printMsg("Request is cancelled", "success", alertCont);
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            printMsg(handleErrorMsg(cancel_response), "success", alertCont);
+
+        }
     }
 
     onMount(() => {
@@ -140,6 +152,7 @@
         </div>
     </div>
 </section>
+<div class="alertCont" bind:this={alertCont} />
 
 <style lang="scss">
     @import "../../../lib/Assets/common.scss";
@@ -200,5 +213,11 @@
         font-size: 16px;
         text-align: justify;
         padding: 8px;
+    }
+
+    .alertCont {
+        position: fixed;
+        bottom: 30px;
+        left: 30px;
     }
 </style>
