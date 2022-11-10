@@ -66,7 +66,7 @@
                 location.reload();
             }, 1000);
         } else {
-            printMsg(handleErrorMsg(cancel_response), "success", alertCont);
+            printMsg(handleErrorMsg(cancel_response), "error", alertCont);
 
         }
     }
@@ -151,8 +151,8 @@
             {/if}
         </div>
     </div>
+    <div class="alertCont" bind:this={alertCont} />
 </section>
-<div class="alertCont" bind:this={alertCont} />
 
 <style lang="scss">
     @import "../../../lib/Assets/common.scss";
