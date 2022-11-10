@@ -182,10 +182,10 @@
                 });
 
                 if (profile_request.ok) {
-                    printMsg("success", "Your profile has been updated successfully", alertCont);
+                    printMsg("Your profile has been updated successfully", "success",  alertCont);
                     window.location.reload();
                 } else {
-                    printMsg("error", "Something went wrong, please try again later", alertCont);
+                    printMsg("Error!", "Something went wrong, please try again later", alertCont);
                 }
             } else {
                 update.permission = userPermission;
@@ -292,10 +292,9 @@
         if (link_tele_request.ok) {
             printMsg("Your telegram account has been linked successfully", "success", alertCont);
             window.location.reload();
-
             return;
         } else {
-            printMsg("Something went wrong, please try again later", "error", alertCont);
+            printMsg(link_tele_respond.message, "error", alertCont);
         }
     }
 

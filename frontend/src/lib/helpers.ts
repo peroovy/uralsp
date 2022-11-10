@@ -10,11 +10,18 @@ export function parsePayload(token: string): {
 
 interface ErrorObject {
     error: string;
-    msg: [] | string;
+    message: Array<{msg: string}> | string;
 }
 
 export function handleErrorMsg(msg: ErrorObject): string {
-    return msg != undefined ? (Array.isArray(msg) ? msg[0].msg : msg) : "Something went wrong";
+    let error_message = msg.message;
+    if (typeof error_message === "string") {
+        return error_message;
+    } else if (Array.isArray(error_message)) {
+        return error_message[0].msg;
+    } else {
+        return "Something went wrong";
+    }
 }
 
 export function printMsg(msg: string, type: string, alertCont: HTMLElement): void {
